@@ -3,13 +3,6 @@
 #include "include/LFUCache.hpp"
 #include "include/IdealCache.hpp"
 
-using namespace cache;
-
-int getPageData(int key)
-{
-    return key;
-}
-
 int main(int argc, char* argv[])
 {
     std::vector<int> data;
@@ -30,8 +23,8 @@ int main(int argc, char* argv[])
         cacheSize = 5;
     }
 
-    LFUCache<int, int> LFU{cacheSize};
-    IdealCache<int> ideal{cacheSize};
+    cache::LFUCache<int> LFU{cacheSize};
+    cache::IdealCache<int> ideal{cacheSize};
 
     std::cout << "LFU   cache hits " << LFU.countCacheHits(data) << std::endl;
     std::cout << "Ideal cache hits " << ideal.countCacheHits(data) << std::endl;

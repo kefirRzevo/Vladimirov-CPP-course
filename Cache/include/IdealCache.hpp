@@ -92,7 +92,7 @@ class IdealCache
                     {
                         cache_.erase(cache_.begin());
                     }
-                    if(hit->second.size())
+                    if(hit->second.size() != 0)
                     {
                         hit->second.pop_front();
                     }

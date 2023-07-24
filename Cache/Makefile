@@ -86,12 +86,12 @@ $(TARGET): $(OBJECTS)
 test_lfu: test_dirs $(TEST_LFU_TARGET)
 
 $(TEST_LFU_TARGET): $(TEST_LFU_OBJECTS)
-	$(CXX) -g $(CXXFLAGS) -mmacosx-version-min=12.6 -pthread $^ -o $@ -lgtest_main  -lgtest -lpthread
+	$(CXX) -g $(CXXFLAGS) -pthread $^ -o $@ -lgtest_main  -lgtest -lpthread
 
 test_ideal: test_dirs $(TEST_IDEAL_TARGET)
 
 $(TEST_IDEAL_TARGET): $(TEST_IDEAL_OBJECTS)
-	$(CXX) -g $(CXXFLAGS) -mmacosx-version-min=12.6 -pthread $^ -o $@ -lgtest_main  -lgtest -lpthread
+	$(CXX) -g $(CXXFLAGS) -pthread $^ -o $@ -lgtest_main  -lgtest -lpthread
 
 -include $(DEPENDS)
 -include $(TEST_LFU_DEPENDS)

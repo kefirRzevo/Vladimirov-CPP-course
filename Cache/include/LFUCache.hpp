@@ -7,7 +7,7 @@
 namespace cache
 {
 
-template<typename T, typename KeyT = int >
+template<typename KeyT = int >
 class LFUCache
 {
     private:
@@ -30,15 +30,14 @@ class LFUCache
         typedef struct PageNode
         {
             FreqNodeIt iterator_;
-            T pageData_;
             KeyT key_;
 
-            PageNode(const FreqNodeIt& iterator, T pageData, KeyT key):
-                iterator_(iterator), pageData_(pageData), key_(key) {};
+            PageNode(const FreqNodeIt& iterator, KeyT key):
+                iterator_(iterator), key_(key) {};
         } PageNode;
 
         size_t size_;
-        std::list<FreqNode> list_;
+        std::list<FreqNode> cache_;
         std::unordered_map<KeyT, PageNodeIt> hashTab_;
 
     public:
@@ -51,37 +50,39 @@ class LFUCache
             size_t cacheHits = 0;
             for(size_t i = 0; i < pages.size(); i++)
             {
-                if(cache(pages[i], defaultGetPageData))
+                if(addToCache(pages[i]))
+                {
                     cacheHits++;
+                }
             }
             return cacheHits;
         }
 
     private:
 
-        bool cache(const KeyT& key, T getPage(KeyT))
+        bool addToCache(const KeyT& key)
         {
             auto hit = hashTab_.find(key);
             if(hit == hashTab_.cend())
             {
                 if(hashTab_.size() == size_)
                 {
-                    FreqNode& smallestFreqNode = list_.front();
+                    FreqNode& smallestFreqNode = cache_.front();
                     hashTab_.erase(smallestFreqNode.list_.begin()->key_);
                     smallestFreqNode.list_.pop_front();
                     if(smallestFreqNode.list_.size() == 0)
                     {
-                        list_.pop_front();
+                        cache_.pop_front();
                     }
                 }
 
-                if(list_.size() == 0 || list_.front().frequency_ != 1)
+                if(cache_.size() == 0 || cache_.front().frequency_ != 1)
                 {
-                    list_.emplace_front(1);
+                    cache_.emplace_front(1);
                 }
 
-                list_.front().list_.emplace_back(list_.begin(), getPage(key), key);
-                hashTab_.emplace(key, std::prev(list_.front().list_.end()));
+                cache_.front().list_.emplace_back(cache_.begin(), key);
+                hashTab_.emplace(key, std::prev(cache_.front().list_.end()));
                 return false;
             }
             else
@@ -89,13 +90,13 @@ class LFUCache
                 PageNodeIt pageNodeIt = hit->second;
                 FreqNodeIt freqNodeIt = pageNodeIt->iterator_;
 
-                if(freqNodeIt == list_.rbegin().base() ||
+                if(freqNodeIt == cache_.rbegin().base() ||
                 std::next(freqNodeIt)->frequency_ != freqNodeIt->frequency_ + 1)
                 {
-                    list_.emplace(std::next(freqNodeIt), freqNodeIt->frequency_ + 1);
+                    cache_.emplace(std::next(freqNodeIt), freqNodeIt->frequency_ + 1);
                 }
 
-                std::next(freqNodeIt)->list_.emplace_back(std::next(freqNodeIt), pageNodeIt->pageData_, pageNodeIt->key_);
+                std::next(freqNodeIt)->list_.emplace_back(std::next(freqNodeIt), pageNodeIt->key_);
                 freqNodeIt->list_.erase(pageNodeIt);
 
                 hashTab_.erase(key);
@@ -103,7 +104,7 @@ class LFUCache
 
                 if(freqNodeIt->list_.size() == 0)
                 {
-                    list_.erase(freqNodeIt);
+                    cache_.erase(freqNodeIt);
                 }
                 return true;
             }
@@ -112,7 +113,7 @@ class LFUCache
         void dump() const
         {
             std::cout << "Dump:\nList       ";
-            for(const auto& freqNode: list_)
+            for(const auto& freqNode: cache_)
             {
                 std::cout << "|freq " << freqNode.frequency_ << ": nodes";
                 for(const auto& pageNode: freqNode.list_)
@@ -126,11 +127,6 @@ class LFUCache
                 std::cout << "|key: " << node.first << "; freq " << node.second->iterator_->frequency_;
             }
             std::cout << "|" << std::endl;
-        }
-
-        static KeyT defaultGetPageData(KeyT key)
-        {
-            return key;
         }
 };
 
