@@ -13,7 +13,7 @@ namespace cache
 template<typename KeyT>
 using UniquePagesIt = typename std::unordered_map<KeyT, std::deque<size_t>>::iterator;
 
-template<typename KeyT> 
+template<typename KeyT>
 struct Comparator
 {
     bool operator()(const UniquePagesIt<KeyT>& lhs, const UniquePagesIt<KeyT>& rhs) const

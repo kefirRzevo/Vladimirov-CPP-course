@@ -1,32 +1,46 @@
+#include <unistd.h>
 #include <string>
 
 #include "include/LFUCache.hpp"
 #include "include/IdealCache.hpp"
 
+int getData(int key)
+{
+    usleep(5000);
+    return key;
+}
+
 int main(int argc, char* argv[])
 {
-    std::vector<int> data;
+    std::vector<int> data{};
     size_t cacheSize = 0;
+    size_t capacity = 0;
 
     if(argc > 2)
     {
-        size_t capacity = static_cast<size_t>(argc - 2);
+        cacheSize = std::stoi(argv[1]);
+        capacity = std::stoi(argv[2]);
         for(size_t i = 0; i < capacity; i++)
         {
-            data.push_back(std::stoi(argv[2 + i]));
+            data.push_back(std::stoi(argv[3 + i]));
         }
-        cacheSize = std::stoi(argv[1]);
     }
     else
     {
-        data = {1, 2, 3, 4, 5, 6, 1, 2, 7, 8};
-        cacheSize = 5;
+        std::cin >> cacheSize;
+        std::cin >> capacity;
+        int temp = 0;
+        for(size_t i = 0; i < capacity; i++)
+        {
+            std::cin >> temp;
+            data.push_back(temp);
+        }
     }
 
-    cache::LFUCache<int> LFU{cacheSize};
+    cache::LFUCache<int, int> LFU{cacheSize};
     cache::IdealCache<int> ideal{cacheSize};
 
-    std::cout << "LFU   cache hits " << LFU.countCacheHits(data) << std::endl;
+    std::cout << "LFU   cache hits " << LFU.countCacheHits(data, getData) << std::endl;
     std::cout << "Ideal cache hits " << ideal.countCacheHits(data) << std::endl;
 
     return 0;
