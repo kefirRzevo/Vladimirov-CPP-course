@@ -40,104 +40,106 @@ class IdealCache
     private:
 
         size_t size_;
-        const std::vector<KeyT>& pages_;
 
         std::unordered_map<KeyT, std::deque<size_t>> uniquePages_;
         std::set<UniquePagesIt<KeyT>, Comparator<KeyT>> cache_;
 
     public:
 
-        IdealCache(size_t cacheSize, const std::vector<KeyT>& pages):
-            size_(cacheSize), pages_(pages)
-            {
-                firstPass();
-                std::cout << secondPass() << std::endl;
-            }
+        IdealCache(size_t cacheSize):
+            size_(cacheSize)
+            {}
+
+        size_t countCacheHits(const std::vector<KeyT>& pages)
+        {
+            firstPass(pages);
+            return secondPass(pages);
+        }
 
     private:
 
-        void firstPass()
+        void firstPass(const std::vector<KeyT>& pages)
+        {
+            for(size_t i = 0; i < pages.size(); i++)
             {
-                for(size_t i = 0; i < pages_.size(); i++)
+                auto hit = uniquePages_.find(pages[i]);
+                if(hit == uniquePages_.cend())
                 {
-                    auto hit = uniquePages_.find(pages_[i]);
-                    if(hit == uniquePages_.cend())
-                    {
-                        uniquePages_.emplace(pages_[i], std::deque<size_t>{i});
-                    }
-                    else
-                    {
-                        hit->second.push_back(i);
-                    }     
+                    uniquePages_.emplace(pages[i], std::deque<size_t>{i});
+                }
+                else
+                {
+                    hit->second.push_back(i);
                 }
             }
+        }
+
+        size_t secondPass(const std::vector<KeyT>& pages)
+        {
+            size_t cacheHits = 0;
+            for(size_t i = 0; i < pages.size(); i++)
+            {
+                auto hit = uniquePages_.find(pages[i]);
+                if(hit == uniquePages_.cend())
+                {
+                    std::cout << "Can't find " << pages[i] << std::endl;
+                    return 0;
+                }
+
+                if(cache_.find(hit) == cache_.cend())
+                {
+                    if(cache_.size() == size_)
+                    {
+                        cache_.erase(cache_.begin());
+                    }
+                    if(hit->second.size())
+                    {
+                        hit->second.pop_front();
+                    }
+                    cache_.insert(hit);
+                }
+                else
+                {
+                    cache_.erase(hit);
+                    if(hit->second.size())
+                    {
+                        hit->second.pop_front();
+                    }
+                    cache_.insert(hit);
+                    cacheHits++;
+                }
+            }
+            return cacheHits;
+        }
 
         void dumpFirstPass() const
+        {
+            std::cout << "First Pass Dump\n";
+            for(const auto& page: uniquePages_)
             {
-                std::cout << "First Pass Dump\n";
-                for(const auto& page: uniquePages_)
+                std::cout << "|key: " << page.first << "|";
+                for(size_t i = 0; i < page.second.size(); i++)
                 {
-                    std::cout << "|key: " << page.first << "|";
-                    for(size_t i = 0; i < page.second.size(); i++)
-                    {
-                        std::cout << page.second[i] << "; ";
-                    }
-                    std::cout << "|" << std::endl;
+                    std::cout << page.second[i] << "; ";
                 }
+                std::cout << "|" << std::endl;
             }
-
-        size_t secondPass()
-            {
-                size_t cacheHits = 0;
-                for(size_t i = 0; i < pages_.size(); i++)
-                {
-                    auto hit = uniquePages_.find(pages_[i]);
-                    if(hit == uniquePages_.cend())
-                    {
-                        std::cout << "Vector was changed" << std::endl;
-                        return 0;
-                    }
-
-                    if(cache_.find(hit) == cache_.cend())
-                    {
-                        if(cache_.size() == size_)
-                        {
-                            cache_.erase(cache_.begin());
-                        }
-                        if(hit->second.size())
-                        {
-                            hit->second.pop_front();
-                        }
-                        cache_.insert(hit);
-                    }
-                    else
-                    {
-                        cache_.erase(hit);
-                        if(hit->second.size())
-                        {
-                            hit->second.pop_front();
-                        }
-                        cache_.insert(hit);
-                        cacheHits++;
-                    }
-                }
-                return cacheHits;
-            }
+        }
 
         void dumpSecondPass() const
+        {
+            std::cout << "Second Pass Dump\n";
+            std::cout << "Cache size " << size_ << " and " << cache_.size() << "\n";
+            for(const auto& cachedPage: cache_)
             {
-                std::cout << "Second Pass Dump\n";
-                std::cout << "Cache size " << size_ << " and " << cache_.size() << "\n";
-                for(const auto& cachedPage: cache_)
+                std::cout << "|key: " << cachedPage->first << "|";
+                for(size_t i = 0; i < cachedPage->second.size(); i++)
                 {
-                    std::cout << "|key: " << cachedPage->first << "|";
-                    for(size_t i = 0; i < cachedPage->second.size(); i++)
-                    {
-                        std::cout << cachedPage->second[i] << "; ";
-                    }
-                    std::cout << "|" << std::endl;
+                    std::cout << cachedPage->second[i] << "; ";
                 }
+                std::cout << "|" << std::endl;
             }
+        }
 };
 
 }

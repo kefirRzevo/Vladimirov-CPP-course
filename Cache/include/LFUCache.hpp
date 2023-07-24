@@ -46,6 +46,19 @@ class LFUCache
         LFUCache(size_t size):
             size_(size) {}
 
+       size_t countCacheHits(const std::vector<KeyT>& pages)
+        {
+            size_t cacheHits = 0;
+            for(size_t i = 0; i < pages.size(); i++)
+            {
+                if(cache(pages[i], defaultGetPageData))
+                    cacheHits++;
+            }
+            return cacheHits;
+        }
+
+    private:
+
         bool cache(const KeyT& key, T getPage(KeyT))
         {
             auto hit = hashTab_.find(key);
@@ -69,7 +82,6 @@ class LFUCache
 
                 list_.front().list_.emplace_back(list_.begin(), getPage(key), key);
                 hashTab_.emplace(key, std::prev(list_.front().list_.end()));
-                std::cout << key << " miss" << std::endl;
                 return false;
             }
             else
@@ -93,7 +105,6 @@ class LFUCache
                 {
                     list_.erase(freqNodeIt);
                 }
-                std::cout << key << " found" << std::endl;
                 return true;
             }
         }
@@ -115,6 +126,11 @@ class LFUCache
                 std::cout << "|key: " << node.first << "; freq " << node.second->iterator_->frequency_;
             }
             std::cout << "|" << std::endl;
+        }
+
+        static KeyT defaultGetPageData(KeyT key)
+        {
+            return key;
         }
 };
 

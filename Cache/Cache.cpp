@@ -1,3 +1,5 @@
+#include <string>
+
 #include "include/LFUCache.hpp"
 #include "include/IdealCache.hpp"
 
@@ -10,23 +12,29 @@ int getPageData(int key)
 
 int main(int argc, char* argv[])
 {
-    /*LFUCache<int, int> cache{4};
-    cache.cache(5, getPageData);
-    cache.cache(5, getPageData);
-    cache.cache(5, getPageData);
-    cache.cache(5, getPageData);
-    cache.cache(3, getPageData);
-    cache.cache(3, getPageData);
-    cache.cache(2, getPageData);
-    cache.cache(1, getPageData);
-    cache.cache(4, getPageData);
-    cache.cache(6, getPageData);
-    cache.cache(5, getPageData);
-    cache.cache(5, getPageData);
-    cache.cache(5, getPageData);
-    cache.cache(5, getPageData);*/
-    std::vector<int> data{1, 3, 2, 4, 1, 2, 3, 2, 4};
-    IdealCache<int> cache{3, data};
+    std::vector<int> data;
+    size_t cacheSize = 0;
+
+    if(argc > 2)
+    {
+        size_t capacity = static_cast<size_t>(argc - 2);
+        for(size_t i = 0; i < capacity; i++)
+        {
+            data.push_back(std::stoi(argv[2 + i]));
+        }
+        cacheSize = std::stoi(argv[1]);
+    }
+    else
+    {
+        data = {1, 2, 3, 4, 5, 6, 1, 2, 7, 8};
+        cacheSize = 5;
+    }
+
+    LFUCache<int, int> LFU{cacheSize};
+    IdealCache<int> ideal{cacheSize};
+
+    std::cout << "LFU   cache hits " << LFU.countCacheHits(data) << std::endl;
+    std::cout << "Ideal cache hits " << ideal.countCacheHits(data) << std::endl;
 
     return 0;
 }
