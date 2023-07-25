@@ -4,12 +4,6 @@
 #include "include/LFUCache.hpp"
 #include "include/IdealCache.hpp"
 
-int getData(int key)
-{
-    usleep(5000);
-    return key;
-}
-
 int main(int argc, char* argv[])
 {
     std::vector<int> data{};
@@ -37,11 +31,13 @@ int main(int argc, char* argv[])
         }
     }
 
-    cache::LFUCache<int, int> LFU{cacheSize};
-    cache::IdealCache<int> ideal{cacheSize};
+    cache::LFUCache<int, int> lfu{cacheSize};
+    cache::IdealCache<int, int> ideal{cacheSize};
 
-    std::cout << "LFU   cache hits " << LFU.countCacheHits(data, getData) << std::endl;
-    std::cout << "Ideal cache hits " << ideal.countCacheHits(data) << std::endl;
+    std::cout << "LFU   cache hits " << 
+        lfu.countCacheHits(data, cache::LFUCache<int, int>::getData) << std::endl;
+    std::cout << "Ideal cache hits " <<
+        ideal.countCacheHits(data, cache::IdealCache<int, int>::getData) << std::endl;
 
     return 0;
 }

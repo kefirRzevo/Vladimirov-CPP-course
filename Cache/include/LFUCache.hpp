@@ -2,6 +2,7 @@
 
 #include <unordered_map>
 #include <iostream>
+#include <unistd.h>
 #include <list>
 
 namespace cache
@@ -57,6 +58,12 @@ class LFUCache
                 }
             }
             return cacheHits;
+        }
+
+        static int getData(int key)
+        {
+            usleep(5000);
+            return key;
         }
 
     private:

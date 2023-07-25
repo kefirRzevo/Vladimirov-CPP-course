@@ -2,10 +2,11 @@
 
 #include <unordered_map>
 #include <iostream>
+#include <unistd.h>
 #include <vector>
 #include <queue>
 #include <list>
-#include <set>
+#include <map>
 
 namespace cache
 {
@@ -34,7 +35,7 @@ struct Comparator
     }
 };
 
-template<typename KeyT>
+template<typename KeyT, typename D>
 class IdealCache
 {
     private:
@@ -42,7 +43,7 @@ class IdealCache
         size_t size_;
 
         std::unordered_map<KeyT, std::deque<size_t>> uniquePages_;
-        std::set<UniquePagesIt<KeyT>, Comparator<KeyT>> cache_;
+        std::map<UniquePagesIt<KeyT>, D, Comparator<KeyT>> cache_;
 
     public:
 
@@ -50,10 +51,16 @@ class IdealCache
             size_(cacheSize)
             {}
 
-        size_t countCacheHits(const std::vector<KeyT>& pages)
+        size_t countCacheHits(const std::vector<KeyT>& pages, D getPage(KeyT))
         {
             firstPass(pages);
-            return secondPass(pages);
+            return secondPass(pages, getPage);
+        }
+
+        static int getData(int key)
+        {
+            usleep(5000);
+            return key;
         }
 
     private:
@@ -74,7 +81,7 @@ class IdealCache
             }
         }
 
-        size_t secondPass(const std::vector<KeyT>& pages)
+        size_t secondPass(const std::vector<KeyT>& pages, D getPage(KeyT))
         {
             size_t cacheHits = 0;
             for(size_t i = 0; i < pages.size(); i++)
@@ -96,7 +103,7 @@ class IdealCache
                     {
                         hit->second.pop_front();
                     }
-                    cache_.insert(hit);
+                    cache_.emplace(hit, getPage(hit->first));
                 }
                 else
                 {
@@ -105,7 +112,7 @@ class IdealCache
                     {
                         hit->second.pop_front();
                     }
-                    cache_.insert(hit);
+                    cache_.emplace(hit, getPage(hit->first));
                     cacheHits++;
                 }
             }
@@ -132,10 +139,10 @@ class IdealCache
             std::cout << "Cache size " << size_ << " and " << cache_.size() << "\n";
             for(const auto& cachedPage: cache_)
             {
-                std::cout << "|key: " << cachedPage->first << "|";
-                for(size_t i = 0; i < cachedPage->second.size(); i++)
+                std::cout << "|key: " << cachedPage.first->first << "|";
+                for(size_t i = 0; i < cachedPage.first->second.size(); i++)
                 {
-                    std::cout << cachedPage->second[i] << "; ";
+                    std::cout << cachedPage.first->second[i] << "; ";
                 }
                 std::cout << "|" << std::endl;
             }

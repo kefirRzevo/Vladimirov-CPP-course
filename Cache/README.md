@@ -17,6 +17,14 @@ To run LFU tests:
 
 ## Ideal Cache Tests
 This is 2 pass algorithm that works for O(Nlog(M)), where N is number of elements need to be put in cache and M is size of cache.
-To run Ideal tests:
-        make test_ideal
-        ./cache_testIdeal
+To build program:
+        mkdir build
+        cd build
+        cmake ../
+        cmake --build ./
+
+Now you can run these three programs:
+        ./cache 2 6 1 2 1 2 1 2 (or using stdin)
+        ./lfu_test
+        ./ideal_test
+Enjoy.
