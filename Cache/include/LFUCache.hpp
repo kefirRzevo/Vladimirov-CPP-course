@@ -47,12 +47,12 @@ class LFUCache
         LFUCache(size_t size):
             size_(size) {}
 
-       size_t countCacheHits(const std::vector<KeyT>& pages, D getPage(KeyT))
+       size_t countCacheHits(const std::vector<KeyT>& keys, D getPage(KeyT))
         {
             size_t cacheHits = 0;
-            for(size_t i = 0; i < pages.size(); i++)
+            for(size_t i = 0; i < keys.size(); i++)
             {
-                if(isCached(pages[i], getPage))
+                if(isCached(keys[i], getPage))
                 {
                     cacheHits++;
                 }

@@ -51,10 +51,10 @@ class IdealCache
             size_(cacheSize)
             {}
 
-        size_t countCacheHits(const std::vector<KeyT>& pages, D getPage(KeyT))
+        size_t countCacheHits(const std::vector<KeyT>& keys, D getPage(KeyT))
         {
-            firstPass(pages);
-            return secondPass(pages, getPage);
+            firstPass(keys);
+            return secondPass(keys, getPage);
         }
 
         static int getData(int key)
@@ -65,14 +65,14 @@ class IdealCache
 
     private:
 
-        void firstPass(const std::vector<KeyT>& pages)
+        void firstPass(const std::vector<KeyT>& keys)
         {
-            for(size_t i = 0; i < pages.size(); i++)
+            for(size_t i = 0; i < keys.size(); i++)
             {
-                auto hit = uniquePages_.find(pages[i]);
+                auto hit = uniquePages_.find(keys[i]);
                 if(hit == uniquePages_.cend())
                 {
-                    uniquePages_.emplace(pages[i], std::deque<size_t>{i});
+                    uniquePages_.emplace(keys[i], std::deque<size_t>{i});
                 }
                 else
                 {
@@ -81,15 +81,15 @@ class IdealCache
             }
         }
 
-        size_t secondPass(const std::vector<KeyT>& pages, D getPage(KeyT))
+        size_t secondPass(const std::vector<KeyT>& keys, D getPage(KeyT))
         {
             size_t cacheHits = 0;
-            for(size_t i = 0; i < pages.size(); i++)
+            for(size_t i = 0; i < keys.size(); i++)
             {
                 auto hit = uniquePages_.find(pages[i]);
                 if(hit == uniquePages_.cend())
                 {
-                    std::cout << "Can't find " << pages[i] << std::endl;
+                    std::cout << "Can't find " << keys[i] << std::endl;
                     return 0;
                 }
 
