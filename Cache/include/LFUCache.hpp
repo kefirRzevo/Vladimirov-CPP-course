@@ -3,6 +3,7 @@
 #include <unordered_map>
 #include <iostream>
 #include <unistd.h>
+#include <vector>
 #include <list>
 
 namespace cache
