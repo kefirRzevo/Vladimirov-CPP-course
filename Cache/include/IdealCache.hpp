@@ -86,7 +86,7 @@ class IdealCache
             size_t cacheHits = 0;
             for(size_t i = 0; i < keys.size(); i++)
             {
-                auto hit = uniquePages_.find(pages[i]);
+                auto hit = uniquePages_.find(keys[i]);
                 if(hit == uniquePages_.cend())
                 {
                     std::cout << "Can't find " << keys[i] << std::endl;
