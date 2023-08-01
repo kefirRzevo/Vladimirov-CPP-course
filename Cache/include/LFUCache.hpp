@@ -19,6 +19,7 @@ class LFUCache
 
         using FreqNodeIt = typename std::list<FreqNode>::iterator;
         using PageNodeIt = typename std::list<PageNode>::iterator;
+        using HashTabIt  = typename std::unordered_map<KeyT, PageNodeIt>::iterator;
 
         struct FreqNode
         {
@@ -63,58 +64,69 @@ class LFUCache
 
         static int getData(int key)
         {
-            usleep(5000);
             return key;
         }
 
     private:
+
+        void insert(const KeyT& key, D getPage(KeyT))
+        {
+            if(hashTab_.size() == size_)
+            {
+                FreqNode& smallestFreqNode = cache_.front();
+                hashTab_.erase(smallestFreqNode.list_.begin()->key_);
+                smallestFreqNode.list_.pop_front();
+                if(smallestFreqNode.list_.size() == 0)
+                {
+                    cache_.pop_front();
+                }
+            }
+
+            if(cache_.size() == 0 || cache_.front().frequency_ != 1)
+            {
+                cache_.emplace_front(1);
+            }
+
+            cache_.front().list_.emplace_back(cache_.begin(), getPage(key), key);
+            hashTab_.emplace(key, std::prev(cache_.front().list_.end()));
+        }
+
+        void cacheUpdate(const KeyT& key, const HashTabIt& hit)
+        {
+                PageNodeIt pageNodeIt = hit->second;
+                FreqNodeIt freqNodeIt = pageNodeIt->iterator_;
+                FreqNodeIt nextFreqNodeIt = std::next(freqNodeIt);
+
+                if(freqNodeIt == cache_.rbegin().base() ||
+                nextFreqNodeIt->frequency_ != freqNodeIt->frequency_ + 1)
+                {
+                    cache_.emplace(nextFreqNodeIt, freqNodeIt->frequency_ + 1);
+                }
+
+                nextFreqNodeIt = std::next(freqNodeIt);
+                nextFreqNodeIt->list_.emplace_back(nextFreqNodeIt, pageNodeIt->pageData_, pageNodeIt->key_);
+                freqNodeIt->list_.erase(pageNodeIt);
+
+                hashTab_.erase(key);
+                hashTab_.emplace(key, std::prev(nextFreqNodeIt->list_.end()));
+
+                if(freqNodeIt->list_.size() == 0)
+                {
+                    cache_.erase(freqNodeIt);
+                }
+        }
 
         bool isCached(const KeyT& key, D getPage(KeyT))
         {
             auto hit = hashTab_.find(key);
             if(hit == hashTab_.cend())
             {
-                if(hashTab_.size() == size_)
-                {
-                    FreqNode& smallestFreqNode = cache_.front();
-                    hashTab_.erase(smallestFreqNode.list_.begin()->key_);
-                    smallestFreqNode.list_.pop_front();
-                    if(smallestFreqNode.list_.size() == 0)
-                    {
-                        cache_.pop_front();
-                    }
-                }
-
-                if(cache_.size() == 0 || cache_.front().frequency_ != 1)
-                {
-                    cache_.emplace_front(1);
-                }
-
-                cache_.front().list_.emplace_back(cache_.begin(), getPage(key), key);
-                hashTab_.emplace(key, std::prev(cache_.front().list_.end()));
+                insert(key, getPage);
                 return false;
             }
             else
             {
-                PageNodeIt pageNodeIt = hit->second;
-                FreqNodeIt freqNodeIt = pageNodeIt->iterator_;
-
-                if(freqNodeIt == cache_.rbegin().base() ||
-                std::next(freqNodeIt)->frequency_ != freqNodeIt->frequency_ + 1)
-                {
-                    cache_.emplace(std::next(freqNodeIt), freqNodeIt->frequency_ + 1);
-                }
-
-                std::next(freqNodeIt)->list_.emplace_back(std::next(freqNodeIt), pageNodeIt->pageData_, pageNodeIt->key_);
-                freqNodeIt->list_.erase(pageNodeIt);
-
-                hashTab_.erase(key);
-                hashTab_.emplace(key, std::prev(std::next(freqNodeIt)->list_.end()));
-
-                if(freqNodeIt->list_.size() == 0)
-                {
-                    cache_.erase(freqNodeIt);
-                }
+                cacheUpdate(key, hit);
                 return true;
             }
         }

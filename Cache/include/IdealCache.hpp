@@ -59,7 +59,6 @@ class IdealCache
 
         static int getData(int key)
         {
-            usleep(5000);
             return key;
         }
 
@@ -95,15 +94,15 @@ class IdealCache
 
                 if(cache_.find(hit) == cache_.cend())
                 {
-                    if(cache_.size() == size_)
-                    {
-                        cache_.erase(cache_.begin());
-                    }
                     if(hit->second.size() != 0)
                     {
                         hit->second.pop_front();
                     }
                     cache_.emplace(hit, getPage(hit->first));
+                    if(cache_.size() == size_ + 1)
+                    {
+                        cache_.erase(cache_.begin());
+                    }
                 }
                 else
                 {
