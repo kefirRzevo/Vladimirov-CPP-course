@@ -11,6 +11,22 @@ namespace triangles
 template<typename T>
 class Vector
 {
+    private:
+
+        template<typename U>
+        bool equals(const Vector<U>& rhs) const
+        {
+            return x_ == rhs.x_ && y_ == rhs.y_ && z_ == rhs.z_;
+        }
+
+        template<typename U>
+        bool equals(const Vector<U>& rhs) const requires std::is_floating_point_v<U>
+        {
+                return  std::fabs(x_ - rhs.x_) <= Config<U>::epsilon &&
+                        std::fabs(y_ - rhs.y_) <= Config<U>::epsilon &&
+                        std::fabs(z_ - rhs.z_) <= Config<U>::epsilon;
+        }
+
     public:
 
         T x_;
@@ -65,16 +81,25 @@ class Vector
                 return *this;
             }
 
-        bool equals(const Vector<T>& vector) const
+        Vector<T>& normalize()
             {
-                return  std::abs(x_ - vector.x_) <= Config<T>::epsilon &&
-                        std::abs(y_ - vector.y_) <= Config<T>::epsilon &&
-                        std::abs(z_ - vector.z_) <= Config<T>::epsilon;
+                T length = length();
+                return operator/=(length);
+            }
+
+        bool operator==(const Vector<T>& rhs) const
+            {
+                return equals<T>(rhs);
+            }
+
+        bool operator!=(const Vector<T>& rhs) const
+            {
+                return !operator==(rhs);
             }
 
         bool equalsZero() const
             {
-                return  equals({});
+                return operator==({});
             }
 
         T squaredLength() const
@@ -84,7 +109,7 @@ class Vector
 
         T length() const
             {
-                return std::sqrt(squaredLength);
+                return std::sqrt(squaredLength());
             }
 
         T getSquaredDistance(const Vector<T>& vector) const
@@ -101,6 +126,11 @@ class Vector
         void dump() const
             {
                 std::cout << x_ << " " << y_ << " " << z_ << std::endl;
+            }
+
+        bool collinear(const Vector<T>& rhs) const
+            {
+                return cross(*this, rhs).equalsZero();
             }
 };
 
@@ -156,10 +186,4 @@ Vector<T> triple(const Vector<T>& a, const Vector<T>& b, const Vector<T>& c)
     return dot(a, cross(b, c));
 }
 
-template<typename T>
-bool collinear(const Vector<T>& lhs, const Vector<T>& rhs)
-{
-    return cross(lhs, rhs).equalsZero();
-}
-
-} //nnamespace triangles
+} //namespace triangles

@@ -5,6 +5,7 @@
 namespace triangles
 {
 
+/*
 template<typename T>
 class Line
 {
@@ -119,5 +120,5 @@ class Plane
                 return n_.equalsZero();
             }
 };
-
+*/
 } //namespace triangles
