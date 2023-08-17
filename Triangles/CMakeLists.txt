@@ -1,10 +1,16 @@
 cmake_minimum_required (VERSION 3.16)
 project (triangles)
 
-set (CMAKE_CXX_STANDARD 20)
+set (CMAKE_CXX_STANDARD 17)
+set(CMAKE_CXX_COMPILER "/usr/bin/g++")
 
 #main
 set (SOURCES Triangles.cpp)
+
+set(CMAKE_CXX_FLAGS_DEBUG_INIT "-Werror -Wdollar-in-identifier-extension")
+set(CMAKE_EXE_LINKER_FLAGS_INIT "-Werror -Wdollar-in-identifier-extension")
+set(CMAKE_CXX_FLAGS_INIT "-Werror -Wdollar-in-identifier-extension")
+set(CMAKE_CXX_FLAGS "-Werror -Wdollar-in-identifier-extension")
 
 add_executable (${PROJECT_NAME} ${SOURCES})
 
