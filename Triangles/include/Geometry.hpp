@@ -11,12 +11,8 @@ class Line;
 template<typename T>
 class Plane;
 
-enum class IntersectionType
-{
-    Belongs,
-    Intersects,
-    Parallels,
-};
+template<typename T>
+class Triangle;
 
 template<typename T>
 class Line

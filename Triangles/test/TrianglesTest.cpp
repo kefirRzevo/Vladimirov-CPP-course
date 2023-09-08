@@ -1,11 +1,9 @@
 #include <gtest/gtest.h>
 
 #include "../include/Geometry.hpp"
-#include "../include/Intersections.hpp"
 
 using namespace triangles;
 using namespace compare;
-using namespace intersection;
 
 TEST(VectorTest, test0) 
 {
@@ -128,9 +126,9 @@ TEST(TriangleTest, test3)
 	Triangle<float> t1{v1, v2, v3};
 	Triangle<float> t2{v2, v1, v3};
 	Triangle<float> t3{v3, v1, v2};
-	EXPECT_TRUE(t1.equals(t3));
-	EXPECT_TRUE(t1.equals(t2));
- 	EXPECT_TRUE(t3.equals(t2));
+	EXPECT_TRUE(t1 == t1);
+	EXPECT_TRUE(t1 != t2);
+ 	EXPECT_TRUE(t3 != t2);
 
 
 	Segment<float> seg0{{0, 0, 0}, {2, 2, 2}};
@@ -166,7 +164,7 @@ TEST(TriangleTest, test3)
 	EXPECT_TRUE(t1.contains(v6));
 	EXPECT_FALSE(t1.contains(v7));
 	EXPECT_FALSE(t1.contains(v8));
-//*
+
 	Segment<float> seg2{{0, 0, 1}, {0, 0, -1}};
 	Segment<float> seg3{{2, -1, 1}, {-1, 2, -1}};
 	Segment<float> seg4{{1, 1, 1}, {-1, 2, -1}};
@@ -423,38 +421,36 @@ TEST(TrianglesIntersectionTest1, test11)
 	Triangle<float> t3{{4, 1, 0}, {5, 0, 0}, {3, 2, 0}};
 	Triangle<float> t4{{4, 3, 0}, {5, 4, 0}, {3, 2, 0}};
 	Triangle<float> t5{{1, 1, 0}, {2, 2, 0}, {3, 3, 0}};
-	EXPECT_TRUE(intersects(t1, t2));
-	EXPECT_FALSE(intersects(t1, t3));
-	EXPECT_FALSE(intersects(t1, t4));
-	EXPECT_TRUE(intersects(t1, t5));
+	EXPECT_TRUE(t1.intersects(t2));
+	EXPECT_FALSE(t1.intersects(t3));
+	EXPECT_FALSE(t1.intersects(t4));
+	EXPECT_TRUE(t1.intersects(t5));
 }
 
-//*
 TEST(TrianglesIntersectionTest2, test12)
 {
 	//lines
 	Triangle<float> t1{{1, 1, 0}, {2, 2, 0}, {3, 3, 0}};
 	Triangle<float> t2{{2, 3, 0}, {2, 2, 0}, {3, 2, 0}};
-	EXPECT_TRUE(intersects(t1, t2));
+	EXPECT_TRUE(t1.intersects(t2));
 
 	Triangle<float> t3{{4, 3, 0}, {3, 3, 0}, {3, 4, 0}};
-	EXPECT_TRUE(intersects(t1, t3));
+	EXPECT_TRUE(t1.intersects(t3));
 
 	Triangle<float> t4{{4, 3, 0}, {4, 4, 0}, {3, 4, 0}};
-	EXPECT_FALSE(intersects(t1, t4));
+	EXPECT_FALSE(t1.intersects(t4));
 
 	Triangle<float> t5{{-1, -1, -1}, {2, 2, 2}, {3, 3, 3}};
 	Triangle<float> t6{{-1, -1, 0}, {2, -1, 0}, {-1, 2, 0}};
-	EXPECT_TRUE(intersects(t5, t6));
-	EXPECT_FALSE(intersects(t3, t5));
+	EXPECT_TRUE(t5.intersects(t6));
+	EXPECT_FALSE(t3.intersects(t5));
 
 	Triangle<float> t7{{1, 1, 1}, {2, 2, 2}, {3, 3, 3}};
-	EXPECT_FALSE(intersects(t7, t6));
+	EXPECT_FALSE(t7.intersects(t6));
 
 	Triangle<float> t8{{-1, -1, 1}, {2, -1, 1}, {-1, 2, 1}};
-	EXPECT_FALSE(intersects(t8, t6));
+	EXPECT_FALSE(t8.intersects(t6));
 }
-//*/
 
 TEST(TrianglesIntersectionTest3, test13)
 {
@@ -462,15 +458,15 @@ TEST(TrianglesIntersectionTest3, test13)
 	Triangle<float> t1{{1.5, -4, 8.25}, {7, 10, -4.25}, {5, 3, -0.15}};
 	Vector<float> v1{-11.84074, -72.09926, 30.60363};
 	Triangle<float> t2{v1, v1, v1};
-	EXPECT_FALSE(intersects(t2, t1));
+	EXPECT_FALSE(t2.intersects(t1));
 
 	Vector<float> v2{4.54335, 2.99349, 1.15753};
 	Triangle<float> t3{v2, v2, v2};
-	EXPECT_TRUE(intersects(t3, t1));
+	EXPECT_TRUE(t3.intersects(t1));
 
 	Vector<float> v3{4.54335, 10, 1.15753};
 	Triangle<float> t4{v3, v3, v3};
-	EXPECT_FALSE(intersects(t4, t1));
+	EXPECT_FALSE(t4.intersects(t1));
 }
 
 TEST(TrianglesIntersectionTest4, test14)
@@ -484,7 +480,7 @@ TEST(TrianglesIntersectionTest4, test14)
     Vector<float> v6{-273.4987522435, -732.4222971763, 626.6145537568};
     Triangle<float> t1{v1, v2, v3};
     Triangle<float> t2{v4, v5, v6};
-	EXPECT_TRUE(intersects(t1, t2));
+	EXPECT_TRUE(t1.intersects(t2));
 
     Vector<float> v7{20.58046, -43.99046, 0};
     Vector<float> v8{-10, -30, 0};
@@ -494,25 +490,25 @@ TEST(TrianglesIntersectionTest4, test14)
     Vector<float> v12{56.74394, -23.46234, 0};
     Triangle<float> t3{v7, v8, v9};
     Triangle<float> t4{v10, v11, v12};
-	EXPECT_TRUE(intersects(t3, t4));
+	EXPECT_TRUE(t3.intersects(t4));
 
     Vector<float> v13(33.22144, -30.78249, 5.73506);
     Triangle<float> t5{v13, v7, v8};
-	EXPECT_TRUE(intersects(t5, t4));
+	EXPECT_TRUE(t5.intersects(t4));
 
     Triangle<float> t6{v12, v7, v8};
-	EXPECT_TRUE(intersects(t6, t4));
+	EXPECT_TRUE(t6.intersects(t4));
 
     Triangle<float> t7{v12, v11, v8};
-	EXPECT_TRUE(intersects(t7, t4));
+	EXPECT_TRUE(t7.intersects(t4));
 
     Vector<float> v14{23.36736, -14.79033, 5.72534};
     Triangle<float> t8{v14, v7, v8};
-	EXPECT_TRUE(intersects(t8, t4));
+	EXPECT_TRUE(t8.intersects(t4));
 
     Vector<float> v15{10.36104, -17.95187, 5.72534};
     Triangle<float> t9{v15, v7, v8};
-	EXPECT_FALSE(intersects(t9, t4));
+	EXPECT_FALSE(t9.intersects(t4));
 }
 
 TEST(TrianglesIntersectionTest5, test15)
@@ -526,25 +522,24 @@ TEST(TrianglesIntersectionTest5, test15)
     Vector<float> v12{56.74394, -23.46234, 0};
     Triangle<float> t3{v7, v8, v9};
     Triangle<float> t4{v10, v11, v12};
-	EXPECT_TRUE(intersects(t3, t4));
+	EXPECT_TRUE(t3.intersects(t4));
 
     Triangle<float> t5{v7, v11, v12};
-	EXPECT_TRUE(intersects(t3, t5));
+	EXPECT_TRUE(t3.intersects(t5));
 
     Triangle<float> t6{v10, v8, v9};
-	EXPECT_TRUE(intersects(t3, t6));
+	EXPECT_TRUE(t3.intersects(t6));
 
     Vector<float> v13{25.08383, -40.98338, 0};
     Triangle<float> t7{v10, v13, v12};
-	EXPECT_TRUE(intersects(t3, t7));
+	EXPECT_TRUE(t3.intersects(t7));
 
     Vector<float> v14{36.36463, -32.43919, 0};
     Vector<float> v15{33.80259, -25.61689, 0};
     Vector<float> v16{47.729, -25.99418, 0};
     Triangle<float> t8{v14, v15, v16};
-	EXPECT_TRUE(intersects(t8, t4));
+	EXPECT_TRUE(t8.intersects(t4));
 }
-//*/
 
 int main()
 {

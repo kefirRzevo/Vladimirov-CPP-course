@@ -13,6 +13,7 @@ To build program:
 ```
 
 ## Triangles test
+To check triangles intersection:
 ```
         ./triangles_test
 ```

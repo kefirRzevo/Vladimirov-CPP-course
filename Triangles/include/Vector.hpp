@@ -93,6 +93,11 @@ class Vector
                 return !operator==({});
             }
 
+        bool valid() const
+            {
+                return x_ == x_ && y_ == y_ && z_ == z_;
+            }
+
         T squaredLength() const
             {
                 return x_ * x_ + y_ * y_ + z_ * z_;
@@ -128,6 +133,22 @@ class Vector
         Vector<T> project(const Vector<T>& v) const
             {
                 return dot(*this, v) / squaredLength() * *this;
+            }
+
+        Coordinate greatestComponent() const
+            {
+                if(greaterEq(x_, y_) && greaterEq(x_, z_))
+                {
+                    return Coordinate::x;
+                }
+                else if(greaterEq(y_, x_) && greaterEq(y_, z_))
+                {
+                    return Coordinate::y;
+                }
+                else
+                {
+                    return Coordinate::z;
+                }
             }
 };
 
@@ -258,6 +279,11 @@ class Vector2
                 return !operator==({});
             }
 
+        bool valid() const
+            {
+                return x_ == x_ && y_ == y_;
+            }
+
         T squaredLength() const
             {
                 return x_ * x_ + y_ * y_;
@@ -293,6 +319,18 @@ class Vector2
         Vector2<T> project(const Vector2<T>& v) const
             {
                 return dot2(*this, v) / squaredLength() * *this;
+            }
+
+        Coordinate greatestComponent() const
+            {
+                if(greaterEq(x_, y_))
+                {
+                    return Coordinate::x;
+                }
+                else
+                {
+                    return Coordinate::y;
+                }
             }
 };
 

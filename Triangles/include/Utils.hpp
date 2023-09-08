@@ -101,4 +101,45 @@ char getSign(const T& val)
 
 using namespace compare;
 
+enum class IntersectionType
+{
+    Belongs,
+    Intersects,
+    Parallels,
+};
+
+enum Quadrant
+{
+    xyz,
+    xy_z,
+    x_yz,
+    x_y_z,
+    _xyz,
+    _xy_z,
+    _x_yz,
+    _x_y_z,
+    count,
+};
+
+enum class Coordinate
+{
+    x,
+    y,
+    z,
+};
+
+template<typename T>
+bool sameSign(const T& val1, const T& val2, const T& val3)
+    {
+        if((greater(val1, T{0}) && greater(val2, T{0}) && greater(val3, T{0})) ||
+           (less(val1, T{0}) && less(val2, T{0}) && less(val3, T{0})))
+        {
+            return true;
+        }
+        else
+        {
+            return false;
+        }
+    }
+
 } //namespace triangles
