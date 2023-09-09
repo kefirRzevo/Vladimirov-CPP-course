@@ -2,7 +2,9 @@
 
 #include <list>
 #include <array>
+#include <memory>
 #include <fstream>
+#include <cassert>
 #include <unordered_set>
 
 #include "BoundingBox.hpp"

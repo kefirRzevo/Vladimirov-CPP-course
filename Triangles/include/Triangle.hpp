@@ -1,5 +1,7 @@
 #pragma once
 
+#include <cassert>
+
 #include "Vector.hpp"
 #include "Segment.hpp"
 #include "Geometry.hpp"
