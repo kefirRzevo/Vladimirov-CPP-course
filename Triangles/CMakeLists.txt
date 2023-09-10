@@ -16,7 +16,7 @@ find_package(GTest REQUIRED)
 include_directories(${GTEST_INCLUDE_DIRS})
 
 set (TARGET geometry_test)
-set (TEST_SOURCES test/TrianglesTest.cpp)
+set (TEST_SOURCES test/GeometryTest.cpp)
 
 set (TARGET1 problem_test)
 set (TEST_SOURCES1 test/ProblemTest.cpp)

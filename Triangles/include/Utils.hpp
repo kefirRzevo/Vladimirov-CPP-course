@@ -10,13 +10,13 @@ namespace compare
 {
 
 template<typename T>
-constexpr T epsilon = 1.0e-2;
+constexpr T epsilon = 1.0e-4;
 
 template<>
-float epsilon<float> = 1.0e-3;
+float epsilon<float> = 1.0e-5;
 
 template<>
-double epsilon<double> = 1.0e-4;
+double epsilon<double> = 1.0e-6;
 
 template<typename T>
 T max(T value)

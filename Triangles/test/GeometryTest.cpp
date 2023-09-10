@@ -1,6 +1,7 @@
 #include <gtest/gtest.h>
 
 #include "../include/Geometry.hpp"
+#include "../include/BoundingBox.hpp"
 
 using namespace triangles;
 using namespace compare;
@@ -539,6 +540,41 @@ TEST(TrianglesIntersectionTest5, test15)
     Vector<float> v16{47.729, -25.99418, 0};
     Triangle<float> t8{v14, v15, v16};
 	EXPECT_TRUE(t8.intersects(t4));
+}
+
+TEST(BoundingBoxTest, test16) 
+{
+    Triangle<float> t1{{0, 0, 0}, {0, 1, 1}, {1, 0, 1}};
+    BoundingBox<float> b1{t1};
+    Triangle<float> t2{{0, 1, 0}, {1, 0, 0}, {0, 0, 0}};
+    BoundingBox<float> b2{t2};
+    EXPECT_TRUE(b1.intersects(b2));
+    EXPECT_TRUE(t1.intersects(t2));
+
+    Vector<float> v1{0, 0, 0};
+    BoundingBox<float> b3{{-1, -1, -1}, {1, 1, 1}};
+    auto [flag1, res1] = b3.intersects(v1);
+    EXPECT_TRUE(flag1 == true && res1 == Quadrant::count);
+
+    BoundingBox<float> b4{{0, 0, 1}, {1, 1, 1}};
+    auto [flag2, res2] = b4.intersects(v1);
+    EXPECT_TRUE(flag2 == true && res2 == Quadrant::count);
+
+    BoundingBox<float> b5{{-2, -1, 1}, {-1, -0.5, 2}};
+    auto [flag3, res3] = b5.intersects(v1);
+    EXPECT_TRUE(flag3 == false && res3 == Quadrant::_x_yz);
+
+    BoundingBox<float> b6{{3, 1, 1}, {3, 2, 4}};
+    auto [flag4, res4] = b6.intersects(v1);
+    EXPECT_TRUE(flag4 == false && res4 == Quadrant::xyz);
+
+    BoundingBox<float> b7{{0, 0, 0}, {1, 1, 1}};
+    Vector<float> v2{0, 1, 0};
+    Vector<float> v3{0.5, 0.5, 0.2};
+    Vector<float> v4{1.1, 1.1, 1.2};
+    EXPECT_TRUE(b7.contains(v2));
+    EXPECT_TRUE(b7.contains(v3));
+    EXPECT_FALSE(b7.contains(v4));
 }
 
 int main()
