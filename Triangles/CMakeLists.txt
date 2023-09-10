@@ -25,4 +25,4 @@ add_executable(${TARGET} ${TEST_SOURCES})
 add_executable(${TARGET1} ${TEST_SOURCES1})
 
 target_link_libraries (${TARGET} ${GTEST_LIBRARIES} ${GTEST_MAIN_LIBRARIES})
-target_link_libraries (${TARGET1} ${GTEST_LIBRARIES} ${GTEST_MAIN_LIBRARIES})
+target_link_libraries (${TARGET1} ${GTEST_LIBRARIES} ${GTEST_MAIN_LIBRARIES} pthread)
