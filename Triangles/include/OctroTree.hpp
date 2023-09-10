@@ -77,13 +77,10 @@ class LeafNode: public Node<T>
 
         bool insert(const NodeValue<T>& value) override
             {
-                if(!search(value))
+                if(this->box_.contains(value.box))
                 {
-                    if(this->box_.contains(value.box))
-                    {
-                        this->data_.push_back(value);
-                        return true;
-                    }
+                    this->data_.push_back(value);
+                    return true;
                 }
                 return false;
             }
@@ -196,25 +193,22 @@ class BranchNode: public Node<T>
 
         bool insert(const NodeValue<T>& value) override
             {
-                if(!search(value))
+                if(this->box_.contains(value.box))
                 {
-                    if(this->box_.contains(value.box))
+                    auto [intersects, quadrant] = this->box_.intersects(sepPoint_);
+                    if(intersects)
                     {
-                        auto [intersects, quadrant] = this->box_.intersects(sepPoint_);
-                        if(intersects)
-                        {
-                            this->data_.push_back(value);
-                        }
-                        else
-                        {
-                            if(this->children_[static_cast<size_t>(quadrant)]->needsSplit())
-                            {
-                                split(this->children_[static_cast<size_t>(quadrant)]);
-                            }
-                            this->children_[static_cast<size_t>(quadrant)]->insert(value);
-                        }
-                        return true;
+                        this->data_.push_back(value);
                     }
+                    else
+                    {
+                        if(this->children_[static_cast<size_t>(quadrant)]->needsSplit())
+                        {
+                            split(this->children_[static_cast<size_t>(quadrant)]);
+                        }
+                        this->children_[static_cast<size_t>(quadrant)]->insert(value);
+                    }
+                    return true;
                 }
                 return false;
             }
