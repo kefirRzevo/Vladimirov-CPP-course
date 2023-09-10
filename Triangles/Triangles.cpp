@@ -29,11 +29,13 @@ int main()
 	}
 	tree.getIntersections(result);
 
-	for(const auto& value: result)
+	for(size_t i = 0; i < triangles.size(); ++i)
 	{
-		std::cout << value << " ";
+		if(result.find(i) != result.end())
+		{
+			std::cout << i << "\n";
+		}
 	}
-	std::cout << std::endl;
 
     return 0;
 }
