@@ -21,7 +21,7 @@ class Segment
         Vector<T> v2_;
 
         Segment():
-            v1_({}), v2_({})
+            v1_(), v2_()
             {}
 
         Segment(const Vector<T>& v1, const Vector<T>& v2):
@@ -182,7 +182,7 @@ class Segment2
         Vector2<T> v2_;
 
         Segment2():
-            v1_({}), v2_({})
+            v1_(), v2_()
             {}
 
         Segment2(const Vector2<T>& v1, const Vector2<T>& v2):

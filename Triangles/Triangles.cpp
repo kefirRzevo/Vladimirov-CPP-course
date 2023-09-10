@@ -25,7 +25,17 @@ int main()
 	std::unordered_set<size_t> result{};
 	for(size_t i = 0; i < triangles.size(); ++i)
 	{
-		tree.insert(NodeValue{triangles[i], BoundingBox<float>{triangles[i]}, i});
+		NodeValue<float> val{triangles[i], BoundingBox<float>{triangles[i]}, i};
+		auto [found, foundVal] = tree.search(val);
+		if(found)
+		{
+			result.insert(foundVal.num);
+			result.insert(val.num);
+		}
+		else
+		{
+			tree.insert(val);
+		}
 	}
 	tree.getIntersections(result);
 

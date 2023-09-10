@@ -17,7 +17,7 @@ class BoundingBox
         Vector<T> max_;
 
         BoundingBox():
-            min_({}), max_({})
+            min_(), max_()
             {}
 
         BoundingBox(const Vector<T>& min, const Vector<T>& max):

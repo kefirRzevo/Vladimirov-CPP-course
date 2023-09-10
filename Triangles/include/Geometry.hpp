@@ -23,7 +23,7 @@ class Line
         Vector<T> dir_;
 
         Line():
-            point_({}), dir_({})
+            point_(), dir_()
             {}
 
         Line(const Vector<T>& point, const Vector<T>& dir):
@@ -142,7 +142,7 @@ class Plane
         Vector<T> norm_;
 
         Plane():
-            point_({}), norm_({})
+            point_(), norm_()
             {}
 
         Plane(const Vector<T>& point, const Vector<T>& norm):

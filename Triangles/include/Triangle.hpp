@@ -57,7 +57,7 @@ class Triangle
         Vector<T> v3_;
 
         Triangle():
-            v1_({}), v2_({}), v3_({})
+            v1_(), v2_(), v3_()
             {}
 
         Triangle(const Vector<T>& v1, const Vector<T>& v2, const Vector<T>& v3):
@@ -343,7 +343,7 @@ class Triangle2
         Vector2<T> v3_;
 
         Triangle2():
-            v1_({}), v2_({}), v3_({})
+            v1_(), v2_(), v3_()
             {}
 
         Triangle2(const Vector2<T>& v1, const Vector2<T>& v2, const Vector2<T>& v3):

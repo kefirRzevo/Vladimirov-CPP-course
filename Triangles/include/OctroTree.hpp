@@ -36,6 +36,10 @@ struct NodeValue
     BoundingBox<T> box;
     size_t num;
 
+    NodeValue():
+        triag(), box(), num(0U)
+        {}
+
     NodeValue(const Triangle<T>& triag_, const BoundingBox<T>& box_, size_t triagNum):
         triag(triag_), box(box_), num(triagNum)
         {}
@@ -59,7 +63,7 @@ class Node
 
         virtual bool needsSplit() const = 0;
 
-        virtual bool search(const NodeValue<T>& value) const = 0;
+        virtual std::pair<bool, NodeValue<T>> search(const NodeValue<T>& value) const = 0;
 
         virtual void getIntersections(std::unordered_set<size_t>& storage) const = 0;
 
@@ -90,7 +94,7 @@ class LeafNode: public Node<T>
                 return this->data_.size() > 3U;
             }
 
-        bool search(const NodeValue<T>& value) const override
+        std::pair<bool, NodeValue<T>> search(const NodeValue<T>& value) const override
             {
                 if(this->box_.contains(value.box))
                 {
@@ -100,12 +104,12 @@ class LeafNode: public Node<T>
                         {
                             if(val.triag == value.triag)
                             {
-                                return true;
+                                return std::make_pair(true, val);
                             }
                         }
                     }
                 }
-                return false;
+                return std::make_pair(false, NodeValue<T>{});
             }
 
         void getIntersections(std::unordered_set<size_t>& storage) const override
@@ -199,6 +203,7 @@ class BranchNode: public Node<T>
                     if(intersects)
                     {
                         this->data_.push_back(value);
+                        return true;
                     }
                     else
                     {
@@ -206,9 +211,8 @@ class BranchNode: public Node<T>
                         {
                             split(this->children_[static_cast<size_t>(quadrant)]);
                         }
-                        this->children_[static_cast<size_t>(quadrant)]->insert(value);
+                        return this->children_[static_cast<size_t>(quadrant)]->insert(value);
                     }
-                    return true;
                 }
                 return false;
             }
@@ -218,33 +222,31 @@ class BranchNode: public Node<T>
                 return false;
             }
 
-        bool search(const NodeValue<T>& value) const override
+        std::pair<bool, NodeValue<T>> search(const NodeValue<T>& value) const override
             {
                 if(this->box_.contains(value.box))
                 {
-                    for(const auto& val: this->data_)
+                    auto [intersects, quadrant] = this->box_.intersects(sepPoint_);
+                    if(intersects)
                     {
-                        if(val.box == value.box)
+                        for(const auto& val: this->data_)
                         {
-                            if(val.triag == value.triag)
+                            if(val.box == value.box)
                             {
-                                return true;
+                                if(val.triag == value.triag)
+                                {
+                                    return std::make_pair(true, val);
+                                }
                             }
                         }
                     }
-
-                    for(size_t i = 0; i < this->children_.size(); ++i)
+                    else
                     {
-                        if(this->children_[i])
-                        {
-                            if(this->children_[i]->search(value))
-                            {
-                                return true;
-                            }
-                        }
+                        assert(this->children_[static_cast<size_t>(quadrant)]);
+                        return this->children_[static_cast<size_t>(quadrant)]->search(value);
                     }
                 }
-                return false;
+                return std::make_pair(false, NodeValue<T>{});
             }
 
         void getIntersections(std::unordered_set<size_t>& storage) const override
@@ -406,7 +408,7 @@ class OctoTree
                 return root_->insert(value);
             }
 
-        bool search(const NodeValue<T>& value) const
+        std::pair<bool, NodeValue<T>> search(const NodeValue<T>& value) const
             {
                 return root_->search(value);
             }

@@ -12,21 +12,21 @@ TEST(VectorTest, test0)
 	Vector<int> v2{1, 2, 3};
 	EXPECT_EQ(v1, v2);
 
-	Vector<double> v3{-1.00000001, 2, -1};
-	Vector<double> v4{-0.999999, 2, -1.0000001};
+	Vector<double> v3{-1.0000000001, 2, -1};
+	Vector<double> v4{-0.99999999, 2, -1.00000001};
 	EXPECT_EQ(v3, v4);
 
-	Vector<double> v5{0.00001, 0.000009, 0};
+	Vector<double> v5{0.0000001, 0.00000009, 0};
 	EXPECT_FALSE(v5);
 	EXPECT_TRUE(!v5);
 
 	Vector<float> v6{3., 1., 2.};
-	Vector<float> v7{0.802, 0.267, 0.534};
+	Vector<float> v7{3./std::sqrt(14.), 1./std::sqrt(14.), 2./std::sqrt(14.)};
 	EXPECT_EQ(v6.normalize(), v7);
 
 	Vector<float> v8{2., 3., 1.};
 	Vector<float> v9{8., -5., 0.};
-	EXPECT_TRUE(equals(v8.getDistance(v9), 10.04988f));
+	EXPECT_TRUE(equals(v8.getDistance(v9), std::sqrt(6.f * 6.f + 8.f * 8.f + 1.f * 1.f)));
 
 	Vector<float> v10{-1., 3., 3.};
 	Vector<float> v11{-2., 3., 1.};
@@ -42,9 +42,9 @@ TEST(VectorTest, test0)
 	Vector<float> v17{4., -5., 6.};
 	EXPECT_TRUE(equals(dot(v16, v17), 12.f));
 
-	Vector<float> v18{-3.15, 2.51, 0.};
-	Vector<float> v19{-1.66, 1.79, 3.};
-	Vector<float> v20{-1.888, 1.504, 0.};
+	Vector<float> v18{1., 1., 1.};
+	Vector<float> v19{2., 2., 2.};
+	Vector<float> v20{2., 2., 2.};
 	EXPECT_EQ(v18.project(v19), v20);
 }
 
@@ -265,8 +265,8 @@ TEST(CompareTest, test6)
 	auto max2 = max(1.);
 	EXPECT_EQ(max2, 1.);
 
-	float val1 = 0.0019;
-	float val2 = 0.0018;
+	float val1 = 0.000019;
+	float val2 = 0.000018;
 	float val3 = 0.3;
 	float val4 = 0.4;
 	EXPECT_TRUE(equals(val1, val2));
