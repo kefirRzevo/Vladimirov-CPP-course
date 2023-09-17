@@ -17,8 +17,8 @@ TEST(VectorTest, test0)
 	EXPECT_EQ(v3, v4);
 
 	Vector<double> v5{0.0000001, 0.00000009, 0};
-	EXPECT_FALSE(v5);
 	EXPECT_TRUE(!v5);
+	EXPECT_TRUE(!(v5/0.).valid());
 
 	Vector<float> v6{3., 1., 2.};
 	Vector<float> v7{3./std::sqrt(14.), 1./std::sqrt(14.), 2./std::sqrt(14.)};
@@ -26,7 +26,7 @@ TEST(VectorTest, test0)
 
 	Vector<float> v8{2., 3., 1.};
 	Vector<float> v9{8., -5., 0.};
-	EXPECT_TRUE(equals(v8.getDistance(v9), std::sqrt(6.f * 6.f + 8.f * 8.f + 1.f * 1.f)));
+	EXPECT_TRUE(equals(v8.distance(v9), std::sqrt(6.f * 6.f + 8.f * 8.f + 1.f * 1.f)));
 
 	Vector<float> v10{-1., 3., 3.};
 	Vector<float> v11{-2., 3., 1.};
@@ -48,6 +48,41 @@ TEST(VectorTest, test0)
 	EXPECT_EQ(v18.project(v19), v20);
 }
 
+TEST(Vector2Test, test5)
+{
+	Vector2<float> v2_1{2, 3};
+	Vector2<float> v2_2{-2, -3};
+	EXPECT_EQ(-v2_1, v2_2);
+
+	Vector2<float> v2_3{3, 4};
+	Vector2<float> v2_4{0.6, 0.8};
+	EXPECT_EQ(v2_3+=Vector2<float>{}, v2_3);
+	EXPECT_EQ(v2_3.normalize(), v2_4);
+
+	Vector2<float> v2_5{4, 3};
+	Vector2<float> v2_6{3.9999999, 3.000001};
+	EXPECT_EQ(v2_5, v2_6);
+
+	Vector2<float> v2_7{0.0000001, -0.00000000099};
+	EXPECT_FALSE(v2_7);
+	EXPECT_TRUE(!v2_7);
+
+	Vector2<float> v2_8{4, 3};
+	EXPECT_EQ(v2_8.length(), 5);
+
+	Vector2<float> v2_9{4, 3};
+	Vector2<float> v2_10{0, 0};
+	Vector2<float> v2_11{4, 3};
+	Vector2<float> v2_12{2, 1.4999999};
+	EXPECT_TRUE(v2_9.collinear(v2_10));
+	EXPECT_TRUE(v2_11.collinear(v2_12));
+
+	Vector2<float> v2_13{1, 1};
+	Vector2<float> v2_14{0, std::sqrt(2)};
+	Vector2<float> v2_15{0, 1};
+	EXPECT_EQ(v2_14.project(v2_13), v2_15);
+}
+
 TEST(LineTest, test1)
 {
 	Line<float> l1{{-1., 0., 4.}, {-1., 2., 5.}};
@@ -56,11 +91,11 @@ TEST(LineTest, test1)
 
 	Line<float> l3{{1., 1., 2.}, {5., 0., 1.}};
 	Vector<float> v1{2., 3., 1.};
-	EXPECT_TRUE(equals<float>(l3.getDistance(v1), 2.32047740));
+	EXPECT_TRUE(equals<float>(l3.distance(v1), 2.32047740));
 	
 	Line<float> l4{{2., 1., 4.}, {-1., 1., 0.}};
 	Line<float> l5{{-1., 0., 2.}, {5., 1., 2.}};
-	EXPECT_TRUE(equals<float>(l4.getDistance(l5), 0.603022));
+	EXPECT_TRUE(equals<float>(l4.distance(l5), 0.603022));
 
 	Line<float> l6{{-1., 3., 2.}, {-3., 5., 3.}};
 	Vector<float> v2{4., -2., 1.};
@@ -87,7 +122,6 @@ TEST(LineTest, test1)
 	auto [flag6, res6] = l8.contains(v9);
 	EXPECT_TRUE(flag4 == true && equals(res4, 0.f));
 	EXPECT_TRUE(flag5 == true && equals(res5, -2.f));
-	std::cout << flag5 << "\n";
 	EXPECT_TRUE(flag6 == true && equals(res6, -1.f));	
 }
 
@@ -116,7 +150,7 @@ TEST(PlaneTest, test2)
 
 	Plane<float> p7{-2., 1., 2., -7.};
 	Vector<float> v6{-5., -8., -6.};
-	EXPECT_TRUE(equals<float>(p7.getDistance(v6), 17. / 3.));
+	EXPECT_TRUE(equals<float>(p7.distance(v6), 17. / 3.));
 }
 
 TEST(TriangleTest, test3)
@@ -189,7 +223,7 @@ TEST(FiguresIntersectionTest, test4)
 	EXPECT_EQ(res1.first, IntersectionType::Intersects);
 	EXPECT_TRUE(l1.equals(res1.second));
 	EXPECT_EQ(res2.first, IntersectionType::Belongs);
-	EXPECT_EQ(res3.first, IntersectionType::Parallels);
+	EXPECT_EQ(res3.first, IntersectionType::Parallel);
 
 	Plane<float> p4{4, 2, -1, -8};
 	Plane<float> p5{2, -5, 1, -6};
@@ -203,7 +237,7 @@ TEST(FiguresIntersectionTest, test4)
 	auto res6 = p6.intersects(l4);
 	EXPECT_EQ(res4.first, IntersectionType::Intersects);
 	EXPECT_EQ(res4.second, v1);
-	EXPECT_EQ(res5.first, IntersectionType::Parallels);
+	EXPECT_EQ(res5.first, IntersectionType::Parallel);
 	EXPECT_EQ(res6.first, IntersectionType::Belongs);
 
 	Triangle2<float> t1{{0, 0}, {1, 0}, {1, 1}};
@@ -221,41 +255,6 @@ TEST(FiguresIntersectionTest, test4)
 	Triangle2<float> t7{{0, 0}, {4, 4}, {4, 0}};
 	Triangle2<float> t8{{1, 0.5}, {3.5, 3}, {3.5, 0.5}};
 	EXPECT_FALSE(t7.intersects(t8));
-}
-
-TEST(Vector2Test, test5)
-{
-	Vector2<float> v2_1{2, 3};
-	Vector2<float> v2_2{-2, -3};
-	EXPECT_EQ(-v2_1, v2_2);
-
-	Vector2<float> v2_3{3, 4};
-	Vector2<float> v2_4{0.6, 0.8};
-	EXPECT_EQ(v2_3+=Vector2<float>{}, v2_3);
-	EXPECT_EQ(v2_3.normalize(), v2_4);
-
-	Vector2<float> v2_5{4, 3};
-	Vector2<float> v2_6{3.9999999, 3.000001};
-	EXPECT_EQ(v2_5, v2_6);
-
-	Vector2<float> v2_7{0.0000001, -0.00000000099};
-	EXPECT_FALSE(v2_7);
-	EXPECT_TRUE(!v2_7);
-
-	Vector2<float> v2_8{4, 3};
-	EXPECT_EQ(v2_8.length(), 5);
-
-	Vector2<float> v2_9{4, 3};
-	Vector2<float> v2_10{0, 0};
-	Vector2<float> v2_11{4, 3};
-	Vector2<float> v2_12{2, 1.4999999};
-	EXPECT_TRUE(v2_9.collinear(v2_10));
-	EXPECT_TRUE(v2_11.collinear(v2_12));
-
-	Vector2<float> v2_13{1, 1};
-	Vector2<float> v2_14{0, std::sqrt(2)};
-	Vector2<float> v2_15{0, 1};
-	EXPECT_EQ(v2_14.project(v2_13), v2_15);
 }
 
 TEST(CompareTest, test6)
