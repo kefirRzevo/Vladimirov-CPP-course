@@ -1,12 +1,27 @@
 #pragma once
 
-#include <list>
-#include <array>
+/*
+
+Class NodeValue. Class that contains information that should be storaged in the class Node.
+
+Abstract class Node. Node interface. Contains typical functions like insert, search
+and getIntersections.
+
+Class BranchNode: public Node. A class that contains 8 children and separation point.
+Boxes that intersect with coordinate planes, passing through the separation point
+within BranchNode.box_ are stored in the BranchNode.data_. So they can intersect
+with each other or with children's data_.
+
+Class LeafNode: public Node. A class that contains Nodes. Can be split to BranchNode.
+
+Class OctoTree. Main object, that one can create to get objects that intersect with others.
+
+*/
+
 #include <memory>
 #include <fstream>
 #include <cassert>
 #include <unordered_set>
-
 #include "BoundingBox.hpp"
 #include "Triangle.hpp"
 
@@ -36,30 +51,80 @@ struct NodeValue {
     size_t num;
 
     NodeValue():
-        triag(), box(), num(0U) {}
+        triag(), box(), num() {}
 
     NodeValue(const Triangle<T>& triag_, const BoundingBox<T>& box_, size_t triagNum):
         triag(triag_), box(box_), num(triagNum) {}
+
+    bool intersects(const NodeValue<T>& nodeVal) const {
+        return box.intersects(nodeVal.box) && triag.intersects(nodeVal.triag);
+    }
+
+    bool operator==(const NodeValue<T>& nodeVal) const {
+        return box == nodeVal.box && triag == nodeVal.triag;
+    }
+
+    bool operator!=(const NodeValue<T>& nodeVal) const {
+        return !operator==(nodeVal);
+    }
 };
 
 template<typename T>
 class Node {
 
+    protected:
+        static void intersect(std::unordered_set<size_t>& storage,
+        const std::vector<NodeValue<T>>& vec1, const std::vector<NodeValue<T>>& vec2) {
+            for (size_t i = 0; i < vec1.size(); ++i) {
+                for (size_t j = 0; j < vec2.size(); ++j) {
+                    if (vec1[i].intersects(vec2[j])) {
+                        storage.insert(vec1[i].num);
+                        storage.insert(vec2[j].num);
+                    }
+                }
+            }
+        }
+
+        static void intersect(std::unordered_set<size_t>& storage,
+        const std::vector<NodeValue<T>>& vec) {
+            if (vec.size() < 2U) {
+                return;
+            }
+            for (size_t i = 0; i < vec.size(); ++i) {
+                for (size_t j = i + 1; j < vec.size(); ++j) {
+                    if (vec[i].intersects(vec[j])) {
+                        storage.insert(vec[i].num);
+                        storage.insert(vec[j].num);
+                    }
+                }
+            }
+        }
+
+        static void intersect(std::unordered_set<size_t>& storage,
+        const std::vector<NodeValue<T>>& vec, const NodeValue<T>& val) {
+            for (size_t i = 0; i < vec.size(); ++i) {
+                if (vec[i].intersects(val)) {
+                    storage.insert(vec[i].num);
+                    storage.insert(val.num);
+                }
+            }
+        }
+
     public:
-        BoundingBox<T> box_;
-        std::list<NodeValue<T>> data_;
         size_t level_;
+        BoundingBox<T> box_;
+        std::vector<NodeValue<T>> data_;
 
         Node(const BoundingBox<T>& box, size_t level):
-            box_(box), level_(level) {}
+            level_(level), box_(box) {}
 
         virtual ~Node() = default;
 
+        virtual std::pair<bool, NodeValue<T>> search(const NodeValue<T>& value) const = 0;
+
         virtual bool insert(const NodeValue<T>& value) = 0;
 
-        virtual bool needsSplit() const = 0;
-
-        virtual std::pair<bool, NodeValue<T>> search(const NodeValue<T>& value) const = 0;
+        virtual void getAllIntersections(std::unordered_set<size_t>& storage, const NodeValue<T>& val) const = 0;
 
         virtual void getIntersections(std::unordered_set<size_t>& storage) const = 0;
 
@@ -70,169 +135,127 @@ template<typename T>
 class LeafNode: public Node<T> {
 
     public:
+        using Node<T>::level_;
+        using Node<T>::box_;
+        using Node<T>::data_;
+
         LeafNode(const BoundingBox<T>& box, size_t level):
             Node<T>(box, level) {}
 
-        bool insert(const NodeValue<T>& value) override {
-            if (this->box_.contains(value.box)) {
-                this->data_.push_back(value);
-                return true;
-            }
-            return false;
-        }
-
-        bool needsSplit() const override {
-            return this->data_.size() > OctoTree<T>::maxThreshold || this->level_ > OctoTree<T>::maxDepth;
+        bool needsSplit() const {
+            return data_.size() > OctoTree<T>::maxThreshold || level_ > OctoTree<T>::maxDepth;
         }
 
         std::pair<bool, NodeValue<T>> search(const NodeValue<T>& value) const override {
-            if (this->box_.contains(value.box)) {
-                for (const auto& val: this->data_) {
-                    if (val.box == value.box) {
-                        if (val.triag == value.triag) {
-                            return std::make_pair(true, val);
-                        }
+            if (box_.contains(value.box)) {
+                for (const auto& val: data_) {
+                    if (val == value) {
+                        return std::make_pair(true, val);
                     }
                 }
             }
             return std::make_pair(false, NodeValue<T>{});
         }
 
-        void getIntersections(std::unordered_set<size_t>& storage) const override {
-            for (auto dataIt1 = this->data_.begin(); dataIt1 != this->data_.end(); ++dataIt1) {
-                for (auto dataIt2 = std::next(dataIt1); dataIt2 != this->data_.end(); ++dataIt2) {
-                    if (dataIt1->box.intersects(dataIt2->box)) {
-                        if (dataIt1->triag.intersects(dataIt2->triag)) {
-                            storage.insert(dataIt1->num);
-                            storage.insert(dataIt2->num);
-                        }
-                    }
-                }
+        bool insert(const NodeValue<T>& value) override {
+            if (box_.contains(value.box)) {
+                data_.push_back(value);
+                return true;
             }
+            return false;
+        }
+
+        void getAllIntersections(std::unordered_set<size_t>& storage, const NodeValue<T>& val) const override {
+            Node<T>::intersect(storage, data_, val);
+        }
+
+        void getIntersections(std::unordered_set<size_t>& storage) const override {
+            Node<T>::intersect(storage, data_);
         }
 
         void dump(std::fstream& file) const override {
             file << "Node" << this << "[";
             file << "label = \"Box: ";
-            file << "min {" << this->box_.min_.x_ << ", " << this->box_.min_.y_ << ", " << this->box_.min_.z_ << "}, ";
-            file << "max {" << this->box_.max_.x_ << ", " << this->box_.max_.y_ << ", " << this->box_.max_.z_ << "}\n";
-            for (const auto& val: this->data_) {
+            file << "min {" << box_.min_.x_ << ", " << box_.min_.y_ << ", " << box_.min_.z_ << "}, ";
+            file << "max {" << box_.max_.x_ << ", " << box_.max_.y_ << ", " << box_.max_.z_ << "}\n";
+            for (const auto& val: data_) {
                 file << "triag" << val.num << " ";
-                file << "min {" << val.box.min_.x_ << ", " << val.box.min_.y_ << ", " << val.box.min_.z_ << "} ";
-                file << "max {" << val.box.max_.x_ << ", " << val.box.max_.y_ << ", " << val.box.max_.z_ << "}\n";
             }
-            file << "\", shape=\"square\"]";
+            file  << "\n\", shape=\"square\"]";
         }
 };
 
 template<typename T>
 class BranchNode: public Node<T> {
 
-    private:
-        void splitBox(const Vector<T>& sepPoint) {
-            children_[static_cast<size_t>(Quadrant::xyz)].reset(new LeafNode{BoundingBox{sepPoint, this->box_.max_}, this->level_ + 1U});
-
-            Vector xy_zMin = {sepPoint.x_, sepPoint.y_, this->box_.min_.z_};
-            Vector xy_zMax = {this->box_.max_.x_, this->box_.max_.y_, sepPoint.z_};
-            children_[static_cast<size_t>(Quadrant::xy_z)].reset(new LeafNode{BoundingBox{xy_zMin, xy_zMax}, this->level_ + 1U});
-
-            Vector x_yzMin = {sepPoint.x_, this->box_.min_.y_, sepPoint.z_};
-            Vector x_yzMax = {this->box_.max_.x_, sepPoint.y_, this->box_.max_.z_};
-            children_[static_cast<size_t>(Quadrant::x_yz)].reset(new LeafNode{BoundingBox{x_yzMin, x_yzMax}, this->level_ + 1U});
-
-            Vector x_y_zMin = {sepPoint.x_, this->box_.min_.y_, this->box_.min_.z_};
-            Vector x_y_zMax = {this->box_.max_.x_, sepPoint.y_, sepPoint.z_};
-            children_[static_cast<size_t>(Quadrant::x_y_z)].reset(new LeafNode{BoundingBox{x_y_zMin, x_y_zMax}, this->level_ + 1U});
-
-            Vector _xyzMin = {this->box_.min_.x_, sepPoint.y_, sepPoint.z_};
-            Vector _xyzMax = {sepPoint.x_, this->box_.max_.y_, this->box_.max_.z_};
-            children_[static_cast<size_t>(Quadrant::_xyz)].reset(new LeafNode{BoundingBox{_xyzMin, _xyzMax}, this->level_ + 1U});
-
-            Vector _xy_zMin = {this->box_.min_.x_, sepPoint.y_, this->box_.min_.z_};
-            Vector _xy_zMax = {sepPoint.x_, this->box_.max_.y_, sepPoint.z_};
-            children_[static_cast<size_t>(Quadrant::_xy_z)].reset(new LeafNode{BoundingBox{_xy_zMin, _xy_zMax}, this->level_ + 1U});
-    
-            Vector _x_yzMin = {this->box_.min_.x_, this->box_.min_.y_, sepPoint.z_};
-            Vector _x_yzMax = {sepPoint.x_, sepPoint.y_, this->box_.max_.z_};
-            children_[static_cast<size_t>(Quadrant::_x_yz)].reset(new LeafNode{BoundingBox{_x_yzMin, _x_yzMax}, this->level_ + 1U});
-
-            children_[static_cast<size_t>(Quadrant::_x_y_z)].reset(new LeafNode{BoundingBox{this->box_.min_, sepPoint}, this->level_ + 1U});
-        }
-
     public:
+        using Node<T>::level_;
+        using Node<T>::box_;
+        using Node<T>::data_;
+
         Vector<T> sepPoint_;
         std::array<std::unique_ptr<Node<T>>, Quadrant::count> children_;
 
         BranchNode(const BoundingBox<T>& box, const Vector<T>& sepPoint, size_t level):
             Node<T>(box, level), sepPoint_(sepPoint) {
-            splitBox(sepPoint);
-        }
-
-        bool insert(const NodeValue<T>& value) override {
-            if (this->box_.contains(value.box)) {
-                auto [intersects, quadrant] = this->box_.intersects(sepPoint_);
-                if (intersects) {
-                    this->data_.push_back(value);
-                    return true;
-                } else {
-                    if (this->children_[static_cast<size_t>(quadrant)]->needsSplit()) {
-                        split(this->children_[static_cast<size_t>(quadrant)]);
-                    }
-                    return this->children_[static_cast<size_t>(quadrant)]->insert(value);
-                }
+            for (auto i = 0; i < Quadrant::count; ++i) {
+                children_[i].reset(new LeafNode{box.split(sepPoint, static_cast<Quadrant>(i)), level + 1});
             }
-            return false;
-        }
-
-        bool needsSplit() const override {
-            return false;
         }
 
         std::pair<bool, NodeValue<T>> search(const NodeValue<T>& value) const override {
-            if (this->box_.contains(value.box)) {
-                auto [intersects, quadrant] = this->box_.intersects(sepPoint_);
+            if (box_.contains(value.box)) {
+                auto [intersects, quadrant] = box_.intersects(sepPoint_);
                 if (intersects) {
-                    for (const auto& val: this->data_) {
-                        if (val.box == value.box) {
-                            if (val.triag == value.triag) {
-                                return std::make_pair(true, val);
-                            }
+                    for (const auto& val: data_) {
+                        if (val == value) {
+                            return std::make_pair(true, val);
                         }
                     }
                 } else {
-                    assert(this->children_[static_cast<size_t>(quadrant)]);
-                    return this->children_[static_cast<size_t>(quadrant)]->search(value);
+                    assert(children_[static_cast<size_t>(quadrant)]);
+                    return children_[static_cast<size_t>(quadrant)]->search(value);
                 }
             }
             return std::make_pair(false, NodeValue<T>{});
         }
 
-        void getIntersections(std::unordered_set<size_t>& storage) const override {
-            for (auto dataIt1 = this->data_.begin(); dataIt1 != this->data_.end(); ++dataIt1) {
-                for (auto dataIt2 = std::next(dataIt1); dataIt2 != this->data_.end(); ++dataIt2) {
-                    if (dataIt1->box.intersects(dataIt2->box)) {
-                        if (dataIt1->triag.intersects(dataIt2->triag)) {
-                            storage.insert(dataIt1->num);
-                            storage.insert(dataIt2->num);
+        bool insert(const NodeValue<T>& value) override {
+            if (box_.contains(value.box)) {
+                auto [intersects, quadrant] = box_.intersects(sepPoint_);
+                if (intersects) {
+                    data_.push_back(value);
+                    return true;
+                } else {
+                    assert(children_[static_cast<size_t>(quadrant)]);
+                    auto asLeaf = dynamic_cast<LeafNode<T>*>(children_[static_cast<size_t>(quadrant)].get());
+                    if (asLeaf) {
+                        if (asLeaf->needsSplit()) {
+                            split(children_[static_cast<size_t>(quadrant)]);
                         }
                     }
+                    return children_[static_cast<size_t>(quadrant)]->insert(value);
                 }
             }
+            return false;
+        }
 
-            for (size_t i = 0; i < this->children_.size(); ++i) {
-                if (this->children_[i]) {
-                    auto childData = this->children_[i]->data_;
-                    for (auto childDataIt = childData.begin(); childDataIt != childData.end(); ++childDataIt) {
-                        for (auto dataIt = this->data_.begin(); dataIt != this->data_.end(); ++dataIt) {
-                            if (childDataIt->box.intersects(dataIt->box)) {
-                                if (childDataIt->triag.intersects(dataIt->triag)) {
-                                    storage.insert(childDataIt->num);
-                                    storage.insert(dataIt->num);
-                                }
-                            }
-                        }
-                    }
-                    this->children_[i]->getIntersections(storage);
+        void getAllIntersections(std::unordered_set<size_t>& storage, const NodeValue<T>& val) const override {
+            Node<T>::intersect(storage, data_, val);
+            for (size_t i = 0; i < children_.size(); ++i) {
+                assert(children_[i]);
+                children_[i]->getAllIntersections(storage, val);
+            }
+        }
+
+        void getIntersections(std::unordered_set<size_t>& storage) const override {
+            Node<T>::intersect(storage, data_);
+            for (size_t i = 0; i < children_.size(); ++i) {
+                assert(children_[i]);
+                children_[i]->getIntersections(storage);
+                Node<T>::intersect(storage, data_, children_[i]->data_);
+                for (size_t j = 0; j < data_.size(); ++j) {
+                    children_[i]->getAllIntersections(storage, data_[j]);
                 }
             }
         }
@@ -240,18 +263,16 @@ class BranchNode: public Node<T> {
         void dump(std::fstream& file) const override {
             file << "Node" << this << "[";
             file << "label = \"Box: ";
-            file << "min {" << this->box_.min_.x_ << ", " << this->box_.min_.y_ << ", " << this->box_.min_.z_ << "}, ";
-            file << "max {" << this->box_.max_.x_ << ", " << this->box_.max_.y_ << ", " << this->box_.max_.z_ << "}\n";
+            file << "min {" << box_.min_.x_ << ", " << box_.min_.y_ << ", " << box_.min_.z_ << "}, ";
+            file << "max {" << box_.max_.x_ << ", " << box_.max_.y_ << ", " << box_.max_.z_ << "}\n";
             file << "SepPoint {" << sepPoint_.x_ << ", " << sepPoint_.y_ << ", " << sepPoint_.z_ << "}\n";
-            for (const auto& val: this->data_) {
+            for (const auto& val: data_) {
                 file << "triag" << val.num << " ";
-                file << "min {" << val.box.min_.x_ << ", " << val.box.min_.y_ << ", " << val.box.min_.z_ << "} ";
-                file << "max {" << val.box.max_.x_ << ", " << val.box.max_.y_ << ", " << val.box.max_.z_ << "}\n";
             }
             file << "\", shape=\"square\"]";
 
             for (size_t i = 0; i < children_.size(); ++i) {
-                file << "Node" << this << "->Node" << children_[i].get() << "\n";
+                file << "\nNode" << this << "->Node" << children_[i].get() << "\n";
                 children_[i]->dump(file);
             }
         }
@@ -259,14 +280,14 @@ class BranchNode: public Node<T> {
 
 template<typename T>
 void split(std::unique_ptr<Node<T>>& node) {
-    auto leaf = dynamic_cast<LeafNode<T>*>(node.get());
-    if (!leaf) {
+    auto asLeaf = dynamic_cast<LeafNode<T>*>(node.get());
+    if (!asLeaf) {
         return;
     }
 
-    auto box = leaf->box_;
-    auto data = leaf->data_;
-    auto lvl = leaf->level_;
+    auto box = asLeaf->box_;
+    auto data = std::move(asLeaf->data_);
+    auto lvl = asLeaf->level_;
 
     Vector<T> sepPoint{};
     if (data.size() != 0) {
@@ -281,38 +302,39 @@ void split(std::unique_ptr<Node<T>>& node) {
     assert(sepPoint.valid());
 
     node.reset(new BranchNode<T>{box, sepPoint, lvl});
-    auto branch = dynamic_cast<BranchNode<T>*>(node.get());
+    auto asBranch = dynamic_cast<BranchNode<T>*>(node.get());
 
     for (auto dataIt = data.begin(); dataIt != data.end(); ++dataIt) {
         auto [intersects, quadrant] = dataIt->box.intersects(sepPoint);
         if (!intersects) {
-            branch->children_[static_cast<size_t>(quadrant)]->data_.push_back(*dataIt);
+            asBranch->children_[static_cast<size_t>(quadrant)]->data_.push_back(*dataIt);
         } else {
-            branch->data_.push_back(*dataIt);
+            asBranch->data_.push_back(*dataIt);
         }
     }
 }
 
 template<typename T>
 void collect(std::unique_ptr<Node<T>>& node) {
-    auto branch = dynamic_cast<BranchNode<T>*>(node.get());
-    if (!branch) {
+    auto asBranch = dynamic_cast<BranchNode<T>*>(node.get());
+    if (!asBranch) {
         return;
     }
 
-    for (auto i = 0; i < branch->children_.size(); i++) {
-        if (branch->children_[i]) {
-            if (auto asBranchNode = dynamic_cast<BranchNode<T>>(branch->children_[i])) {
+    for (auto i = 0; i < asBranch->children_.size(); i++) {
+        if (asBranch->children_[i]) {
+            if (auto asBranchNode = dynamic_cast<BranchNode<T>>(asBranch->children_[i])) {
                 asBranchNode->collect();
             }
-            branch->data_.insert(branch->children_[i]->data_);
+            asBranch->data_.insert(asBranch->children_[i]->data_);
         }
     }
 
-    auto box = branch->box_;
-    auto data = branch->data_;
+    auto box = asBranch->box_;
+    auto data = std::move(asBranch->data_);
+    auto lvl = asBranch->level_;
 
-    node.reset(new LeafNode<T>{box});
+    node.reset(new LeafNode<T>{box, lvl});
     node->data_ = data;
 }
 
@@ -340,9 +362,13 @@ class OctoTree {
                 return true;
             }
 
-            if (root_->needsSplit()) {
-                split(root_);
+            auto asLeaf = dynamic_cast<LeafNode<T>*>(root_.get());
+            if (asLeaf) {
+                if (asLeaf->needsSplit()) {
+                    split(root_);
+                }
             }
+
             return root_->insert(value);
         }
 
@@ -358,7 +384,8 @@ class OctoTree {
         void dump(std::fstream& file) const {
             file << "digraph D {\n";
             root_->dump(file);
-            file << "}\n";
+            file << "\n}";
+            file << std::endl;
         }
 };
 

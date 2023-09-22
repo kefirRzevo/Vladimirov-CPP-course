@@ -1,8 +1,17 @@
 #pragma once
 
-#include "Vector.hpp"
-#include "Segment.hpp"
+/*
+
+Class Line. Geometry object with typical methods like intersects() or
+contains(). Is parametrized with any point on the line and it's direction.
+
+Class Plane. Is parametrized with any point on the plane and normal to it.
+
+*/
+
 #include "Triangle.hpp"
+#include "Segment.hpp"
+#include "Vector.hpp"
 
 namespace triangles
 {
@@ -95,8 +104,8 @@ class Line {
 
         void dump() {
             std::cout << "Point {" << point_.x_ << ", " << point_.y_ << ", " << point_.z_ << "}\n";
-            std::cout << "Dir   {" << dir_.x_   << ", " << dir_.y_   << ", " << dir_.z_   << "}\n";
-            std::cout.flush();
+            std::cout << "Dir   {" << dir_.x_   << ", " << dir_.y_   << ", " << dir_.z_   << "}";
+            std::cout << std::endl;
         }
 
 };
@@ -243,16 +252,16 @@ class Plane {
 
         void dump() const {
             std::cout << "Point  {" << point_.x_ << ", " << point_.y_ << ", " << point_.z_ << "}\n";
-            std::cout << "Normal {" << norm_.x_  << ", " << norm_.y_  << ", " << norm_.z_  << "}\n";
-            std::cout.flush();
+            std::cout << "Normal {" << norm_.x_  << ", " << norm_.y_  << ", " << norm_.z_  << "}";
+            std::cout << std::endl;
         }
 
         void dumpABCD() const {
             std::cout << "a " << norm_.x_ << "\n";
             std::cout << "b " << norm_.y_ << "\n";
             std::cout << "c " << norm_.z_ << "\n";
-            std::cout << "d " << -dot(norm_, point_) << "\n";
-            std::cout.flush();
+            std::cout << "d " << -dot(norm_, point_);
+            std::cout << std::endl;
         }
 };
 

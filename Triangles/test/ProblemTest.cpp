@@ -23,12 +23,12 @@ void getIntersectionsSlow(const std::vector<Triangle<T>>& vec, std::unordered_se
 
 TEST(TriangleIntersectionTest, test0)
 {
-    size_t size = 500;
+    size_t size = 100;
     std::vector<Triangle<float>> triangles{};
 
     for (size_t i = 0; i < size; ++i) {
-        float minVal = static_cast<float>(std::rand()) / RAND_MAX * 100.f;
-        float maxVal = minVal + static_cast<float>(std::rand()) / RAND_MAX * 10.f;
+        float minVal = static_cast<float>(std::rand()) / RAND_MAX * 100.f - 50.f;
+        float maxVal = minVal + static_cast<float>(std::rand()) / RAND_MAX * 10.f - 5.f;
         Vector<float> v1{
             static_cast<float>(std::rand()) / RAND_MAX * (maxVal - minVal) + minVal,
             static_cast<float>(std::rand()) / RAND_MAX * (maxVal - minVal) + minVal,

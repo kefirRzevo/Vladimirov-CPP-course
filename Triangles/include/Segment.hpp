@@ -1,5 +1,16 @@
 #pragma once
 
+/*
+
+Class Segment. Geometric object with methods intersects(Segment), contains(point), etc.
+Is parameterized with begin and end.
+
+Class Segment2. Similar to Segment, but points are in 2d space.
+
+Class Segment1(Interval).
+
+*/
+
 #include "Vector.hpp"
 
 namespace triangles
@@ -89,8 +100,8 @@ class Segment {
 
         void dump() const {
             std::cout << "Vert1 {" << v1_.x_ << ", " << v1_.y_ << ", " << v1_.z_ << "}\n";
-            std::cout << "Vert2 {" << v2_.x_ << ", " << v2_.y_ << ", " << v2_.z_ << "}\n";
-            std::cout.flush();
+            std::cout << "Vert2 {" << v2_.x_ << ", " << v2_.y_ << ", " << v2_.z_ << "}";
+            std::cout << std::endl;
         }
 };
 
@@ -158,8 +169,8 @@ class Segment2 {
 
         void dump() const {
             std::cout << "Vert1 {" << v1_.x_ << ", " << v1_.y_ << "}\n";
-            std::cout << "Vert2 {" << v2_.x_ << ", " << v2_.y_ << "}\n";
-            std::cout.flush();
+            std::cout << "Vert2 {" << v2_.x_ << ", " << v2_.y_ << "}";
+            std::cout << std::endl;
         }
 };
 
@@ -196,8 +207,8 @@ class Segment1 {
 
         void dump() const {
             std::cout << "Val1 {" << val1_ << "}\n";
-            std::cout << "Val2 {" << val2_ << "}\n";
-            std::cout.flush();
+            std::cout << "Val2 {" << val2_ << "}";
+            std::cout << std::endl;
         }
 };
 

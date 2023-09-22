@@ -162,9 +162,8 @@ TEST(TriangleTest, test3)
 	Triangle<float> t2{v2, v1, v3};
 	Triangle<float> t3{v3, v1, v2};
 	EXPECT_TRUE(t1 == t1);
-	EXPECT_TRUE(t1 != t2);
- 	EXPECT_TRUE(t3 != t2);
-
+	EXPECT_TRUE(t1 == t2);
+ 	EXPECT_TRUE(t3 == t2);
 
 	Segment<float> seg0{{0, 0, 0}, {2, 2, 2}};
 	Segment<float> seg1{{1, 1, 0}, {3, 3, 0}};
@@ -405,9 +404,9 @@ TEST(Triangle2Test, test10)
 	Triangle2<float> t1{v1, v2, v3};
 	Triangle2<float> t2{v2, v1, v3};
 	Triangle2<float> t3{v3, v1, v2};
-	EXPECT_TRUE(t1.equals(t3));
-	EXPECT_TRUE(t1.equals(t2));
- 	EXPECT_TRUE(t3.equals(t2));
+	EXPECT_TRUE(t1 == t3);
+	EXPECT_TRUE(t1 == t2);
+ 	EXPECT_TRUE(t3 == t2);
 
 	Triangle2<float> t4{{0, 0}, {1, 1}, {2, 2}};
 	EXPECT_FALSE(t4.valid());

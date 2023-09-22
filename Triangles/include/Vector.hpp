@@ -1,9 +1,16 @@
 #pragma once
 
-#include <stdexcept>
-#include <iostream>
-#include <cmath>
+/*
 
+Class Vector. Implementation of good known math object with sume useful methods.
+
+Class Vector2. Same to class Vector, but in 2d space.
+
+*/
+
+#include <cmath>
+#include <iostream>
+#include <stdexcept>
 #include "Utils.hpp"
 
 namespace triangles {
@@ -169,8 +176,8 @@ class Vector {
         }
 
         void dump() const {
-            std::cout << "Vector {" << x_ << ", " << y_ << ", " << z_ << "}\n";
-            std::cout.flush();
+            std::cout << "Vector {" << x_ << ", " << y_ << ", " << z_ << "}";
+            std::cout << std::endl;
         }
 };
 
@@ -350,8 +357,8 @@ class Vector2 {
         }
 
         void dump() const {
-            std::cout << "Vector2 {" << x_ << ", " << y_ << "}\n";
-            std::cout.flush();
+            std::cout << "Vector2 {" << x_ << ", " << y_ << "}";
+            std::cout << std::endl;
         }
 };
 

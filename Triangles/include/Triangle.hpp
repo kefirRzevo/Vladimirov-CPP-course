@@ -1,10 +1,19 @@
 #pragma once
 
-#include <cassert>
+/*
 
-#include "Vector.hpp"
-#include "Segment.hpp"
+Class Triangle. Main geometic object in this project. It has method intersect(Triangle),
+that checks whether 2 triangles intersect.
+
+Class Triangle2. Same to class Triangle, but in the 2d space.
+
+*/
+
+#include <array>
+#include <cassert>
 #include "Geometry.hpp"
+#include "Segment.hpp"
+#include "Vector.hpp"
 
 namespace triangles
 {
@@ -24,8 +33,8 @@ class Triangle {
 
     private:
         static void renumber(std::pair<T, Vector<T>>(& distVert)[3]) {
-            char signs[3]{};
-            for (size_t i = 0; i < 3U; i++) {
+            std::array<char, 3U> signs{};
+            for (size_t i = 0; i < signs.size(); ++i) {
                 signs[i] = sign(distVert[i].first);
             }
 
@@ -44,57 +53,73 @@ class Triangle {
             }
         }
 
-        bool validTrianglesIntersects(const Triangle<T>& t) const {
+        bool intersects2d(const Triangle<T>& t, const Plane<T>& p1) const {
+            auto axis = p1.norm_.greatestComponent();
+            Triangle2<T> flatT1 = projectOnAxisPlane(axis);
+            Triangle2<T> flatT2 = t.projectOnAxisPlane(axis);
+            return flatT1.intersects(flatT2);
+        }
+
+        static Segment1<T> toSegment1(const std::pair<T, Vector<T>>(& distVert)[3], const Line<T>& line) {
+            Vector<T> p = line.point_;
+            Vector<T> d = line.dir_;
+
+            T v1_ = dot(d, distVert[0].second - p);
+            T v2_ = dot(d, distVert[1].second - p);
+            T v3_ = dot(d, distVert[2].second - p);
+            T t1 = v1_ + (v3_ - v1_) * distVert[0].first / (distVert[0].first - distVert[2].first);
+            T t2 = v2_ + (v3_ - v2_) * distVert[1].first / (distVert[1].first - distVert[2].first);
+            return Segment1<T>{t1, t2};
+        }
+
+        bool intersects3d(const Triangle<T>& t, const Line<T>& line, const Plane<T>& p1, const Plane<T>& p2) const {
+            std::pair<T, Vector<T>> distVert1[3] = {
+                std::make_pair(p2.signedDistance(v1_), v1_),
+                std::make_pair(p2.signedDistance(v3_), v3_),
+                std::make_pair(p2.signedDistance(v2_), v2_),
+            };
+            if (sameSign(distVert1[0].first, distVert1[1].first, distVert1[2].first)) {
+                return false;
+            }
+            renumber(distVert1);
+
+            std::pair<T, Vector<T>> distVert2[3] = {
+                std::make_pair(p1.signedDistance(t.v1_), t.v1_),
+                std::make_pair(p1.signedDistance(t.v3_), t.v3_),
+                std::make_pair(p1.signedDistance(t.v2_), t.v2_),
+            };
+            if (sameSign(distVert2[0].first, distVert2[1].first, distVert2[2].first)) {
+                return false;
+            }
+            renumber(distVert2);
+
+            Segment1<T> seg1 = Triangle<T>::toSegment1(distVert1, line);
+            Segment1<T> seg2 = Triangle<T>::toSegment1(distVert2, line);
+            return seg1.intersects(seg2);
+        }
+
+        bool trianglesIntersects(const Triangle<T>& t) const {
             Plane<T> p1{v1_, v2_, v3_};
             Plane<T> p2{t.v1_, t.v2_, t.v3_};
             auto [type, line] = p1.intersects(p2);
             if (type == IntersectionType::Belongs) {
-                auto axis = p1.norm_.greatestComponent();
-                Triangle2<T> flatT1 = projectOnAxisPlane(axis);
-                Triangle2<T> flatT2 = t.projectOnAxisPlane(axis);
-                return flatT1.intersects(flatT2);
+                return intersects2d(t, p1);
             } else if (type == IntersectionType::Intersects) {
-                std::pair<T, Vector<T>> distVert1[3] = {
-                    std::make_pair(p2.signedDistance(v1_), v1_),
-                    std::make_pair(p2.signedDistance(v3_), v3_),
-                    std::make_pair(p2.signedDistance(v2_), v2_),
-                };
-                if (sameSign(distVert1[0].first, distVert1[1].first, distVert1[2].first)) {
-                    return false;
-                }
-                renumber(distVert1);
-
-                std::pair<T, Vector<T>> distVert2[3] = {
-                    std::make_pair(p1.signedDistance(t.v1_), t.v1_),
-                    std::make_pair(p1.signedDistance(t.v3_), t.v3_),
-                    std::make_pair(p1.signedDistance(t.v2_), t.v2_),
-                };
-                if (sameSign(distVert2[0].first, distVert2[1].first, distVert2[2].first)) {
-                    return false;
-                }
-                renumber(distVert2);
-
-                Vector<T> p = line.point_;
-                Vector<T> d = line.dir_;
-
-                T v11_ = dot(d, distVert1[0].second - p);
-                T v12_ = dot(d, distVert1[1].second - p);
-                T v13_ = dot(d, distVert1[2].second - p);
-                T t11 = v11_ + (v13_ - v11_) * distVert1[0].first / (distVert1[0].first - distVert1[2].first);
-                T t12 = v12_ + (v13_ - v12_) * distVert1[1].first / (distVert1[1].first - distVert1[2].first);
-
-                T v21_ = dot(d, distVert2[0].second - p);
-                T v22_ = dot(d, distVert2[1].second - p);
-                T v23_ = dot(d, distVert2[2].second - p);
-                T t21 = v21_ + (v23_ - v21_) * distVert2[0].first / (distVert2[0].first - distVert2[2].first);
-                T t22 = v22_ + (v23_ - v22_) * distVert2[1].first / (distVert2[1].first - distVert2[2].first);
-
-                Segment1<T> seg1{t11, t12};
-                Segment1<T> seg2{t21, t22};
-                return seg1.intersects(seg2);
+                return intersects3d(t, line, p1, p2);
             } else {
                 return false;
             }
+        }
+
+        std::array<Vector<T>, 3U> sortedVertices() const {
+            std::array<Vector<T>, 3U> vert{v1_, v2_, v3_};
+            auto sortX = [](const Vector<T>& a, const Vector<T>& b){ return greaterEq(a.x_, b.x_); };
+            auto sortY = [](const Vector<T>& a, const Vector<T>& b){ return greaterEq(a.y_, b.y_); };
+            auto sortZ = [](const Vector<T>& a, const Vector<T>& b){ return greaterEq(a.z_, b.z_); };
+            std::sort(vert.begin(), vert.end(), sortX);
+            std::sort(vert.begin(), vert.end(), sortY);
+            std::sort(vert.begin(), vert.end(), sortZ);
+            return vert;
         }
 
     public:
@@ -115,7 +140,9 @@ class Triangle {
         }
 
         bool operator==(const Triangle<T>& t) const {
-            return v1_ == t.v1_ && v2_ == t.v2_ && v3_ == t.v3_;
+            auto vert1 = sortedVertices();
+            auto vert2 = t.sortedVertices();
+            return vert1[0] == vert2[0] && vert1[1] == vert2[1] && vert1[2] == vert2[2];
         }
 
         bool operator!=(const Triangle<T>& t) const {
@@ -209,39 +236,77 @@ class Triangle {
             if (segFlag) {
                 return t.intersects(seg);
             }
+            return trianglesIntersects(t);
+        }
 
-            return validTrianglesIntersects(t);
+        Vector2<T>& operator[](size_t index) {
+            switch(index)
+            {
+            case 0U:
+                return v1_;
+            case 1U:
+                return v2_;
+            case 2U:
+                return v3_;
+            default:
+                throw std::out_of_range("Incorrect index");
+            }
+        }
+
+        const Vector2<T>& operator[](size_t index) const {
+            switch(index)
+            {
+            case 0U:
+                return v1_;
+            case 1U:
+                return v2_;
+            case 2U:
+                return v3_;
+            default:
+                throw std::out_of_range("Incorrect index");
+            }
         }
 
         void dump() const {
             std::cout << "Vert1 {" << v1_.x_ << ", " << v1_.y_ << ", " << v1_.z_ << "}\n";
             std::cout << "Vert2 {" << v2_.x_ << ", " << v2_.y_ << ", " << v2_.z_ << "}\n";
-            std::cout << "Vert3 {" << v3_.x_ << ", " << v3_.y_ << ", " << v3_.z_ << "}\n";
-            std::cout.flush();
+            std::cout << "Vert3 {" << v3_.x_ << ", " << v3_.y_ << ", " << v3_.z_ << "}";
+            std::cout << std::endl;
         }
 };
 
 template<typename T>
 class Triangle2 {
-    
-    public:
+
+    private:
         Vector2<T> v1_;
         Vector2<T> v2_;
         Vector2<T> v3_;
 
+        std::array<Vector2<T>, 3U> sortedVertices() const {
+            std::array<Vector2<T>, 3U> vert{v1_, v2_, v3_};
+            auto sortX = [](const Vector2<T>& a, const Vector2<T>& b){ return greaterEq(a.x_, b.x_); };
+            auto sortY = [](const Vector2<T>& a, const Vector2<T>& b){ return greaterEq(a.y_, b.y_); };
+            std::sort(vert.begin(), vert.end(), sortX);
+            std::sort(vert.begin(), vert.end(), sortY);
+            return vert;
+        }
+
+    public:
         Triangle2():
             v1_(), v2_(), v3_() {}
 
         Triangle2(const Vector2<T>& v1, const Vector2<T>& v2, const Vector2<T>& v3):
             v1_(v1), v2_(v2), v3_(v3) {}
 
-        bool equals(const Triangle2<T>& t) const {
-            return  (v1_ == t.v1_ && v2_ == t.v2_ && v3_ == t.v3_) ||
-                    (v1_ == t.v1_ && v2_ == t.v3_ && v3_ == t.v2_) ||
-                    (v1_ == t.v2_ && v2_ == t.v3_ && v3_ == t.v1_) ||
-                    (v1_ == t.v2_ && v2_ == t.v1_ && v3_ == t.v3_) ||
-                    (v1_ == t.v3_ && v2_ == t.v1_ && v3_ == t.v2_) ||
-                    (v1_ == t.v3_ && v2_ == t.v2_ && v3_ == t.v1_);
+        bool operator==(const Triangle2<T>& t) const {
+            auto vert1 = sortedVertices();
+            auto vert2 = t.sortedVertices();
+            return vert1[0] == vert2[0] && vert1[1] == vert2[1] && vert1[2] == vert2[2];
+        }
+
+        bool operator!=(const Triangle2<T>& t) const {
+            return !operator==(t);
         }
 
         bool valid() const {
@@ -253,24 +318,18 @@ class Triangle2 {
         bool intersects(const Triangle2<T>& t) const {
             Segment2<T> segs1[3]{{v2_, v3_}, {v3_, v1_}, {v1_, v2_}};
             Segment2<T> segs2[3]{{t.v2_, t.v3_}, {t.v3_, t.v1_}, {t.v1_, t.v2_}};
-            for (size_t i = 0; i < 3U; ++i) {
-                for (size_t j = 0; j < 3U; ++j) {
-                    if (segs1[i].intersects(segs2[j])) {
-                        return true;
-                    }
-                }
-            }
-            return false;
+
+            std::array<size_t, 3U> axis{0U, 1U, 2U};
+            return std::any_of(axis.cbegin(), axis.cend(), [&](size_t i) {
+                return std::any_of(axis.cbegin(), axis.cend(), [&](size_t j) { return segs1[i].intersects(segs2[j]); });
+            });
         }
 
         bool intersects(const Segment2<T>& seg) const {
             Segment2<T> segs[3]{{v2_, v3_}, {v3_, v1_}, {v1_, v2_}};
-            for (size_t i = 0; i < 3U; ++i) {
-                if (segs[i].intersects(seg)) {
-                    return true;
-                }
-            }
-            return false;
+            std::array<size_t, 3U> axis{0U, 1U, 2U};
+            auto intersects = [&](size_t i) { return segs[i].intersects(seg); };
+            return std::any_of(axis.cbegin(), axis.cend(), intersects);
         }
 
         bool contains(const Vector2<T>& p) const {
@@ -328,8 +387,8 @@ class Triangle2 {
         void dump() const {
             std::cout << "Vert1 {" << v1_.x_ << ", " << v1_.y_ << "}\n";
             std::cout << "Vert2 {" << v2_.x_ << ", " << v2_.y_ << "}\n";
-            std::cout << "Vert3 {" << v3_.x_ << ", " << v3_.y_ << "}\n";
-            std::cout.flush();
+            std::cout << "Vert3 {" << v3_.x_ << ", " << v3_.y_ << "}";
+            std::cout << std::endl;
         }
 };
 
