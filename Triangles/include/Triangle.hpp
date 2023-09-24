@@ -318,7 +318,6 @@ class Triangle2 {
         bool intersects(const Triangle2<T>& t) const {
             Segment2<T> segs1[3]{{v2_, v3_}, {v3_, v1_}, {v1_, v2_}};
             Segment2<T> segs2[3]{{t.v2_, t.v3_}, {t.v3_, t.v1_}, {t.v1_, t.v2_}};
-
             std::array<size_t, 3U> axis{0U, 1U, 2U};
             return std::any_of(axis.cbegin(), axis.cend(), [&](size_t i) {
                 return std::any_of(axis.cbegin(), axis.cend(), [&](size_t j) { return segs1[i].intersects(segs2[j]); });

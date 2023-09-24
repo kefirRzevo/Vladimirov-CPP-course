@@ -48,7 +48,7 @@ class BoundingBox {
 
         bool intersects(const BoundingBox<T>& b) const {
             std::array<size_t, 3U> axis{0U, 1U, 2U};
-            auto intersects = [&](size_t i) { return greater(b.max_[i], min_[i]) || greater(max_[i], b.min_[i]); };
+            auto intersects = [&](size_t i) { return greaterEq(max_[i], b.min_[i]) && lessEq(min_[i], b.max_[i]); };
             return std::all_of(axis.cbegin(), axis.cend(), intersects);
         }
 

@@ -573,6 +573,14 @@ TEST(BoundingBoxTest, test16)
     EXPECT_TRUE(b7.contains(v2));
     EXPECT_TRUE(b7.contains(v3));
     EXPECT_FALSE(b7.contains(v4));
+
+	BoundingBox<float> b8{{0, 0, 0}, {1, 1, 0}};
+	BoundingBox<float> b9{{0, 0, 0}, {5, 5, 0}};
+	EXPECT_TRUE(b8.intersects(b9));
+
+	BoundingBox<float> b10{{0, 0, 0}, {1, 1, 1}};
+	BoundingBox<float> b11{{2, 2, 2}, {3, 3, 3}};
+	EXPECT_FALSE(b10.intersects(b11));
 }
 
 int main()
