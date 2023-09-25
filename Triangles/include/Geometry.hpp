@@ -27,8 +27,8 @@ template<typename T>
 class Triangle;
 
 template<typename T>
-class Line {
-
+class Line
+{
     public:
         Vector<T> point_;
         Vector<T> dir_;
@@ -111,8 +111,8 @@ class Line {
 };
 
 template<typename T>
-class Plane {
-
+class Plane
+{
     public:
         Vector<T> point_;
         Vector<T> norm_;
