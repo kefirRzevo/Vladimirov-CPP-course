@@ -27,8 +27,8 @@ template<typename T>
 Orientation orientation(Vector2<T> p, Vector2<T> q, Vector2<T> r);
 
 template<typename T>
-class Segment {
-
+class Segment
+{
     public:
         Vector<T> v1_;
         Vector<T> v2_;
@@ -106,8 +106,8 @@ class Segment {
 };
 
 template<typename T>
-class Segment2 {
-
+class Segment2
+{
     private:
         bool containsCollinearPoint(const Vector2<T>& v) const {
             if (lessEq(v.x_, max(v1_.x_, v2_.x_)) && greaterEq(v.x_, min(v1_.x_, v2_.x_)) &&
@@ -175,8 +175,8 @@ class Segment2 {
 };
 
 template<typename T>
-class Segment1 {
-
+class Segment1
+{
     public:
         T val1_;
         T val2_;

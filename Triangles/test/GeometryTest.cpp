@@ -4,7 +4,6 @@
 #include "../include/BoundingBox.hpp"
 
 using namespace triangles;
-using namespace compare;
 
 TEST(VectorTest, test0) 
 {

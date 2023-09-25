@@ -16,8 +16,8 @@ template<typename T>
 class BoundingBox;
 
 template<typename T>
-class BoundingBox {
-
+class BoundingBox
+{
     public:
         Vector<T> min_;
         Vector<T> max_;

@@ -29,8 +29,8 @@ template<typename T>
 class Plane;
 
 template<typename T>
-class Triangle {
-
+class Triangle
+{
     private:
         static void renumber(std::pair<T, Vector<T>>(& distVert)[3]) {
             std::array<char, 3U> signs{};
@@ -276,8 +276,8 @@ class Triangle {
 };
 
 template<typename T>
-class Triangle2 {
-
+class Triangle2
+{
     private:
         Vector2<T> v1_;
         Vector2<T> v2_;

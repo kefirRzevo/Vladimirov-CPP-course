@@ -21,8 +21,8 @@ template<typename T>
 class Vector2;
 
 template<typename T>
-class Vector {
-
+class Vector
+{
     public:
         T x_;
         T y_;
@@ -227,8 +227,8 @@ T triple(const Vector<T>& v1, const Vector<T>& v2, const Vector<T>& v3) {
 }
 
 template<typename T>
-class Vector2 {
-
+class Vector2
+{
     public:
         T x_;
         T y_;

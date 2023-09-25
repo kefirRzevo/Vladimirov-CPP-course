@@ -45,7 +45,8 @@ template<typename T>
 void collect(std::unique_ptr<Node<T>>& node);
 
 template<typename T>
-struct NodeValue {
+struct NodeValue
+{
     Triangle<T> triag;
     BoundingBox<T> box;
     size_t num;
@@ -70,8 +71,8 @@ struct NodeValue {
 };
 
 template<typename T>
-class Node {
-
+class Node
+{
     protected:
         static void intersect(std::unordered_set<size_t>& storage,
         const std::vector<NodeValue<T>>& vec1, const std::vector<NodeValue<T>>& vec2) {
@@ -132,8 +133,8 @@ class Node {
 };
 
 template<typename T>
-class LeafNode: public Node<T> {
-
+class LeafNode: public Node<T>
+{
     public:
         using Node<T>::level_;
         using Node<T>::box_;
@@ -186,8 +187,8 @@ class LeafNode: public Node<T> {
 };
 
 template<typename T>
-class BranchNode: public Node<T> {
-
+class BranchNode: public Node<T>
+{
     public:
         using Node<T>::level_;
         using Node<T>::box_;
@@ -339,8 +340,8 @@ void collect(std::unique_ptr<Node<T>>& node) {
 }
 
 template<typename T>
-class OctoTree {
-
+class OctoTree
+{
     public:
         std::unique_ptr<Node<T>> root_;
         std::unordered_set<size_t> collisions_;

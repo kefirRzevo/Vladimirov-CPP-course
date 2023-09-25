@@ -19,8 +19,6 @@ Enum class Orientation. Types of orientation in 2d space.
 
 namespace triangles {
 
-    namespace compare {
-
     template<typename T>
     constexpr T epsilon = 1.0e-4;
 
@@ -82,65 +80,60 @@ namespace triangles {
         return !greaterEq(lhs, rhs);
     }
 
-    } //namespace compare
+    template<typename T>
+    class Vector2;
 
-using namespace compare;
-
-template<typename T>
-class Vector2;
-
-template<typename T>
-inline char sign(const T& value) {
-    if (isZero(value)) {
-        return 0;
-    } else if (less(value, T{0})) {
-        return -1;
-    } else {
-        return 1;
+    template<typename T>
+    inline char sign(const T& value) {
+        if (isZero(value)) {
+            return 0;
+        } else if (less(value, T{0})) {
+            return -1;
+        } else {
+            return 1;
+        }
     }
-}
 
-template<typename T, typename... Args>
-inline bool sameSign(const T& value, const Args&... args) {
-    char firstSign = sign(value);
-    bool allSameSign = true;
-    
-    ((allSameSign = allSameSign && (sign(args) == firstSign)), ...);
+    template<typename T, typename... Args>
+    inline bool sameSign(const T& value, const Args&... args) {
+        char firstSign = sign(value);
+        bool allSameSign = true;
+        
+        ((allSameSign = allSameSign && (sign(args) == firstSign)), ...);
 
-    return allSameSign;
-}
+        return allSameSign;
+    }
 
-enum class IntersectionType
-{
-    Belongs,
-    Intersects,
-    Parallel,
-    Undefined,
-};
-
-enum Quadrant
-{
-    xyz,
-    xy_z,
-    x_yz,
-    x_y_z,
-    _xyz,
-    _xy_z,
-    _x_yz,
-    _x_y_z,
-    count,
-};
-
-enum class Orientation
-{
-    Collinear,
-    Clockwise,
-    Counterclockwise,
-};
-
-template<typename T>
-Orientation orientation(Vector2<T> p, Vector2<T> q, Vector2<T> r)
+    enum class IntersectionType
     {
+        Belongs,
+        Intersects,
+        Parallel,
+        Undefined,
+    };
+
+    enum Quadrant
+    {
+        xyz,
+        xy_z,
+        x_yz,
+        x_y_z,
+        _xyz,
+        _xy_z,
+        _x_yz,
+        _x_y_z,
+        count,
+    };
+
+    enum class Orientation
+    {
+        Collinear,
+        Clockwise,
+        Counterclockwise,
+    };
+
+    template<typename T>
+    Orientation orientation(Vector2<T> p, Vector2<T> q, Vector2<T> r) {
         T val = (q.y_ - p.y_) * (r.x_ - q.x_) -
                 (q.x_ - p.x_) * (r.y_ - q.y_);
 
