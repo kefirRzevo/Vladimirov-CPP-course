@@ -36,7 +36,7 @@ Class Tree. Functionality:
 
 namespace tree {
 
-#define rep std::cout << __LINE__ << std::endl;
+#define report std::cout << __LINE__ << std::endl;
 
 template<typename K>
 struct Node;
@@ -151,7 +151,7 @@ struct Node
         }
     }
 
-    void dump() const {
+    void textDump() const {
         std::cout << "Node   " << this << "\n";
         std::cout << "Color  " << (color_ == Color::Black ? "black" : "red") << "\n";
         std::cout << "Value  " << key_ << "\n";
@@ -162,7 +162,7 @@ struct Node
     }
 
     void recursiveDump() const {
-        dump();
+        textDump();
         if (left_) {
             left_->recursiveDump();
         }
@@ -451,7 +451,6 @@ private:
 
     void transplant(NodePtr x, NodePtr y) {
         assert(x);
-        assert(y);
         if (root_ == x) {
             root_ = y;
         } else if (x->isLeftChild()) {
@@ -465,41 +464,42 @@ private:
         auto [found, node] = visit(key, [] (NodePtr&) {});
         if (!found) { return nil_; }
 
-        visit(key, [] (NodePtr& node_) { node_->size_--; });
         NodePtr next = node->next();
         NodePtr y = node;
         NodePtr x = nullptr;
         NodePtr xParent = nullptr;
-rep
-        if (!y->left_) { rep
+
+        if (!y->left_) {
             x = y->right_;
-        } else if (!y->right_) { rep
+        } else if (!y->right_) {
             x = y->left_;
-        } else { rep
+        } else {
             y = y->right_->leftMost();
             x = y->right_;
         }
+        visit(y->key_, [] (NodePtr& node_) { node_->size_--; });
 
-        if (y != node) { rep
+        if (y != node) {
             node->left_->parent_ = y;
             y->left_ = node->left_;
-            if (y != node->right_) { rep
+            if (y != node->right_) {
                 xParent = y->parent_;
-                if (x) { rep x->parent_ = y->parent_; }
+                if (x) { x->parent_ = y->parent_; }
                 y->parent_->left_ = x;
                 y->right_ = node->right_;
                 node->right_->parent_ = y;
-            } else { rep
+            } else {
                 xParent = y;
             }
 
             transplant(node, y);
             y->parent_ = node->parent_;
             std::swap(y->color_, node->color_);
+            std::swap(y->size_, node->size_);
             y = node;
-        } else { rep
+        } else {
             xParent = y->parent_;
-            if (x) { rep x->parent_ = y->parent_; }
+            if (x) { x->parent_ = y->parent_; }
             transplant(node, x);
 
             if (nil_->left_ == node) {
@@ -598,6 +598,16 @@ rep
         for (auto it = begin(); it != end(); it++) {
             it.node_->dumpImpl(file);
         }
+    }
+
+    size_t countNodesLess(NodePtr node) const {
+        if (node == nil_) { return root_->size_; }
+        size_t sum = node->leftSize() + 1U;
+        while (node != root_) {
+            if (node->isRightChild()) { sum += node->parent_->leftSize() + 1U; }
+            node = node->parent_;
+        }
+        return sum;
     }
 
 public:
@@ -706,9 +716,7 @@ public:
 
     size_t distance(iterator first, iterator last) const {
         if (compare_(*last, *first)) { return 0U; }
-        size_t dist = 1U;
-        for(auto it = first; it != last; ++it) { dist++; }
-        return dist;
+        return countNodesLess(last.node_) - countNodesLess(first.node_) + 1U;
     }
 
     void dump(std::fstream& file) {
@@ -717,7 +725,7 @@ public:
         file << "}\n";
     }
 
-    void dumpInfo() {
+    void textInfo() {
         std::cout << "Root       " << root_ << "\n";
         std::cout << "RootParent " << root_->parent_ << "\n";
         std::cout << "Leftest    " << nil_->left_ << "\n";
