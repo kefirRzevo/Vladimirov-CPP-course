@@ -24,7 +24,7 @@ Class Tree. Functionality:
     dump(std::fstream& file) - graphviz dump to the particular file
 */
 
-#include <set>
+#include <list>
 #include <memory>
 #include <vector>
 #include <fstream>
@@ -252,14 +252,17 @@ private:
     NodePtr nil_ = nullptr;
     NodePtr root_ = nullptr;
 
+    std::list<Node<K>> nodes_;
     Compare compare_;
 
-    NodePtr createNode(const K& key) const {
-		return new Node<K>{key};
+    NodePtr createNode(const K& key) {
+        return &nodes_.emplace_back(key);
     }
 
-    void deleteNode(NodePtr node) const {
-        delete node;
+    void deleteNode(NodePtr node) {
+        for (auto it = nodes_.begin(); it != nodes_.end(); ++it) {
+            if (&(*it) == node) { nodes_.erase(it); }
+        }
     }
 
     void rotateLeft(NodePtr x) {
@@ -274,22 +277,16 @@ private:
         */
         assert(x);
 		NodePtr y = x->right_;
-        assert(x->right_);
 		x->right_ = y->left_;
         if (y->left_) {
-            assert(y->left_->parent_);
             y->left_->parent_ = x;
         }
-        assert(y->parent_);
 		y->parent_ = x->parent_;
 		if (x == root_) {
-            assert(root_);
 			root_ = y;
 		} else if (x->isLeftChild()) {
-            assert(x->parent_->left_);
 			x->parent_->left_ = y;
 		} else if (x->isRightChild()) {
-            assert(x->parent_->right_);
 			x->parent_->right_ = y;
 		} else {
             throw std::out_of_range("X is not left nor right child");
@@ -313,22 +310,16 @@ private:
         */
         assert(x);
 		NodePtr y = x->left_;
-        assert(x->left_);
 		x->left_ = y->right_;
 		if (y->right_) {
-            assert(y->right_->parent_);
 			y->right_->parent_ = x;
 		}
-        assert(y->parent_);
 		y->parent_ = x->parent_;
 		if (x == root_) {
-            assert(root_);
 			root_ = y;
 		} else if (x->isRightChild()) {
-            assert(x->parent_->right_);
 			x->parent_->right_ = y;
 		} else if (x->isLeftChild()) {
-            assert(x->parent_->left_);
 			x->parent_->left_ = y;
 		} else {
             throw std::out_of_range("X is not left nor right child");
@@ -518,7 +509,6 @@ private:
                 }
             }
         }
-        xParent->dump();
 
         deleteNode(node);
         if (y->color_ == Color::Black) { fixErase(x, xParent); }
@@ -617,17 +607,6 @@ public:
         nil_->left_ = nil_;
         nil_->right_ = nil_;
         nil_->size_ = 0U;
-    }
-
-    RBTree(const RBTree<K>& rhs) = delete;
-    RBTree& operator=(const RBTree<K>& rhs) = delete;
-    RBTree(RBTree<K>&& rhs) = delete;
-    RBTree& operator=(RBTree<K>&& rhs) = delete;
-
-    ~RBTree() {
-        clear();
-        deleteNode(nil_);
-        nil_ = nullptr;
     }
 
     iterator begin() const {
