@@ -255,6 +255,15 @@ private:
     std::list<Node<K>> nodes_;
     Compare compare_;
 
+    void nilInit() {
+        if (nil_) {
+            nil_->parent_ = nullptr;
+            nil_->left_ = nil_;
+            nil_->right_ = nil_;
+            nil_->size_ = 0U;
+        }
+    }
+
     NodePtr createNode(const K& key) {
         return &nodes_.emplace_back(key);
     }
@@ -603,10 +612,7 @@ private:
 public:
     RBTree() {
         nil_ = createNode(K{0});
-        nil_->parent_ = nullptr;
-        nil_->left_ = nil_;
-        nil_->right_ = nil_;
-        nil_->size_ = 0U;
+        nilInit();
     }
 
     iterator begin() const {
@@ -638,17 +644,10 @@ public:
     }
 
     void clear() {
-        std::vector<NodePtr> nodes;
-        for (auto it = begin(); it != end(); it++) {
-            nodes.push_back(it.node_);
-        }
-        for (auto node: nodes) {
-            deleteNode(node);
-        }
+        nodes_.clear();
+        nil_ = createNode(K{0});
+        nilInit();
         root_ = nullptr;
-        nil_->parent_ = nullptr;
-        nil_->left_ = nil_;
-        nil_->right_ = nil_;
     }
 
     iterator insert(const K& key) {
