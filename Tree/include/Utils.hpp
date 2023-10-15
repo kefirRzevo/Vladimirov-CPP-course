@@ -6,6 +6,7 @@ This file contains function, that checks end_to_end tests.
 
 */
 
+#include <vector>
 #include "Tree.hpp"
 
 namespace tree

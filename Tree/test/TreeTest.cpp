@@ -1,3 +1,6 @@
+#include <set>
+#include <chrono>
+#include <cstdlib>
 #include <gtest/gtest.h>
 #include "../include/Utils.hpp"
 #include "../include/Tree.hpp"
@@ -84,6 +87,50 @@ TEST(RBTreeTest, end_to_end_tests) {
 	auto out1 = process(in1);
 	std::vector<int> outCorrect1{2, 0, 3};
 	EXPECT_TRUE(out1 == outCorrect1);
+}
+
+TEST(RBvsSTDSET, speed_test) {
+	std::fstream file{"../test/compare.txt", std::ios::out};
+
+	for (int size = 10; size < 1000; size+=10) {
+		file << size << "\t";
+		std::set<int> set;
+		RBTree<int> rb;
+		srand(size);
+		for (int i = 0; i < size; ++i) {
+			int key = std::rand() % size;
+			set.insert(key);
+			rb.insert(key);
+		}
+		assert(set.size() == rb.size());
+
+		int sumDist = 0;
+		auto start = std::chrono::high_resolution_clock::now();
+		for (auto it1 = set.begin(); it1 != set.end(); ++it1) {
+			for (auto it2 = it1; it2 != set.end(); ++it2) {
+				sumDist += std::distance(it1, it2);
+			}
+		}
+		auto end = std::chrono::high_resolution_clock::now();
+		auto elapsed = std::chrono::duration_cast<std::chrono::microseconds>(end - start);
+		//std::cout << "Set: " << elapsed.count() << " " << sumDist << std::endl;
+		//std::cout << sumDist << " ";
+		file << static_cast<double>(elapsed.count()) * 0.001 << "\t";
+
+		sumDist = 0;
+		start = std::chrono::high_resolution_clock::now();
+		for (auto it1 = rb.begin(); it1 != rb.end(); ++it1) {
+			for (auto it2 = it1; it2 != rb.end(); ++it2) {
+				sumDist += rb.distance(it1, it2);
+			}
+		}
+		end = std::chrono::high_resolution_clock::now();
+		elapsed = std::chrono::duration_cast<std::chrono::microseconds>(end - start);
+		//std::cout << "RB: " << elapsed.count() << " " << sumDist << std::endl;
+		//std::cout << sumDist << "\n";
+		file << static_cast<double>(elapsed.count()) * 0.001 << "\n";
+		assert(&sumDist);
+	}
 }
 
 int main()

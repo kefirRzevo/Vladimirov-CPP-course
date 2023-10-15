@@ -26,7 +26,7 @@ Class Tree. Functionality:
 
 #include <list>
 #include <memory>
-#include <vector>
+#include <cassert>
 #include <fstream>
 #include <cstddef>
 #include <iterator>
@@ -111,7 +111,7 @@ struct Node
         }
         NodePtr curr = this;
         NodePtr parent = curr->parent_;
-        while (curr->isRightChild()) {
+        while (curr->isRightChild() && parent->parent_) {
             curr = parent;
             parent = parent->parent_;
         }
@@ -124,14 +124,14 @@ struct Node
         }
         NodePtr curr = this;
         NodePtr parent = curr->parent_;
-        while (curr->isLeftChild()) {
+        while (curr->isLeftChild() && parent->parent_) {
             curr = parent;
             parent = parent->parent_;
         }
         return parent;
     }
 
-    void dumpImpl(std::fstream& file) {
+    void dumpImpl(std::fstream& file) const {
         file << "\tnode_" << this << "[label = \"{" << key_ << "} | " << size_ << "\",";
         file << "shape=record, style=filled, fontcolor=white, fillcolor=";
         file << (color_ == Color::Black ? "black" : "red") << "];\n";
@@ -224,11 +224,11 @@ struct Iterator
     }
 
     bool operator==(const Iterator& rhs) const {
-        return node_->key_ == rhs.node_->key_;
+        return node_ == rhs.node_;
     }
 
     bool operator!=(const Iterator& rhs) const {
-        return node_->key_ != rhs.node_->key_;
+        return node_ != rhs.node_;
     }
 
     NodePtr node_ = nullptr;
@@ -593,7 +593,7 @@ private:
         if (node) { node->color_ = Color::Black; }
     }
 
-    void dumpImpl(std::fstream& file) {
+    void dumpImpl(std::fstream& file) const {
         for (auto it = begin(); it != end(); it++) {
             it.node_->dumpImpl(file);
         }
@@ -697,13 +697,13 @@ public:
         return countNodesLess(last.node_) - countNodesLess(first.node_) + 1U;
     }
 
-    void dump(std::fstream& file) {
+    void dump(std::fstream& file) const {
         file << "digraph {\n";
         dumpImpl(file);
         file << "}\n";
     }
 
-    void textInfo() {
+    void textInfo() const {
         std::cout << "Root       " << root_ << "\n";
         std::cout << "RootParent " << root_->parent_ << "\n";
         std::cout << "Leftest    " << nil_->left_ << "\n";

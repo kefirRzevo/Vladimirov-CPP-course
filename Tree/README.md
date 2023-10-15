@@ -27,3 +27,9 @@ To check my tests:
 ```
         ./tree_test
 ```
+
+## Std::set function `distance()` and my tree method `distance()` comparison
+
+Function `std::distance( InputIt first, InputIt last )` and my method `distance(iterator first, iterator last)` were tested on trees with size from 10 to 1000. Here you can see results:
+
+![plot](./res/compare.png)
