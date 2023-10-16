@@ -117,7 +117,6 @@ TEST(RBvsSTDSET, speed_test) {
 		//std::cout << sumDist << " ";
 		file << static_cast<double>(elapsed.count()) * 0.001 << "\t";
 
-		sumDist = 0;
 		start = std::chrono::high_resolution_clock::now();
 		for (auto it1 = rb.begin(); it1 != rb.end(); ++it1) {
 			for (auto it2 = it1; it2 != rb.end(); ++it2) {
