@@ -639,8 +639,8 @@ public:
         return root_ ? root_->size_ : 0U;
     }
 
-    const NodePtr root() const {
-        return root_;
+    ConstNodePtr root() const {
+        return static_cast<ConstNodePtr>(root_);
     }
 
     void clear() {

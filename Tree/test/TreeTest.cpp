@@ -22,16 +22,14 @@ size_t countBlackNodes(NodePtr node, ConstNodePtr root) {
 
 //https://en.wikipedia.org/wiki/Red–black_tree
 //1. Every node is either red or black.
-bool checkProperty1(RBTree<int>& t) {
-	assert(t.root());
-	return true; //Due to my solution, as it enum is inherited from bool
-}
+//bool checkProperty1(RBTree<int>& t) {
+//	return true; //Due to my solution, as it enum is inherited from bool
+//}
 
 //2. All NIL nodes (figure 1) are considered black.
-bool checkProperty2(RBTree<int>& t) {
-	assert(t.root());
-	return true; //Due to my solution, as it is nullptr
-}
+//bool checkProperty2(RBTree<int>& t) {
+//	return true; //Due to my solution, as it is nullptr
+//}
 
 //3. A red node does not have a red child.
 bool checkProperty3(RBTree<int>& t) {
@@ -75,8 +73,8 @@ TEST(RBTreeTest, treeInsert) {
 	t.insert(12);
 	t.insert(8);
 	t.insert(9);
-	EXPECT_TRUE(checkProperty1(t));
-	EXPECT_TRUE(checkProperty2(t));
+	//EXPECT_TRUE(checkProperty1(t));
+	//EXPECT_TRUE(checkProperty2(t));
 	EXPECT_TRUE(checkProperty3(t));
 	EXPECT_TRUE(checkProperty4(t));
 	EXPECT_TRUE(checkProperty5(t));
@@ -127,7 +125,7 @@ TEST(RBvsSTDSET, speed_test) {
 		elapsed = std::chrono::duration_cast<std::chrono::microseconds>(end - start);
 		//std::cout << "RB: " << elapsed.count() << " " << sumDist << std::endl;
 		//std::cout << sumDist << "\n";
-		file << static_cast<double>(elapsed.count()) * 0.001 << "\n";
+		file << static_cast<double>(elapsed.count()) * 0.001 << std::endl;
 		assert(&sumDist);
 	}
 }
