@@ -20,8 +20,18 @@ include_directories(${GTEST_INCLUDE_DIRS})
 
 set (TARGET tree_test)
 set (TEST_SOURCES test/TreeTest.cpp)
-
 add_executable(${TARGET} ${TEST_SOURCES})
+target_include_directories (${TARGET} PRIVATE includes)
+target_link_libraries (${TARGET} ${GTEST_LIBRARIES} ${GTEST_MAIN_LIBRARIES})
 
+set (TARGET myDistance_test)
+set (TEST_SOURCES test/MyDistance.cpp)
+add_executable(${TARGET} ${TEST_SOURCES})
+target_include_directories (${TARGET} PRIVATE includes)
+target_link_libraries (${TARGET} ${GTEST_LIBRARIES} ${GTEST_MAIN_LIBRARIES})
+
+set (TARGET stdDistance_test)
+set (TEST_SOURCES test/StdDistance.cpp)
+add_executable(${TARGET} ${TEST_SOURCES})
 target_include_directories (${TARGET} PRIVATE includes)
 target_link_libraries (${TARGET} ${GTEST_LIBRARIES} ${GTEST_MAIN_LIBRARIES})

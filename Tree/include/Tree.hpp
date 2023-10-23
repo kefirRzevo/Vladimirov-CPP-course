@@ -600,8 +600,9 @@ private:
     }
 
     size_t countNodesLess(NodePtr node) const {
+        assert(node);
         if (node == nil_) { return root_->size_; }
-        size_t sum = node->leftSize() + 1U;
+        size_t sum = node->leftSize();
         while (node != root_) {
             if (node->isRightChild()) { sum += node->parent_->leftSize() + 1U; }
             node = node->parent_;
@@ -623,11 +624,11 @@ public:
         return iterator(nil_);
     }
 
-    reverse_iterator rbegin() {
+    reverse_iterator rbegin() const {
         return reverse_iterator(end());
     }
 
-    reverse_iterator rend() {
+    reverse_iterator rend() const {
         return reverse_iterator(begin());
     }
 
@@ -666,21 +667,6 @@ public:
         NodePtr prev = nil_;
         NodePtr curr = root_;
         while (curr) {
-            bool keyLess = compare_(key, curr->key_);
-            if (keyLess) {
-                curr = curr->right_;
-            } else {
-                prev = curr;
-                curr = curr->right_;
-            }
-        }
-        return iterator(prev);
-    }
-
-    iterator upper_bound(const K& key) {
-        NodePtr prev = nil_;
-        NodePtr curr = root_;
-        while (curr) {
             bool keyBigger = compare_(curr->key_, key);
             if (keyBigger) {
                 curr = curr->right_;
@@ -692,9 +678,25 @@ public:
         return iterator(prev);
     }
 
+    iterator upper_bound(const K& key) {
+        NodePtr prev = nil_;
+        NodePtr curr = root_;
+        while (curr) {
+            bool keyLess = compare_(key, curr->key_);
+            if (keyLess) {
+                prev = curr;
+                curr = curr->left_;
+            } else {
+                curr = curr->right_;
+            }
+        }
+        return iterator(prev);
+    }
+
     size_t distance(iterator first, iterator last) const {
-        if (compare_(*last, *first)) { return 0U; }
-        return countNodesLess(last.node_) - countNodesLess(first.node_) + 1U;
+        if (empty()) { return 0U; }
+        if (last.node_ != nil_ && compare_(*last, *first)) { return 0U; }
+        return countNodesLess(last.node_) - countNodesLess(first.node_);
     }
 
     void dump(std::fstream& file) const {

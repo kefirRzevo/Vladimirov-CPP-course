@@ -33,3 +33,15 @@ To check my tests:
 Function `std::distance( InputIt first, InputIt last )` and my method `distance(iterator first, iterator last)` were tested on trees with size from 10 to 1000. Here you can see results:
 
 ![plot](./res/compare.png)
+
+## More comparison
+
+You can run the task using my algorithm
+```
+        ./myDistance_test
+```
+And using std:
+```
+        ./stdDistance_test
+```
+To see which one is faster.

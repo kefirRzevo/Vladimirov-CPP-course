@@ -51,7 +51,7 @@ bool checkProperty4(RBTree<int>& t) {
 
 	if (leaves.empty()) { return true; }
 	size_t depth = countBlackNodes(leaves[0], t.root());
-	for (size_t i = 1; i < leaves.size(); ++i) {
+	for (size_t i = 1U; i < leaves.size(); ++i) {
 		if (countBlackNodes(leaves[i], t.root()) != depth) { return false; }
 	}
 	return true;
@@ -81,10 +81,15 @@ TEST(RBTreeTest, treeInsert) {
 }
 
 TEST(RBTreeTest, end_to_end_tests) {
-	std::ifstream in1{"../test/test1.txt", std::ios::in};
-	auto out1 = process(in1);
+	std::ifstream in1{"../test/001.dat", std::ios::in};
+	auto out1 = myProcess(in1);
 	std::vector<int> outCorrect1{2, 0, 3};
 	EXPECT_TRUE(out1 == outCorrect1);
+
+	std::ifstream in2{"../test/002.dat", std::ios::in};
+	auto out2 = myProcess(in2);
+	std::vector<int> outCorrect2{0, 0, 2, 2, 0, 1, 0, 2, 4, 3};
+	EXPECT_TRUE(out2 == outCorrect2);	
 }
 
 TEST(RBvsSTDSET, speed_test) {
@@ -111,10 +116,9 @@ TEST(RBvsSTDSET, speed_test) {
 		}
 		auto end = std::chrono::high_resolution_clock::now();
 		auto elapsed = std::chrono::duration_cast<std::chrono::microseconds>(end - start);
-		//std::cout << "Set: " << elapsed.count() << " " << sumDist << std::endl;
-		//std::cout << sumDist << " ";
-		file << static_cast<double>(elapsed.count()) * 0.001 << "\t";
+		file << sumDist << "\t" << static_cast<double>(elapsed.count()) * 0.001 << "\t";
 
+		sumDist = 0;
 		start = std::chrono::high_resolution_clock::now();
 		for (auto it1 = rb.begin(); it1 != rb.end(); ++it1) {
 			for (auto it2 = it1; it2 != rb.end(); ++it2) {
@@ -123,10 +127,7 @@ TEST(RBvsSTDSET, speed_test) {
 		}
 		end = std::chrono::high_resolution_clock::now();
 		elapsed = std::chrono::duration_cast<std::chrono::microseconds>(end - start);
-		//std::cout << "RB: " << elapsed.count() << " " << sumDist << std::endl;
-		//std::cout << sumDist << "\n";
-		file << static_cast<double>(elapsed.count()) * 0.001 << std::endl;
-		assert(&sumDist);
+		file << sumDist << "\t" << static_cast<double>(elapsed.count()) * 0.001 << std::endl;
 	}
 }
 
