@@ -1,3 +1,4 @@
-build/
-mylog.dot
 .vscode/
+build/
+tests/
+mylog.dot

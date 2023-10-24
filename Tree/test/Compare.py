@@ -1,6 +1,6 @@
 import matplotlib.pyplot as plt
 
-with open('../test/compare.txt', 'r') as file:
+with open('../tests/compare.txt', 'r') as file:
     lines = file.readlines()
 
 x = []

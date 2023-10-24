@@ -1,0 +1,16 @@
+{
+    "nTests": 50,
+    "nKeysRange": {
+        "min": 1000,
+        "max": 2000
+    },
+    "nQsRange": {
+        "min": 300,
+        "max": 420
+    },
+    "kRange": {
+      "min": 0,
+      "max": 156002
+    },
+    "outputPath": "../tests/"
+}

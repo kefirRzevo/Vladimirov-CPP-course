@@ -1,6 +1,7 @@
 #include <set>
 #include <chrono>
 #include <cstdlib>
+#include <filesystem>
 #include <gtest/gtest.h>
 #include "../include/Utils.hpp"
 #include "../include/Tree.hpp"
@@ -62,7 +63,7 @@ bool checkProperty5(RBTree<int>& t) {
 	return t.root()->color_ == Color::Black;
 }
 
-TEST(RBTreeTest, treeInsert) {
+TEST(RBTreeTest, treeTest) {
 	RBTree<int> t;
 	t.insert(1);
 	t.insert(2);
@@ -80,20 +81,35 @@ TEST(RBTreeTest, treeInsert) {
 	EXPECT_TRUE(checkProperty5(t));
 }
 
-TEST(RBTreeTest, end_to_end_tests) {
-	std::ifstream in1{"../test/001.dat", std::ios::in};
-	auto out1 = myProcess(in1);
-	std::vector<int> outCorrect1{2, 0, 3};
-	EXPECT_TRUE(out1 == outCorrect1);
-
-	std::ifstream in2{"../test/002.dat", std::ios::in};
-	auto out2 = myProcess(in2);
-	std::vector<int> outCorrect2{0, 0, 2, 2, 0, 1, 0, 2, 4, 3};
-	EXPECT_TRUE(out2 == outCorrect2);	
+TEST(RBTreeTest, end2endTest) {
+	namespace fs = std::filesystem;
+	std::string inputPath = "../tests/";
+	for (auto& p: fs::directory_iterator(inputPath)) {
+		std::string filePath = p.path().generic_string();
+		if (filePath.find(".dat") == std::string::npos || filePath.find(".ans") != std::string::npos) { continue; }
+		std::ifstream in{filePath, std::ios::in};
+		std::ifstream out{filePath + ".ans", std::ios::in};
+		auto out1 = myProcess(in);
+		in.clear();
+		in.seekg(0);
+		auto out2 = stdProcess(in);
+		auto out3 = result(out);
+		//std::cout << "out1 ";
+		//for (auto it = out1.begin(); it != out1.end(); ++it) std::cout << *it << " ";
+		//std::cout << std::endl;
+		//std::cout << "out2 ";
+		//for (auto it = out2.begin(); it != out2.end(); ++it) std::cout << *it << " ";
+		//std::cout << std::endl;
+		//std::cout << "out3 ";
+		//for (auto it = out3.begin(); it != out3.end(); ++it) std::cout << *it << " ";
+		//std::cout << std::endl;
+		EXPECT_TRUE(out1 == out3);
+		EXPECT_TRUE(out2 == out3);
+    }
 }
 
-TEST(RBvsSTDSET, speed_test) {
-	std::fstream file{"../test/compare.txt", std::ios::out};
+TEST(RBTreeTest, speedTest) {
+	std::fstream file{"../tests/compare.txt", std::ios::out};
 
 	for (int size = 10; size < 1000; size+=10) {
 		file << size << "\t";

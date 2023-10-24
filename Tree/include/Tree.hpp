@@ -36,7 +36,7 @@ Class Tree. Functionality:
 
 namespace tree {
 
-#define report std::cout << __LINE__ << std::endl;
+#define ort std::cout << __LINE__ << std::endl;
 
 template<typename K>
 struct Node;
@@ -78,7 +78,7 @@ struct Node
     }
 
     size_t size() const {
-        return leftSize() + rightSize() + 1U;
+        return (left_ ? left_->size_ : 0U) + (right_ ? right_->size_ : 0U) + 1U;
     }
 
     size_t leftSize() const {

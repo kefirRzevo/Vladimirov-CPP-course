@@ -28,10 +28,9 @@ inline std::vector<int> myProcess(std::istream& in) {
 			int upperBound = 0;
 			in >> lowerBound >> upperBound;
 			if (lowerBound > upperBound) { std::swap(lowerBound, upperBound); }
-			output.push_back(0);
 			auto lowIt = tree.lower_bound(lowerBound);
 			auto upIt = tree.upper_bound(upperBound);
-			output[output.size() - 1] = tree.distance(lowIt, upIt);
+			output.push_back(tree.distance(lowIt, upIt));
 		} else if (cmd == 'e') {
 			break;
 		} else {
@@ -55,16 +54,24 @@ inline std::vector<int> stdProcess(std::istream& in) {
 			int lowerBound = 0;
 			int upperBound = 0;
 			in >> lowerBound >> upperBound;
-			output.push_back(0);
+			if (lowerBound > upperBound) { std::swap(lowerBound, upperBound); }
 			auto lowIt = tree.lower_bound(lowerBound);
 			auto upIt = tree.upper_bound(upperBound);
-			output[output.size() - 1] = std::distance(lowIt, upIt);
+			output.push_back(std::distance(lowIt, upIt));
 		} else if (cmd == 'e') {
 			break;
 		} else {
 			throw std::out_of_range(std::string("Unknown command ") + cmd);
 		}
 	}
+	return output;
+}
+
+inline std::vector<int> result(std::istream& in) {
+	std::vector<int> output;
+
+	int elem;
+	while (in >> elem) { output.push_back(elem); }
 	return output;
 }
 

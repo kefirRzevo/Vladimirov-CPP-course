@@ -34,6 +34,10 @@ Function `std::distance( InputIt first, InputIt last )` and my method `distance(
 
 ![plot](./res/compare.png)
 
+## Test Generator
+
+There is script `test/TestGen.py` that can generate end2end tests. You can configure tests in file `test/config.json`.
+
 ## More comparison
 
 You can run the task using my algorithm
