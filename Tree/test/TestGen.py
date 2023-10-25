@@ -1,8 +1,6 @@
-import argparse
 import shutil
 import os
 import json
-import numpy as np
 import random
 
 def numbersInRange (elements: list, kmin: int, kmax: int):
@@ -60,10 +58,6 @@ def generateTests (config: dict):
         saveTest (i, config['outputPath'], test[0], test[1])
 
 def main ():
-    #parser = argparse.ArgumentParser(description='Generate queries end-to-end tests.')
-    #parser.add_argument('--config_path', dest='path', type=str, help='Path to config file.')
-    #args = parser.parse_args()
-
     configPath = os.path.join(os.path.dirname(__file__), 'config.json')
     if (not os.path.isfile(configPath)):
         raise Exception('Wrong config file path.')
