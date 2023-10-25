@@ -1,6 +1,10 @@
 import matplotlib.pyplot as plt
+import os
 
-with open('../tests/compare.txt', 'r') as file:
+comparePath = os.path.join(os.path.dirname(__file__), '../tests/compare.txt')
+plotPath = os.path.join(os.path.dirname(__file__), '../res/compare.png')
+
+with open(comparePath, 'r') as file:
     lines = file.readlines()
 
 x = []
@@ -21,4 +25,4 @@ plt.ylabel('Time, msec')
 plt.legend()
 plt.title('Compare plots for std::set and RBTree')
 plt.grid(True)
-plt.savefig("../res/compare.png")
+plt.savefig(plotPath)

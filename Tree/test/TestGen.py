@@ -64,7 +64,7 @@ def main ():
     #parser.add_argument('--config_path', dest='path', type=str, help='Path to config file.')
     #args = parser.parse_args()
 
-    configPath = './config.json'
+    configPath = os.path.join(os.path.dirname(__file__), 'config.json')
     if (not os.path.isfile(configPath)):
         raise Exception('Wrong config file path.')
 
