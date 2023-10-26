@@ -27,7 +27,10 @@ inline std::vector<int> myProcess(std::istream& in) {
 			int lowerBound = 0;
 			int upperBound = 0;
 			in >> lowerBound >> upperBound;
-			if (lowerBound > upperBound) { std::swap(lowerBound, upperBound); }
+			if (lowerBound > upperBound) {
+				output.push_back(0);
+				continue;
+			}
 			auto lowIt = tree.lower_bound(lowerBound);
 			auto upIt = tree.upper_bound(upperBound);
 			output.push_back(tree.distance(lowIt, upIt));
@@ -54,7 +57,10 @@ inline std::vector<int> stdProcess(std::istream& in) {
 			int lowerBound = 0;
 			int upperBound = 0;
 			in >> lowerBound >> upperBound;
-			if (lowerBound > upperBound) { std::swap(lowerBound, upperBound); }
+			if (lowerBound > upperBound) {
+				output.push_back(0);
+				continue;
+			}
 			auto lowIt = tree.lower_bound(lowerBound);
 			auto upIt = tree.upper_bound(upperBound);
 			output.push_back(std::distance(lowIt, upIt));

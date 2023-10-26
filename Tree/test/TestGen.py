@@ -6,6 +6,8 @@ import random
 def numbersInRange (elements: list, kmin: int, kmax: int):
     elements.sort();
     count = 0
+    if kmin > kmax:
+        return 0
     for i in elements:
         if (i >= kmin):
             if (i <= kmax):
@@ -42,7 +44,7 @@ def generateRandomTest (config: dict):
 
     for i in qs:
         testStr += 'q {} '.format(i[0]) + '{} '.format(i[1])
-        ansStr += '{} '.format(numbersInRange(keys, min(i[0], i[1]), max(i[0], i[1])))
+        ansStr += '{} '.format(numbersInRange(keys, i[0], i[1]))
 
     return [testStr, ansStr]
 
