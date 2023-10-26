@@ -188,12 +188,12 @@ class Segment1
             val1_(val1), val2_(val2) {}
 
         bool valid() const {
-            return !compare::equals(val1_, val2_);
+            return !::triangles::equals(val1_, val2_);
         }
 
         bool equals(const Segment1<T>& seg) const {
-            return (compare::equals(val1_, seg.val1_) && compare::equals(val2_, seg.val2_)) ||
-                    (compare::equals(val1_, seg.val2_) && compare::equals(val2_, seg.val1_));
+            return (::triangles::equals(val1_, seg.val1_) && ::triangles::equals(val2_, seg.val2_)) ||
+                    (::triangles::equals(val1_, seg.val2_) && ::triangles::equals(val2_, seg.val1_));
         }
 
         bool contains(const T& val) const {
