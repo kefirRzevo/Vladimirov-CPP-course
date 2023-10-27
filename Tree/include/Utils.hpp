@@ -27,7 +27,7 @@ inline std::vector<int> myProcess(std::istream& in) {
 			int lowerBound = 0;
 			int upperBound = 0;
 			in >> lowerBound >> upperBound;
-			if (lowerBound > upperBound) {
+			if (lowerBound >= upperBound) {
 				output.push_back(0);
 				continue;
 			}
@@ -57,7 +57,7 @@ inline std::vector<int> stdProcess(std::istream& in) {
 			int lowerBound = 0;
 			int upperBound = 0;
 			in >> lowerBound >> upperBound;
-			if (lowerBound > upperBound) {
+			if (lowerBound >= upperBound) {
 				output.push_back(0);
 				continue;
 			}
@@ -77,7 +77,9 @@ inline std::vector<int> result(std::istream& in) {
 	std::vector<int> output;
 
 	int elem;
-	while (in >> elem) { output.push_back(elem); }
+	while (in >> elem) {
+		output.push_back(elem);
+	}
 	return output;
 }
 

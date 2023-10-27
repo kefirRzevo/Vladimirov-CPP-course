@@ -1,7 +1,6 @@
 #pragma once
 
 /*
-
 Class Node. Tree consists from nodes.
 
 Class Iterator. To give possibility to iterate over the tree.
@@ -24,7 +23,6 @@ Class Tree. Functionality:
     dump(std::fstream& file) - graphviz dump to the particular file
 */
 
-#include <list>
 #include <memory>
 #include <cassert>
 #include <fstream>
@@ -33,6 +31,7 @@ Class Tree. Functionality:
 #include <iostream>
 #include <algorithm>
 #include <stdexcept>
+#include <unordered_set>
 
 namespace tree {
 
@@ -194,11 +193,11 @@ struct Iterator
     }
 
     pointer get() {
-        return &node_->key_;
+        return std::addressof(node_->key_);
     }
 
     pointer operator->() {
-        return &node_->key_;
+        return std::addressof(node_->key_);
     }
 
     Iterator& operator++() {
@@ -249,29 +248,44 @@ public:
     using reverse_iterator = std::reverse_iterator<Iterator<K>>;
 
 private:
-    NodePtr nil_ = nullptr;
+    Node<K> nilNode_ = Node<K>{};
     NodePtr root_ = nullptr;
+    NodePtr nil_ = nullptr;
 
-    std::list<Node<K>> nodes_;
+    struct keyHash
+    {
+        std::size_t operator() (const Node<K>& node) const {
+            return std::hash<K>() (node.key_);
+        }
+    };
+
+    struct keyEqual
+    {
+        bool operator() (const Node<K>& lhs, const Node<K>& rhs) const {
+            return lhs.key_ == rhs.key_;
+        }
+    };
+
+    std::unordered_set<Node<K>, keyHash, keyEqual> nodes_;
     Compare compare_;
 
     void nilInit() {
-        if (nil_) {
-            nil_->parent_ = nullptr;
-            nil_->left_ = nil_;
-            nil_->right_ = nil_;
-            nil_->size_ = 0U;
-        }
+        nil_->parent_ = nullptr;
+        nil_->left_ = nil_;
+        nil_->right_ = nil_;
+        nil_->size_ = 0U;
     }
 
     NodePtr createNode(const K& key) {
-        return &nodes_.emplace_back(key);
+        auto [it, flag] = nodes_.emplace(key);
+        if (!flag) {
+            std:: cout << "Very bad" <<key<<std::endl;
+        }
+        return const_cast<NodePtr>(std::addressof(*it));
     }
 
     void deleteNode(NodePtr node) {
-        for (auto it = nodes_.begin(); it != nodes_.end(); ++it) {
-            if (&(*it) == node) { nodes_.erase(it); }
-        }
+        nodes_.erase(node);
     }
 
     void rotateLeft(NodePtr x) {
@@ -365,7 +379,9 @@ private:
 
 	NodePtr insertImpl(const K& key) {
         auto [found, y] = visit(key, [] (NodePtr&) {});
-        if (found) { return y; }
+        if (found) {
+            return y;
+        }
 
 		NodePtr node = createNode(key);
         if (!root_) {
@@ -403,10 +419,8 @@ private:
 
         assert(node->parent_);
 		while (node != root_ && node->parent_->color_ == Color::Red) {
-
             assert(node->parent_->parent_);
             if (node->parent_->isRightChild()) {
-
                 NodePtr y = node->parent_->parent_->left_;
                 if (y && y->color_ == Color::Red) {
                     node->parent_->color_ = Color::Black;
@@ -414,7 +428,6 @@ private:
                     node->parent_->parent_->color_ = Color::Red;
                     node = node->parent_->parent_;
                 } else {
-
                     if (node->isLeftChild()) {
                         node = node->parent_;
                         rotateRight(node);
@@ -424,7 +437,6 @@ private:
                     rotateLeft(node->parent_->parent_);
                 }
             } else {
-
                 NodePtr y = node->parent_->parent_->right_;
                 if (y && y->color_ == Color::Red) {
                     node->parent_->color_ = Color::Black;
@@ -432,7 +444,6 @@ private:
                     node->parent_->parent_->color_ = Color::Red;
                     node = node->parent_->parent_;
                 } else {
-
                     if (node->isRightChild()) {
                         node = node->parent_;
                         rotateLeft(node);
@@ -462,7 +473,9 @@ private:
 
     NodePtr eraseImpl(const K& key) {
         auto [found, node] = visit(key, [] (NodePtr&) {});
-        if (!found) { return nil_; }
+        if (!found) {
+            return nil_;
+        }
 
         NodePtr next = node->next();
         NodePtr y = node;
@@ -484,7 +497,9 @@ private:
             y->left_ = node->left_;
             if (y != node->right_) {
                 xParent = y->parent_;
-                if (x) { x->parent_ = y->parent_; }
+                if (x) {
+                    x->parent_ = y->parent_;
+                }
                 y->parent_->left_ = x;
                 y->right_ = node->right_;
                 node->right_->parent_ = y;
@@ -499,7 +514,9 @@ private:
             y = node;
         } else {
             xParent = y->parent_;
-            if (x) { x->parent_ = y->parent_; }
+            if (x) {
+                x->parent_ = y->parent_;
+            }
             transplant(node, x);
 
             if (nil_->left_ == node) {
@@ -520,16 +537,16 @@ private:
         }
 
         deleteNode(node);
-        if (y->color_ == Color::Black) { fixErase(x, xParent); }
+        if (y->color_ == Color::Black) {
+            fixErase(x, xParent);
+        }
         return next;
     }
 
     void fixErase(NodePtr node, NodePtr nodeParent) {
         assert(nodeParent);
         while (node != root_ && (!node || node->color_ == Color::Black)) {
-
             if (node == nodeParent->left_) {
-
                 NodePtr w = nodeParent->right_; assert(w);
                 if(w->color_ == Color::Red) {
                     w->color_ = Color::Black;
@@ -537,24 +554,23 @@ private:
                     rotateLeft(nodeParent);
                     w = nodeParent->right_; assert(w);
                 }
-
                 if ((!w->left_ || w->left_->color_ == Color::Black) &&
                     (!w->right_ || w->right_->color_ == Color::Black)) {
                     w->color_ = Color::Red;
                     node = nodeParent;
                     nodeParent = node->parent_;
                 } else {
-
                     if (!w->right_ || w->right_->color_ == Color::Black) {
                         w->left_->color_ = Color::Black;
                         w->color_ = Color::Red;
                         rotateRight(w);
                         w = nodeParent->right_; assert(w);
                     }
-
                     w->color_ = nodeParent->color_;
                     nodeParent->color_ = Color::Black;
-                    if (w->right_) { w->right_->color_ = Color::Black; }
+                    if (w->right_) {
+                        w->right_->color_ = Color::Black;
+                    }
                     rotateLeft(nodeParent);
                     break;
                 }
@@ -584,13 +600,17 @@ private:
 
                     w->color_ = nodeParent->color_;
                     nodeParent->color_ = Color::Black;
-                    if (w->left_) { w->left_->color_ = Color::Black; }
+                    if (w->left_) {
+                        w->left_->color_ = Color::Black;
+                    }
                     rotateRight(nodeParent);
                     break;
                 }
             }
         }
-        if (node) { node->color_ = Color::Black; }
+        if (node) {
+            node->color_ = Color::Black;
+        }
     }
 
     void dumpImpl(std::fstream& file) const {
@@ -601,10 +621,14 @@ private:
 
     size_t countNodesLess(NodePtr node) const {
         assert(node);
-        if (node == nil_) { return root_->size_; }
+        if (node == nil_) {
+            return root_->size_;
+        }
         size_t sum = node->leftSize();
         while (node != root_) {
-            if (node->isRightChild()) { sum += node->parent_->leftSize() + 1U; }
+            if (node->isRightChild()) {
+                sum += node->parent_->leftSize() + 1U;
+            }
             node = node->parent_;
         }
         return sum;
@@ -612,7 +636,7 @@ private:
 
 public:
     RBTree() {
-        nil_ = createNode(K{0});
+        nil_ = std::addressof(nilNode_);
         nilInit();
     }
 
@@ -646,7 +670,6 @@ public:
 
     void clear() {
         nodes_.clear();
-        nil_ = createNode(K{0});
         nilInit();
         root_ = nullptr;
     }
@@ -694,8 +717,12 @@ public:
     }
 
     size_t distance(iterator first, iterator last) const {
-        if (empty()) { return 0U; }
-        if (last.node_ != nil_ && compare_(*last, *first)) { return 0U; }
+        if (empty()) {
+            return 0U;
+        }
+        if (last.node_ != nil_ && compare_(*last, *first)) {
+            return 0U;
+        }
         return countNodesLess(last.node_) - countNodesLess(first.node_);
     }
 

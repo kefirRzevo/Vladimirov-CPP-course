@@ -12,10 +12,14 @@ using NodePtr = Node<int>*;
 using ConstNodePtr = const Node<int>*;
 
 size_t countBlackNodes(NodePtr node, ConstNodePtr root) {
-	if (!node) { return 0U; }
+	if (!node) {
+		return 0U;
+	}
 	size_t res = 0U;
 	while (node != root) {
-		if (node->color_ == Color::Black) { res++; }
+		if (node->color_ == Color::Black) {
+			res++;
+		}
 		node = node->parent_;
 	}
 	return res;
@@ -36,8 +40,12 @@ size_t countBlackNodes(NodePtr node, ConstNodePtr root) {
 bool checkProperty3(RBTree<int>& t) {
 	for(auto it = t.begin(); it != t.end(); ++it) {
 		if (it.node_->color_ == Color::Red) {
-			if (it.node_->left_ && it.node_->left_->color_ == Color::Red) { return false; }
-			if (it.node_->right_ && it.node_->right_->color_ == Color::Red) { return false; }
+			if (it.node_->left_ && it.node_->left_->color_ == Color::Red) {
+				return false;
+			}
+			if (it.node_->right_ && it.node_->right_->color_ == Color::Red) {
+				return false;
+			}
 		}
 	}
 	return true;
@@ -47,13 +55,19 @@ bool checkProperty3(RBTree<int>& t) {
 bool checkProperty4(RBTree<int>& t) {
 	std::vector<NodePtr> leaves;
 	for(auto it = t.begin(); it != t.end(); ++it) {
-		if (!it.node_->left_ && !it.node_->right_) { leaves.push_back(it.node_); }
+		if (!it.node_->left_ && !it.node_->right_) {
+			leaves.push_back(it.node_);
+		}
 	}
 
-	if (leaves.empty()) { return true; }
+	if (leaves.empty()) {
+		return true;
+	}
 	size_t depth = countBlackNodes(leaves[0], t.root());
 	for (size_t i = 1U; i < leaves.size(); ++i) {
-		if (countBlackNodes(leaves[i], t.root()) != depth) { return false; }
+		if (countBlackNodes(leaves[i], t.root()) != depth) {
+			return false;
+		}
 	}
 	return true;
 }
@@ -86,7 +100,10 @@ TEST(RBTreeTest, end2endTest) {
 	std::string inputPath = "../tests/";
 	for (auto& p: fs::directory_iterator(inputPath)) {
 		std::string filePath = p.path().generic_string();
-		if (filePath.find(".dat") == std::string::npos || filePath.find(".ans") != std::string::npos) { continue; }
+		if (filePath.find(".dat") == std::string::npos ||
+			filePath.find(".ans") != std::string::npos) {
+			continue;
+		}
 		std::ifstream in{filePath, std::ios::in};
 		std::ifstream out{filePath + ".ans", std::ios::in};
 		auto out1 = myProcess(in);
