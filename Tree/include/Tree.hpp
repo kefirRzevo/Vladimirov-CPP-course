@@ -57,7 +57,7 @@ enum class Tag: bool
 };
 
 template<typename K>
-struct Node
+struct Node final
 {
     using NodePtr = Node*;
     using ConstNodePtr = const Node*;
@@ -160,7 +160,7 @@ struct Node
 };
 
 template<typename K>
-struct Iterator
+struct Iterator final
 {
     using NodePtr = Node<K>*;
     using ConstNodePtr = const Node<K>*;
@@ -222,7 +222,7 @@ struct Iterator
 };
 
 template<typename K, class Compare>
-class RBTree
+class RBTree final
 {
 public:
     using NodePtr = Node<K>*;
@@ -318,7 +318,7 @@ private:
 		} else if (x->isLeftChild()) {
 			x->parent_->left_ = y;
 		} else {
-            throw std::out_of_range("X is not left nor right child");
+            throw std::out_of_range("Node is not left nor right child");
         }
 		y->right_ = x;
 		x->parent_ = y;
@@ -409,41 +409,49 @@ private:
 	void fixInsert(NodePtr node) {
         assert(node);
         assert(node->parent_);
-		while (node != root_ && node->parent_->color_ == Color::Red) {
-            assert(node->parent_->parent_);
-            if (node->parent_->isRightChild()) {
-                NodePtr y = node->parent_->parent_->left_;
-                if (node->parent_->parent_->lTag_ == Tag::Child && y->color_ == Color::Red) {
-                    node->parent_->color_ = Color::Black;
+        NodePtr nodeParent = node->parent_;
+		while (node != root_ && nodeParent->color_ == Color::Red) {
+            assert(nodeParent->parent_);
+            NodePtr nodeGrandparent = nodeParent->parent_;
+            if (nodeParent->isLeftChild()) {
+                NodePtr y = nodeGrandparent->right_;
+                if (nodeGrandparent->rTag_ == Tag::Child && y->color_ == Color::Red) {
+                    nodeParent->color_ = Color::Black;
                     y->color_ = Color::Black;
-                    node->parent_->parent_->color_ = Color::Red;
-                    node = node->parent_->parent_;
-                } else {
-                    if (node->isLeftChild()) {
-                        node = node->parent_;
-                        rotateRight(node);
-                    }
-                    node->parent_->color_ = Color::Black;
-                    node->parent_->parent_->color_ = Color::Red;
-                    rotateLeft(node->parent_->parent_);
-                }
-            } else {
-                NodePtr y = node->parent_->parent_->right_;
-                if (node->parent_->parent_->rTag_ == Tag::Child && y->color_ == Color::Red) {
-                    node->parent_->color_ = Color::Black;
-                    y->color_ = Color::Black;
-                    node->parent_->parent_->color_ = Color::Red;
-                    node = node->parent_->parent_;
+                    nodeGrandparent->color_ = Color::Red;
+                    node = nodeGrandparent;
+                    nodeParent = node->parent_;
                 } else {
                     if (node->isRightChild()) {
-                        node = node->parent_;
+                        node = nodeParent;
+                        nodeParent = node->parent_;
                         rotateLeft(node);
                     }
-                    node->parent_->color_ = Color::Black;
-                    node->parent_->parent_->color_ = Color::Red;
-                    rotateRight(node->parent_->parent_);
+                    nodeParent->color_ = Color::Black;
+                    nodeGrandparent->color_ = Color::Red;
+                    rotateRight(nodeGrandparent);
                 }
-            }
+            } else if (nodeParent->isRightChild()) {
+                NodePtr y = nodeGrandparent->left_;
+                if (nodeGrandparent->lTag_ == Tag::Child && y->color_ == Color::Red) {
+                    nodeParent->color_ = Color::Black;
+                    y->color_ = Color::Black;
+                    nodeGrandparent->color_ = Color::Red;
+                    node = nodeGrandparent;
+                    nodeParent = node->parent_;
+                } else {
+                    if (node->isLeftChild()) {
+                        node = nodeParent;
+                        nodeParent = node->parent_;
+                        rotateRight(node);
+                    }
+                    nodeParent->color_ = Color::Black;
+                    nodeGrandparent->color_ = Color::Red;
+                    rotateLeft(nodeGrandparent);
+                }
+            } else {
+                throw std::out_of_range("Node is not left nor right child");
+            }  
             if (node == root_) {
                 break;
             }
@@ -451,7 +459,7 @@ private:
 		root_->color_ = Color::Black;
 	}
 
-    void transplant(NodePtr old_, NodePtr new_) {
+    void transplant(NodePtr old_, NodePtr new_, bool changeThreads) {
         assert(old_);
         assert(new_);
         if (old_ == root_) {
@@ -459,57 +467,29 @@ private:
             if (new_ != nil_) {
                 new_->parent_ = old_->parent_;
             }
+            return;
         } else if (old_->isLeftChild()) {
             if (new_ != nil_) {
                 old_->parent_->left_ = new_;
-                new_->parent_ = old_->parent_;
             } else {
                 assert(old_->lTag_ == Tag::Thread && old_->rTag_ == Tag::Thread);
                 old_->parent_->lTag_ = Tag::Thread;
+                return;
             }
         } else if (old_->isRightChild()) {
             if (new_ != nil_) {
                 old_->parent_->right_ = new_;
-                new_->parent_ = old_->parent_;
             } else {
                 assert(old_->lTag_ == Tag::Thread && old_->rTag_ == Tag::Thread);
                 old_->parent_->rTag_ = Tag::Thread;
+                return;
             }
         } else {
-            assert(0 && "Unreachable");
+            throw std::out_of_range("Node is not left nor right child");
         }
-    }
-
-    void transplantWithThreads(NodePtr old_, NodePtr new_) {
-        assert(old_);
-        assert(new_);
-        if (old_ == root_) {
-            root_ = new_;
-            if (new_ != nil_) {
-                new_->parent_ = old_->parent_;
-            }
-        } else if (old_->isLeftChild()) {
-            if (new_ != nil_) {
-                old_->parent_->left_ = new_;
-                new_->parent_ = old_->parent_;
-                new_->rightMost()->right_ = old_->right_;
-            } else {
-                assert(old_->lTag_ == Tag::Thread && old_->rTag_ == Tag::Thread);
-                old_->parent_->lTag_ = Tag::Thread;
-                old_->parent_->left_ = old_->left_;
-            }
-        } else if (old_->isRightChild()) {
-            if (new_ != nil_) {
-                old_->parent_->right_ = new_;
-                new_->parent_ = old_->parent_;
-                new_->rightMost()->right_ = old_->right_;
-            } else {
-                assert(old_->lTag_ == Tag::Thread && old_->rTag_ == Tag::Thread);
-                old_->parent_->rTag_ = Tag::Thread;
-                old_->parent_->right_ = old_->right_;
-            }
-        } else {
-            assert(0 && "Unreachable");
+        new_->parent_ = old_->parent_;
+        if (changeThreads) {
+            new_->rightMost()->right_ = old_->right_;
         }
     }
 
@@ -520,12 +500,12 @@ private:
                 xParent = y;
             } else {
                 xParent = y->parent_;
-                transplant(y, x);
+                transplant(y, x, false);
                 y->rTag_ = Tag::Child;
                 y->right_ = node->right_;
                 y->right_->parent_ = y;
             }
-            transplant(node, y);
+            transplant(node, y, false);
             y->lTag_ = Tag::Child;
             y->left_ = node->left_;
             y->left_->parent_ = y;
@@ -534,7 +514,7 @@ private:
             std::swap(y->size_, node->size_);
         } else {
             xParent = y->parent_;
-            transplantWithThreads(y, x);
+            transplant(y, x, true);
             fixMinMaxErase(node);
         }
         return xParent;
@@ -609,7 +589,7 @@ private:
                     rotateLeft(nodeParent);
                     break;
                 }
-            } else {
+            } else if (node == nodeParent->right_) {
                 NodePtr w = nodeParent->left_;
                 if (w->color_ == Color::Red) {
                     w->color_ = Color::Black;
@@ -637,6 +617,8 @@ private:
                     rotateRight(nodeParent);
                     break;
                 }
+            } else {
+                throw std::out_of_range("Node is not left nor right child");
             }
         }
         if (node) {
