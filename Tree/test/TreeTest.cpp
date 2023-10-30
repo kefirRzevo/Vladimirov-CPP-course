@@ -40,10 +40,10 @@ size_t countBlackNodes(NodePtr node, ConstNodePtr root) {
 bool checkProperty3(RBTree<int>& t) {
 	for(auto it = t.begin(); it != t.end(); ++it) {
 		if (it.node_->color_ == Color::Red) {
-			if (it.node_->left_ && it.node_->left_->color_ == Color::Red) {
+			if (it.node_->left() && it.node_->left_->color_ == Color::Red) {
 				return false;
 			}
-			if (it.node_->right_ && it.node_->right_->color_ == Color::Red) {
+			if (it.node_->right() && it.node_->right_->color_ == Color::Red) {
 				return false;
 			}
 		}
@@ -55,7 +55,7 @@ bool checkProperty3(RBTree<int>& t) {
 bool checkProperty4(RBTree<int>& t) {
 	std::vector<NodePtr> leaves;
 	for(auto it = t.begin(); it != t.end(); ++it) {
-		if (!it.node_->left_ && !it.node_->right_) {
+		if (!it.node_->left() && !it.node_->right()) {
 			leaves.push_back(it.node_);
 		}
 	}
@@ -79,15 +79,22 @@ bool checkProperty5(RBTree<int>& t) {
 
 TEST(RBTreeTest, treeTest) {
 	RBTree<int> t;
-	t.insert(1);
-	t.insert(2);
-	t.insert(5);
-	t.insert(6);
-	t.insert(4);
-	t.insert(4);
+	std::fstream file{"../mylog.dot", std::ios::out};
+	t.insert(10);
+	t.insert(20);
+	t.insert(13);
+	t.insert(17);
+	t.insert(49);
+	t.insert(42);
+	t.insert(3);
+	t.insert(93);
+	t.insert(27);
+	t.insert(16);
 	t.insert(12);
-	t.insert(8);
-	t.insert(9);
+	t.erase(12);
+	t.erase(0);
+	t.erase(17);
+	t.dump(file);
 	//EXPECT_TRUE(checkProperty1(t));
 	//EXPECT_TRUE(checkProperty2(t));
 	EXPECT_TRUE(checkProperty3(t));

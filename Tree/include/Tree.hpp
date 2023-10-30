@@ -35,7 +35,7 @@ Class Tree. Functionality:
 
 namespace tree {
 
-#define ort std::cout << __LINE__ << std::endl;
+//#define rep std::cout << "Line " << __LINE__ << std::endl;
 
 template<typename K>
 struct Node;
@@ -46,8 +46,14 @@ class RBTree;
 
 enum class Color: bool
 {
-    Black,
     Red,
+    Black,
+};
+
+enum class Tag: bool
+{
+    Child,
+    Thread,
 };
 
 template<typename K>
@@ -59,7 +65,11 @@ struct Node
     NodePtr parent_ = nullptr;
     NodePtr left_ = nullptr;
     NodePtr right_ = nullptr;
+
     Color color_ = Color::Red;
+    Tag lTag_ = Tag::Thread;
+    Tag rTag_ = Tag::Thread;
+
     size_t size_ = 1U;
     K key_ = K{0};
 
@@ -68,29 +78,37 @@ struct Node
     Node(const K& key):
         key_(key) {}
 
+    NodePtr left() const {
+        return lTag_ == Tag::Child ? left_ : nullptr;
+    }
+
+    NodePtr right() const {
+        return rTag_ == Tag::Child ? right_ : nullptr;
+    }
+
     bool isLeftChild() const {
-        return parent_ ? this == parent_->left_ : false;
+        return parent_ ? this == parent_->left() : false;
     }
 
     bool isRightChild() const {
-        return parent_ ? this == parent_->right_ : false;
+        return parent_ ? this == parent_->right() : false;
     }
 
     size_t size() const {
-        return (left_ ? left_->size_ : 0U) + (right_ ? right_->size_ : 0U) + 1U;
+        return leftSize() + rightSize() + 1U;
     }
 
     size_t leftSize() const {
-        return left_ ? left_->size_ : 0U;
+        return left() ? left_->size_ : 0U;
     }
 
     size_t rightSize() const {
-        return left_ ? left_->size_ : 0U;
+        return right() ? right_->size_ : 0U;
     }
 
     NodePtr leftMost() {
         NodePtr node = this;
-        while (node->left_) {
+        while (node->left()) {
             node = node->left_;
         }
         return node;
@@ -98,74 +116,44 @@ struct Node
 
     NodePtr rightMost() {
         NodePtr node = this;
-        while (node->right_) {
+        while (node->right()) {
             node = node->right_;
         }
         return node;
     }
 
-    NodePtr next() {
-        if (right_) {
+    NodePtr next() const {
+        if (right()) {
             return right_->leftMost();
         }
-        NodePtr curr = this;
-        NodePtr parent = curr->parent_;
-        while (curr->isRightChild() && parent->parent_) {
-            curr = parent;
-            parent = parent->parent_;
-        }
-        return parent;
+        return right_;
     }
 
-    NodePtr prev() {
-        if (left_) {
+    NodePtr prev() const {
+        if (left()) {
             return left_->rightMost();
         }
-        NodePtr curr = this;
-        NodePtr parent = curr->parent_;
-        while (curr->isLeftChild() && parent->parent_) {
-            curr = parent;
-            parent = parent->parent_;
-        }
-        return parent;
-    }
-
-    void dumpImpl(std::fstream& file) const {
-        file << "\tnode_" << this << "[label = \"{" << key_ << "} | " << size_ << "\",";
-        file << "shape=record, style=filled, fontcolor=white, fillcolor=";
-        file << (color_ == Color::Black ? "black" : "red") << "];\n";
-
-        if (left_) {
-            file << "\tnode_" << this << " -> node_" << left_ << ";\n";
-        } else {
-            file << "\tnode_" << this << " -> node_null_l_" << key_ << ";\n";
-            file << "\tnode_null_l_" << key_ << " [label = \"\", shape=triangle, style=filled, fillcolor=black];\n";
-        }
-
-        if (right_) {
-            file << "\tnode_" << this << " -> node_" << right_ << ";\n";
-        } else {
-            file << "\tnode_" << this << " -> node_null_r_" << key_ << ";\n";
-            file << "\tnode_null_r_" << key_ << " [label = \"\", shape=triangle, style=filled, fillcolor=black];\n";
-        }
+        return left_;
     }
 
     void textDump() const {
-        std::cout << "Node   " << this << "\n";
-        std::cout << "Color  " << (color_ == Color::Black ? "black" : "red") << "\n";
-        std::cout << "Value  " << key_ << "\n";
-        std::cout << "Size   " << size_ << "\n";
+        std::cout << "Node   " << this    << "\n";
         std::cout << "Parent " << parent_ << "\n";
-        std::cout << "Left   " << left_ << "\n";
-        std::cout << "Right  " << right_ << "\n\n";
+        std::cout << "Left   " << left_   << "\n";
+        std::cout << "Right  " << right_  << "\n";
+        std::cout << "Color     " << (color_ == Color::Black ? "black" : "red"   ) << "\n";
+        std::cout << "Left  Tag " << (lTag_  == Tag::Child   ? "child" : "thread") << "\n";
+        std::cout << "Right Tag " << (rTag_  == Tag::Child   ? "child" : "thread") << "\n";
+        std::cout << "Size  " << size_ << "\n";
+        std::cout << "Value " << key_  << "\n\n";
     }
 
     void recursiveDump() const {
         textDump();
-        if (left_) {
+        if (left()) {
             left_->recursiveDump();
         }
-        if (right_) {
+        if (right()) {
             right_->recursiveDump();
         }
     }
@@ -248,10 +236,6 @@ public:
     using reverse_iterator = std::reverse_iterator<Iterator<K>>;
 
 private:
-    Node<K> nilNode_ = Node<K>{};
-    NodePtr root_ = nullptr;
-    NodePtr nil_ = nullptr;
-
     struct keyHash
     {
         std::size_t operator() (const Node<K>& node) const {
@@ -266,6 +250,10 @@ private:
         }
     };
 
+    Node<K> nilNode_ = Node<K>{};
+    NodePtr root_ = nullptr;
+    NodePtr nil_ = std::addressof(nilNode_);
+
     std::unordered_set<Node<K>, keyHash, keyEqual> nodes_;
     Compare compare_;
 
@@ -273,35 +261,24 @@ private:
         nil_->parent_ = nullptr;
         nil_->left_ = nil_;
         nil_->right_ = nil_;
+        nil_->color_ = Color::Black;
         nil_->size_ = 0U;
     }
 
     NodePtr createNode(const K& key) {
-        auto [it, flag] = nodes_.emplace(key);
-        if (!flag) {
-            std:: cout << "Very bad" <<key<<std::endl;
-        }
+        auto it = nodes_.emplace(key).first;
         return const_cast<NodePtr>(std::addressof(*it));
     }
 
     void deleteNode(NodePtr node) {
-        nodes_.erase(node);
+        nodes_.erase(*node);
     }
 
     void rotateLeft(NodePtr x) {
-        /*
-        // parent    --->   parent
-        //   |                |
-        //   x                y
-        //  / \              / \
-        // a   y            x   c
-        //    / \          / \
-        //   b   c        a   b
-        */
         assert(x);
 		NodePtr y = x->right_;
 		x->right_ = y->left_;
-        if (y->left_) {
+        if (y->left()) {
             y->left_->parent_ = x;
         }
 		y->parent_ = x->parent_;
@@ -317,24 +294,20 @@ private:
 		y->left_ = x;
 		x->parent_ = y;
 
+        if (y->lTag_ == Tag::Thread) {
+            y->lTag_ = Tag::Child;
+            x->rTag_ = Tag::Thread;
+            x->right_ = y;
+        }
         y->size_ = x->size_;
         x->size_ = x->size();
     }
 
     void rotateRight(NodePtr x) {
-        /*
-        //    parent    --->   parent
-        //      |                |
-        //      x                y
-        //     / \              / \
-        //    y   c            a   x
-        //   / \                  / \
-        //  a   b                b   c
-        */
         assert(x);
 		NodePtr y = x->left_;
 		x->left_ = y->right_;
-		if (y->right_) {
+		if (y->right()) {
 			y->right_->parent_ = x;
 		}
 		y->parent_ = x->parent_;
@@ -350,6 +323,11 @@ private:
 		y->right_ = x;
 		x->parent_ = y;
 
+        if (y->rTag_ == Tag::Thread) {
+            y->rTag_ = Tag::Child;
+            x->lTag_ = Tag::Thread;
+            x->left_ = y;
+        }
         y->size_ = x->size_;
         x->size_ = x->size();
     }
@@ -362,9 +340,9 @@ private:
             prev = curr;
             action(curr);
 			if (compare_(curr->key_, key)) {
-				curr = curr->right_;
+				curr = curr->right();
 			} else if (compare_(key, curr->key_)) {
-				curr = curr->left_;
+				curr = curr->left();
 			} else {
                 return std::make_pair(true, curr);
             }
@@ -377,6 +355,26 @@ private:
         return found ? node : nil_;
     }
 
+    NodePtr insertFirstNode(NodePtr node) {
+        assert(root_ == nullptr);
+        node->left_ = nil_;
+        node->right_ = nil_;
+        node->color_ = Color::Black;
+        nil_->left_ = node;
+        nil_->right_ = node;
+        root_ = node;
+        return node;
+    }
+
+    void fixMinMaxInsert(NodePtr node) {
+        if (compare_(nil_->right_->key_, node->key_)) {
+            nil_->right_ = node;
+        }
+        if (compare_(node->key_, nil_->left_->key_)) {
+            nil_->left_ = node;
+        }
+    }
+
 	NodePtr insertImpl(const K& key) {
         auto [found, y] = visit(key, [] (NodePtr&) {});
         if (found) {
@@ -384,45 +382,38 @@ private:
         }
 
 		NodePtr node = createNode(key);
-        if (!root_) {
-            node->parent_ = nil_;
-            node->color_ = Color::Black;
-            nil_->left_ = node;
-            nil_->right_ = node;
-            root_ = node;
-            return node;
+        node->parent_ = y;
+        if (y == nil_) {
+            return insertFirstNode(node);
         }
 
         visit(key, [] (NodePtr& node_) { node_->size_++; });
-		node->parent_ = y;
-		if (y == nil_) {
-			root_ = node;
-		} else if (compare_(node->key_, y->key_)) {
+        if (compare_(node->key_, y->key_)) {
+            y->lTag_ = Tag::Child;
+            node->left_ = y->left_;
+            node->right_ = y;
 			y->left_ = node;
-		} else {
+		} else if (compare_(y->key_, node->key_)) {
+            y->rTag_ = Tag::Child;
+            node->right_ = y->right_;
+            node->left_ = y;
 			y->right_ = node;
-		}
-
+		} else {
+            assert(0 && "Unreachable");
+        }
+        fixMinMaxInsert(node);
 		fixInsert(node);
         return node;
 	}
 
 	void fixInsert(NodePtr node) {
         assert(node);
-
-        if (compare_(nil_->right_->key_, node->key_)) {
-            nil_->right_ = node;
-        }
-        if (compare_(node->key_, nil_->left_->key_)) {
-            nil_->left_ = node;
-        }
-
         assert(node->parent_);
 		while (node != root_ && node->parent_->color_ == Color::Red) {
             assert(node->parent_->parent_);
             if (node->parent_->isRightChild()) {
                 NodePtr y = node->parent_->parent_->left_;
-                if (y && y->color_ == Color::Red) {
+                if (node->parent_->parent_->lTag_ == Tag::Child && y->color_ == Color::Red) {
                     node->parent_->color_ = Color::Black;
                     y->color_ = Color::Black;
                     node->parent_->parent_->color_ = Color::Red;
@@ -438,7 +429,7 @@ private:
                 }
             } else {
                 NodePtr y = node->parent_->parent_->right_;
-                if (y && y->color_ == Color::Red) {
+                if (node->parent_->parent_->rTag_ == Tag::Child && y->color_ == Color::Red) {
                     node->parent_->color_ = Color::Black;
                     y->color_ = Color::Black;
                     node->parent_->parent_->color_ = Color::Red;
@@ -460,14 +451,101 @@ private:
 		root_->color_ = Color::Black;
 	}
 
-    void transplant(NodePtr x, NodePtr y) {
-        assert(x);
-        if (root_ == x) {
-            root_ = y;
-        } else if (x->isLeftChild()) {
-            x->parent_->left_ = y;
+    void transplant(NodePtr old_, NodePtr new_) {
+        assert(old_);
+        assert(new_);
+        if (old_ == root_) {
+            root_ = new_;
+            if (new_ != nil_) {
+                new_->parent_ = old_->parent_;
+            }
+        } else if (old_->isLeftChild()) {
+            if (new_ != nil_) {
+                old_->parent_->left_ = new_;
+                new_->parent_ = old_->parent_;
+            } else {
+                assert(old_->lTag_ == Tag::Thread && old_->rTag_ == Tag::Thread);
+                old_->parent_->lTag_ = Tag::Thread;
+            }
+        } else if (old_->isRightChild()) {
+            if (new_ != nil_) {
+                old_->parent_->right_ = new_;
+                new_->parent_ = old_->parent_;
+            } else {
+                assert(old_->lTag_ == Tag::Thread && old_->rTag_ == Tag::Thread);
+                old_->parent_->rTag_ = Tag::Thread;
+            }
         } else {
-            x->parent_->right_ = y;
+            assert(0 && "Unreachable");
+        }
+    }
+
+    void transplantWithThreads(NodePtr old_, NodePtr new_) {
+        assert(old_);
+        assert(new_);
+        if (old_ == root_) {
+            root_ = new_;
+            if (new_ != nil_) {
+                new_->parent_ = old_->parent_;
+            }
+        } else if (old_->isLeftChild()) {
+            if (new_ != nil_) {
+                old_->parent_->left_ = new_;
+                new_->parent_ = old_->parent_;
+                new_->rightMost()->right_ = old_->right_;
+            } else {
+                assert(old_->lTag_ == Tag::Thread && old_->rTag_ == Tag::Thread);
+                old_->parent_->lTag_ = Tag::Thread;
+                old_->parent_->left_ = old_->left_;
+            }
+        } else if (old_->isRightChild()) {
+            if (new_ != nil_) {
+                old_->parent_->right_ = new_;
+                new_->parent_ = old_->parent_;
+                new_->rightMost()->right_ = old_->right_;
+            } else {
+                assert(old_->lTag_ == Tag::Thread && old_->rTag_ == Tag::Thread);
+                old_->parent_->rTag_ = Tag::Thread;
+                old_->parent_->right_ = old_->right_;
+            }
+        } else {
+            assert(0 && "Unreachable");
+        }
+    }
+
+    NodePtr prefixErase(NodePtr node, NodePtr x, NodePtr y) {
+        NodePtr xParent = nullptr;
+        if (node->lTag_ == Tag::Child && node->rTag_ == Tag::Child) {
+            if (y->parent_ == node) {
+                xParent = y;
+            } else {
+                xParent = y->parent_;
+                transplant(y, x);
+                y->rTag_ = Tag::Child;
+                y->right_ = node->right_;
+                y->right_->parent_ = y;
+            }
+            transplant(node, y);
+            y->lTag_ = Tag::Child;
+            y->left_ = node->left_;
+            y->left_->parent_ = y;
+            y->left_->rightMost()->right_ = y;
+            std::swap(y->color_, node->color_);
+            std::swap(y->size_, node->size_);
+        } else {
+            xParent = y->parent_;
+            transplantWithThreads(y, x);
+            fixMinMaxErase(node);
+        }
+        return xParent;
+    }
+
+    void fixMinMaxErase(NodePtr node) {
+        if (nil_->left_ == node) {
+            nil_->left_ = root_->leftMost();
+        }
+        if (nil_->right_ == node) {
+            nil_->right_ = root_->rightMost();
         }
     }
 
@@ -479,65 +557,22 @@ private:
 
         NodePtr next = node->next();
         NodePtr y = node;
-        NodePtr x = nullptr;
-        NodePtr xParent = nullptr;
+        NodePtr x = nil_;
+        Color yColor = y->color_;
 
-        if (!y->left_) {
-            x = y->right_;
-        } else if (!y->right_) {
-            x = y->left_;
+        if (node->lTag_ == Tag::Thread) {
+            x = node->rTag_ == Tag::Child ? node->right_ : nil_;
+        } else if (node->rTag_ == Tag::Thread) {
+            x = node->lTag_ == Tag::Child ? node->left_ : nil_;
         } else {
-            y = y->right_->leftMost();
-            x = y->right_;
+            y = node->right_->leftMost();
+            x = y->rTag_ == Tag::Child ? y->right_ : nil_;
+            yColor = y->color_;
         }
         visit(y->key_, [] (NodePtr& node_) { node_->size_--; });
-
-        if (y != node) {
-            node->left_->parent_ = y;
-            y->left_ = node->left_;
-            if (y != node->right_) {
-                xParent = y->parent_;
-                if (x) {
-                    x->parent_ = y->parent_;
-                }
-                y->parent_->left_ = x;
-                y->right_ = node->right_;
-                node->right_->parent_ = y;
-            } else {
-                xParent = y;
-            }
-
-            transplant(node, y);
-            y->parent_ = node->parent_;
-            std::swap(y->color_, node->color_);
-            std::swap(y->size_, node->size_);
-            y = node;
-        } else {
-            xParent = y->parent_;
-            if (x) {
-                x->parent_ = y->parent_;
-            }
-            transplant(node, x);
-
-            if (nil_->left_ == node) {
-                if (!node->right_) {
-                    nil_->left_ = node->parent_;
-                } else {
-                    nil_->left_ = x->leftMost();
-                }
-            }
-
-            if (nil_->right_ == node) {
-                if (!node->left_) {
-                    nil_->right_ = node->parent_;
-                } else {
-                    nil_->right_ = x->rightMost();
-                }
-            }
-        }
-
+        NodePtr xParent = prefixErase(node, x, y);
         deleteNode(node);
-        if (y->color_ == Color::Black) {
+        if (yColor == Color::Black) {
             fixErase(x, xParent);
         }
         return next;
@@ -545,22 +580,22 @@ private:
 
     void fixErase(NodePtr node, NodePtr nodeParent) {
         assert(nodeParent);
-        while (node != root_ && (!node || node->color_ == Color::Black)) {
+        while (node != root_ && node->color_ == Color::Black) {
             if (node == nodeParent->left_) {
                 NodePtr w = nodeParent->right_; assert(w);
-                if(w->color_ == Color::Red) {
+                if (w->color_ == Color::Red) {
                     w->color_ = Color::Black;
                     nodeParent->color_ = Color::Red;
                     rotateLeft(nodeParent);
                     w = nodeParent->right_; assert(w);
                 }
-                if ((!w->left_ || w->left_->color_ == Color::Black) &&
-                    (!w->right_ || w->right_->color_ == Color::Black)) {
+                if ((w->lTag_ == Tag::Thread || w->left_->color_ == Color::Black) &&
+                    (w->rTag_ == Tag::Thread || w->right_->color_ == Color::Black)) {
                     w->color_ = Color::Red;
                     node = nodeParent;
                     nodeParent = node->parent_;
                 } else {
-                    if (!w->right_ || w->right_->color_ == Color::Black) {
+                    if (w->rTag_ == Tag::Thread || w->right_->color_ == Color::Black) {
                         w->left_->color_ = Color::Black;
                         w->color_ = Color::Red;
                         rotateRight(w);
@@ -568,39 +603,35 @@ private:
                     }
                     w->color_ = nodeParent->color_;
                     nodeParent->color_ = Color::Black;
-                    if (w->right_) {
+                    if (w->right()) {
                         w->right_->color_ = Color::Black;
                     }
                     rotateLeft(nodeParent);
                     break;
                 }
             } else {
-
                 NodePtr w = nodeParent->left_;
-                if(w->color_ == Color::Red) {
+                if (w->color_ == Color::Red) {
                     w->color_ = Color::Black;
                     nodeParent->color_ = Color::Red;
                     rotateRight(nodeParent);
                     w = nodeParent->left_; assert(w);
                 }
-
-                if ((!w->left_ || w->left_->color_ == Color::Black) &&
-                    (!w->right_ || w->right_->color_ == Color::Black)) {
+                if ((w->lTag_ == Tag::Thread || w->left_->color_ == Color::Black) &&
+                    (w->rTag_ == Tag::Thread || w->right_->color_ == Color::Black)) {
                     w->color_ = Color::Red;
                     node = nodeParent;
                     nodeParent = nodeParent->parent_;
                 } else {
-
-                    if (!w->left_ || w->left_->color_ == Color::Black) {
+                    if (w->lTag_ == Tag::Thread || w->left_->color_ == Color::Black) {
                         w->right_->color_ = Color::Black;
                         w->color_ = Color::Red;
                         rotateLeft(w);
                         w = nodeParent->left_; assert(w);
                     }
-
                     w->color_ = nodeParent->color_;
                     nodeParent->color_ = Color::Black;
-                    if (w->left_) {
+                    if (w->left()) {
                         w->left_->color_ = Color::Black;
                     }
                     rotateRight(nodeParent);
@@ -613,10 +644,42 @@ private:
         }
     }
 
-    void dumpImpl(std::fstream& file) const {
-        for (auto it = begin(); it != end(); it++) {
-            it.node_->dumpImpl(file);
+    void dumpNodeImpl(NodePtr node, std::fstream& file) const {
+        file << "\tnode_" << node << "[label = \"{" << node->key_ << "} | " << node->size_ << "\",";
+        file << "shape=record, style=filled, fontcolor=white, fillcolor=";
+        file << (node->color_ == Color::Black ? "black" : "red") << "];\n";
+
+        if (node->left()) {
+            file << "\tnode_" << node << " -> node_" << node->left_ << ";\n";
+        } else if (node->left_ != nil_) {
+            file << "\tnode_" << node << " -> node_" << node->left_ << " [style=dotted, tailport=w];\n";
+            file << "\tnode_null_l_" << node->key_ << "[label = \"\", shape=triangle, style=filled, fillcolor=black];\n";
+            file << "\tnode_" << node << " -> node_null_l_" << node->key_ << ";\n";
+        } else {
+            file << "\tnode_" << node << " -> node_nil_l_" << node->key_ << " [style=dotted, tailport=w];\n";
+            file << "\tnode_nil_l_" << node->key_ << "[label = \"NIL\", shape=triangle, style=filled, fillcolor=white];\n";
         }
+
+        if (node->right()) {
+            file << "\tnode_" << node << " -> node_" << node->right_ << ";\n";
+        } else if (node->right_ != nil_) {
+            file << "\tnode_" << node << " -> node_" << node->right_ << " [style=dotted, tailport=e];\n";
+            file << "\tnode_null_r_" << node->key_ << "[label = \"\", shape=triangle, style=filled, fillcolor=black];\n";
+            file << "\tnode_" << node << " -> node_null_r_" << node->key_ << ";\n";
+        } else {
+            file << "\tnode_" << node << " -> node_nil_r_" << node->key_ << " [style=dotted, tailport=e];\n";
+            file << "\tnode_nil_r_" << node->key_ << "[label = \"NIL\", shape=triangle, style=filled, fillcolor=white];\n";
+        }
+    }
+
+    void dumpImpl(std::fstream& file) const {
+        file << "digraph {\n";
+        file << "\tnode_" << root_ << ";\n";
+        for (auto it = begin(); it != end(); it++) {
+            dumpNodeImpl(it.node_, file);
+        }
+        file << "}\n";
+        file.flush();
     }
 
     size_t countNodesLess(NodePtr node) const {
@@ -636,7 +699,6 @@ private:
 
 public:
     RBTree() {
-        nil_ = std::addressof(nilNode_);
         nilInit();
     }
 
@@ -665,7 +727,7 @@ public:
     }
 
     ConstNodePtr root() const {
-        return static_cast<ConstNodePtr>(root_);
+        return root_;
     }
 
     void clear() {
@@ -692,9 +754,15 @@ public:
         while (curr) {
             bool keyBigger = compare_(curr->key_, key);
             if (keyBigger) {
+                if (curr->rTag_ == Tag::Thread) {
+                    break;
+                }
                 curr = curr->right_;
             } else {
                 prev = curr;
+                if (curr->lTag_ == Tag::Thread) {
+                    break;
+                }
                 curr = curr->left_;
             }
         }
@@ -708,8 +776,14 @@ public:
             bool keyLess = compare_(key, curr->key_);
             if (keyLess) {
                 prev = curr;
+                if (curr->lTag_ == Tag::Thread) {
+                    break;
+                }
                 curr = curr->left_;
             } else {
+                if (curr->rTag_ == Tag::Thread) {
+                    break;
+                }
                 curr = curr->right_;
             }
         }
@@ -717,7 +791,7 @@ public:
     }
 
     size_t distance(iterator first, iterator last) const {
-        if (empty()) {
+        if (empty() || first.node_ == nil_) {
             return 0U;
         }
         if (last.node_ != nil_ && compare_(*last, *first)) {
@@ -727,12 +801,10 @@ public:
     }
 
     void dump(std::fstream& file) const {
-        file << "digraph {\n";
         dumpImpl(file);
-        file << "}\n";
     }
 
-    void textInfo() const {
+    void textDump() const {
         std::cout << "Root       " << root_ << "\n";
         std::cout << "RootParent " << root_->parent_ << "\n";
         std::cout << "Leftest    " << nil_->left_ << "\n";
@@ -740,9 +812,12 @@ public:
         std::cout << "Nil        " << nil_ << "\n";
         std::cout << "NilParent  " << nil_->parent_ << "\n\n";
 
-        std::cout << "Begin      " << begin().node_ << "\n";
-        std::cout << "End        " << end().node_ << "\n";
-        nil_->parent_ = nullptr;
+        std::cout << "Begin " << begin().node_ << "\n";
+        std::cout << "End   " << end().node_ << "\n";
+        std::cout << "Size  " << size() << "\n\n";
+
+        root_->recursiveDump();
+        std::cout.flush();
     }
 };
 
