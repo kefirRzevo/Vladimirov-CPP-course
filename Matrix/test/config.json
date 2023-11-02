@@ -1,0 +1,16 @@
+{
+    "nTests": 10,
+    "matrixSizeRange": {
+        "min": 2,
+        "max": 10
+    },
+    "diagElemsRange": {
+        "min": 1,
+        "max": 10
+    },
+    "elementaryTransformsRange": {
+        "min": 100,
+        "max": 200
+    },
+    "outputPath": "../tests/"
+}
