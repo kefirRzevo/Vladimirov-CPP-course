@@ -44,15 +44,15 @@ def generateRandomTest(config: dict):
     return [mtxStr, detStr]
 
 def generateTests(config: dict):
-    dirPath = config['outputPath']
+    dirPath = os.path.join(os.path.dirname(__file__), config['outputPath'])
     if os.path.exists(dirPath):
         shutil.rmtree(dirPath)
-    os.makedirs(config['outputPath'], exist_ok=True)
+    os.makedirs(dirPath, exist_ok=True)
     nTests = config['nTests']
 
     for i in range(1, nTests + 1):
         test = generateRandomTest(config)
-        saveTest (i, config['outputPath'], test[0], test[1])
+        saveTest (i, dirPath, test[0], test[1])
 
 def main ():
     configPath = os.path.join(os.path.dirname(__file__), 'config.json')
@@ -62,7 +62,7 @@ def main ():
     with open(configPath) as configFile:
         configSettings = json.load(configFile)
     
-    generateTests (configSettings)
+    generateTests(configSettings)
 
 if __name__ == "__main__":
     main()

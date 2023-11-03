@@ -1,4 +1,3 @@
-#include <vector>
 #include "include/Matrix.hpp"
 
 using namespace matrix;
@@ -8,10 +7,10 @@ int main()
     try {
 		std::cin.exceptions(std::cin.failbit);
 		size_t size = 0;
-		std::cin >> size;
-		Matrix<int> m{size};
-		std::cin >> m;
-		std::cout << m;
+		in >> size;
+		Matrix<double> m{size};
+		in >> m;
+		std::cout << m.det();
 	} catch (const std::exception& e) {
 		std::cout << "Error: " << e.what() << std::endl;
 	}

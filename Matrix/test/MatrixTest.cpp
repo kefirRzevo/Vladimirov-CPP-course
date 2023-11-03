@@ -52,11 +52,11 @@ TEST(TestMatrix, test1) {
 	EXPECT_TRUE(m6.equals(m7));
 
 	Matrix<int> m8{{1}, {4, 5, 6}, {7, 8}};
-	std::cout << m8;
+	EXPECT_TRUE(m8.rows() == 3U && m8.cols() == 3U);
 }
 
 TEST(MatrixDetTest, end2endTest) {
-/*
+
 	namespace fs = std::filesystem;
 	std::string inputPath = "../tests/";
 	for (auto& p: fs::directory_iterator(inputPath)) {
@@ -69,13 +69,19 @@ TEST(MatrixDetTest, end2endTest) {
 		std::ifstream out{filePath + ".ans", std::ios::in};
 		size_t mtxSize = 0;
 		in >> mtxSize;
-		Matrix<int> mtx{mtxSize};
+		Matrix<double> mtx{mtxSize};
 		in >> mtx;
-		int det = 0;
-		out >> det;
-		EXPECT_TRUE(det == mtx.det());
+		double ans = 0;
+		out >> ans;
+		double det = mtx.det();
+		if (!::matrix::equals(ans, det)) {
+			std::cout << mtx;
+			std::cout << ans << std::endl;
+			std::cout << det << std::endl;
+		}
+		EXPECT_TRUE(::matrix::equals(ans, det));
     }
-*/
+
 }
 
 int main()

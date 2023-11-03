@@ -17,6 +17,8 @@ Class Storage.
 #include <initializer_list>
 #include "Utils.hpp"
 
+#define rep std::cout << __LINE__ << std::endl;
+
 namespace matrix {
 
 template<typename T>
@@ -313,9 +315,8 @@ public:
 };
 
 template<typename T>
-class Matrix
+class Matrix final
 {
-public:
     using value_type = T;
     using size_type = std::size_t;
     using iterator = Iterator<T>;
@@ -328,7 +329,7 @@ public:
     size_type m_;
     size_type n_;
     Storage<value_type> buffer_;
-    Storage<pointer> rows_;
+    Storage<size_type> rows_;
 
     class ProxyRow
     {
@@ -379,13 +380,13 @@ public:
 
     class ConstProxyRow
     {
-        pointer row_ = nullptr;
+        const_pointer row_ = nullptr;
         size_type n_ = 0U;
 
     public:
         using const_iterator = ConstIterator<value_type>;
 
-        ConstProxyRow(pointer row, size_type n):
+        ConstProxyRow(const_pointer row, size_type n):
             row_(row), n_(n) {}
 
         const_reference operator[](size_type indx) const {
@@ -410,7 +411,7 @@ public:
 
     void setRows() {
         for (size_type i = 0; i < m_; ++i) {
-            rows_[i] = std::addressof(buffer_[i * n_]);
+            rows_[i] = i * n_;
         }
     }
 
@@ -424,27 +425,86 @@ public:
         std::swap(rows_[i], rows_[j]);
     }
 
-    std::pair<size_type, value_type> maxInColumn(size_type col, size_type startRow) const {
-        if (col + 1U > n_) {
-            throw std::out_of_range("col > N");
-        }
-        if (startRow + 1U > m_) {
-            throw std::out_of_range("Start row > M");
-        }
-
-        size_type row = 0U;
-        size_type elem = std::abs((*this)[0U][col]);
-        for (size_type i = startRow; i < m_; ++i) {
-            auto curr = std::abs((*this)[i][col]);
-            if (curr > elem) {
-                row = i;
-                elem = curr;
+    size_type nonZeroRowInCol(size_type k) const {
+        if (::matrix::isZero((*this)[k][k])) {
+            size_type m = 0;
+            for (m = k + 1; m < n_; ++m) {
+                if (!::matrix::isZero((*this)[m][k])) {       
+                    return m;
+                }
             }
+            return n_;
         }
-        return std::make_pair(row, elem);
+        return k;
     }
 
+    value_type detBareiss() const {
+        if (!square()) {
+            throw std::logic_error("Matrix isn't square");
+        }
+        if (empty()) {
+            throw std::logic_error("Matrix is empty");
+        }
+        if (n_ == 1U) {
+            return (*this)[0][0];
+        }
+        Matrix mtx{*this};
+        value_type sign = value_type{1};
+        for (size_type k = 0; k < n_ - 1; ++k) {
+            size_type m = mtx.nonZeroRowInCol(k);
+            if (m == n_) {
+                return value_type{0};
+            } else if (m != k) {
+                mtx.swapRows(m, k);
+                sign = -sign;
+            }
 
+            for (size_type i = k + 1; i < n_; ++i) {
+                for (size_type j = k + 1; j < n_; ++j) {
+                    mtx[i][j] = mtx[k][k] * mtx[i][j] - mtx[i][k] * mtx[k][j];
+                    if (k != 0) {
+                        mtx[i][j] /= mtx[k - 1][k - 1];
+                    }
+                }
+            }
+        }
+        return sign * mtx[n_ - 1][n_ - 1];
+    }
+
+    value_type detGauss() const requires std::is_floating_point_v<value_type> {
+        if (!square()) {
+            throw std::logic_error("Matrix isn't square");
+        }
+        if (empty()) {
+            throw std::logic_error("Matrix is empty");
+        }
+        if (n_ == 1U) {
+            return (*this)[0][0];
+        }
+        Matrix mtx{*this};
+        value_type sign = value_type{1};
+        for(size_type k = 0; k < n_ - 1; ++k) {
+            size_type m = mtx.nonZeroRowInCol(k);
+            if (m == n_) {
+                return value_type{0};
+            } else if (m != k) {
+                mtx.swapRows(m, k);
+                sign = -sign;
+            }
+
+            for (size_type i = k + 1; i < n_; ++i) {
+                value_type coef = mtx[i][k] / mtx[k][k];
+                for (size_type j = 0; j < n_; ++j) {
+                    mtx[i][j] -= coef * mtx[k][j];
+                }
+            }
+        }
+        value_type detAbs = value_type{1};
+        for (size_type i = 0; i < n_; ++i) {
+            detAbs *= mtx[i][i];
+        }
+        return sign * detAbs;
+    }
 
 public:
     Matrix() = default;
@@ -480,37 +540,35 @@ public:
             }
             i++;
         }
-        rows_ = Storage<pointer>{m_};
+        rows_ = Storage<size_type>{m_};
         setRows();
     }
 
     ProxyRow operator[](size_type indx) {
-        return ProxyRow{rows_[indx], n_};
+        return ProxyRow{std::addressof(buffer_[0]) + rows_[indx], n_};
     }
 
     ConstProxyRow operator[](size_type indx) const {
-        return ConstProxyRow{rows_[indx], n_};
+        return ConstProxyRow{std::addressof(buffer_[0]) + rows_[indx], n_};
+    }
+
+    size_type rows() const {
+        return m_;
+    }
+
+    size_type cols() const {
+        return n_;
     }
 
     bool square() const {
         return m_ == n_;
     }
 
-    bool equals(const Matrix& rhs) const {
-        if (m_ != rhs.m_ || n_ != rhs.n_) {
-            return false;
-        }
-        for (size_type i = 0; i < m_; ++i) {
-            for (size_type j = 0; j < n_; ++j) {
-                if ((*this)[i][j] != rhs[i][j]) {
-                    return false;
-                }
-            }
-        }
-        return true;
+    bool empty() const {
+        return n_ == 0U || m_ == 0U;
     }
 
-    bool equals(const Matrix& rhs) const requires std::is_floating_point_v<value_type> {
+    bool equals(const Matrix& rhs) const {
         if (m_ != rhs.m_ || n_ != rhs.n_) {
             return false;
         }
@@ -525,11 +583,11 @@ public:
     }
 
     value_type det() const {
-        return T{0};
+        return detBareiss();
     }
 
     value_type det() const requires std::is_floating_point_v<value_type> {
-        return T{0};
+        return detGauss();
     }
 
     Matrix& transpose() {
@@ -603,10 +661,9 @@ public:
 
     void dump(std::ostream& os) const {
         os << "M " << m_ << "; N " << n_ << "\n";
-        for (const auto& rowPtr: rows_) {
-            ConstProxyRow rowIt{rowPtr, n_};
-            for (const auto& it: rowIt) {
-                os << std::setw(4) << it << " ";
+        for (size_type i = 0; i < m_; ++i) {
+            for (size_type j = 0; j < n_; ++j) {
+                os << std::setw(4) << (*this)[i][j] << " ";
             }
             os << "\n";
         }
@@ -614,10 +671,9 @@ public:
     }
 
     void read(std::istream& is) {
-        for (auto& rowPtr: rows_) {
-            ProxyRow rowIt{rowPtr, n_};
-            for (auto& it: rowIt) {
-                is >> it;
+        for (size_type i = 0; i < m_; ++i) {
+            for (size_type j = 0; j < n_; ++j) {
+                is >> (*this)[i][j];
             }
         }
     }
