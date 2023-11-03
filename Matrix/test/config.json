@@ -1,16 +1,39 @@
-{
-    "nTests": 10,
-    "matrixSizeRange": {
-        "min": 2,
-        "max": 10
+[
+    {
+        "name": "int",
+        "integer": true,
+        "nTests": 5,
+        "matrixSizeRange": {
+            "min": 2,
+            "max": 7
+        },
+        "diagElemsRange": {
+            "min": 1,
+            "max": 10
+        },
+        "elementaryTransformsRange": {
+            "min": 100,
+            "max": 200
+        },
+        "outputPath": "../tests/"
     },
-    "diagElemsRange": {
-        "min": 1,
-        "max": 10
-    },
-    "elementaryTransformsRange": {
-        "min": 100,
-        "max": 200
-    },
-    "outputPath": "../tests/"
-}
+    {
+        "name": "double",
+        "integer": false,
+        "precision": 10,
+        "nTests": 5,
+        "matrixSizeRange": {
+            "min": 90,
+            "max": 100
+        },
+        "diagElemsRange": {
+            "min": 1,
+            "max": 10
+        },
+        "elementaryTransformsRange": {
+            "min": 1000,
+            "max": 2000
+        },
+        "outputPath": "../tests/"
+    }
+]

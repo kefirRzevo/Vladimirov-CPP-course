@@ -31,22 +31,21 @@ Class Matrix. Functionality:
 #include <iostream>
 #include <algorithm>
 #include <stdexcept>
-#include <initializer_list>
 #include "Utils.hpp"
 
 namespace matrix {
 
 template<typename T>
-struct Iterator;
+class Iterator;
 template<typename T>
-struct ConstIterator;
+class ConstIterator;
 template<typename T>
 class Storage;
 template<typename T>
 class Matrix;
 
 template<typename T>
-struct Iterator
+class Iterator
 {
     using iterator_category = std::random_access_iterator_tag;
     using difference_type = std::ptrdiff_t;
@@ -56,6 +55,7 @@ struct Iterator
 
     pointer ptr_;
 
+public:
     Iterator(pointer ptr = nullptr):
         ptr_(ptr) {}
 
@@ -112,7 +112,7 @@ struct Iterator
 };
 
 template<typename T>
-struct ConstIterator
+class ConstIterator
 {
     using iterator_category = std::random_access_iterator_tag;
     using difference_type = std::ptrdiff_t;
@@ -122,6 +122,7 @@ struct ConstIterator
 
     pointer ptr_;
 
+public:
     ConstIterator(pointer ptr = nullptr):
         ptr_(ptr) {}
 
@@ -192,25 +193,39 @@ class Storage final
     pointer data_ = nullptr;
     size_type size_ = 0U;
 
+    bool equals(const Storage<T>& rhs) const {
+        if (size_ != rhs.size_) {
+            return false;
+        }
+        for (size_type i = 0; i < size_; ++i) {
+            if (!::matrix::equals((*this)[i], rhs[i])) {
+                return false;
+            }
+        }
+        return true;
+    }
+
 public:
     Storage() {}
 
-    Storage(size_type size, const_reference val = value_type{}) {
+    Storage(size_type size) {
         data_ = new T[size]{};
+        size_ = size;
+    }
+
+    Storage(size_type size, const_reference val):
+        Storage(size) {
         std::fill_n(data_, size, val);
-        size_ = size;
     }
 
-    Storage(size_type size, std::initializer_list<value_type> lst) {
-        data_ = new T[size]{};
+    Storage(size_type size, std::initializer_list<value_type> lst):
+        Storage(size) {
         std::copy_n(lst.begin(), std::min(size, lst.size()), data_);
-        size_ = size;
     }
 
-    Storage(const Storage<T>& rhs) {
-        data_ = new T[rhs.size_]{};
+    Storage(const Storage<T>& rhs):
+        Storage(rhs.size_) {
         std::copy_n(rhs.data_, rhs.size_, data_);
-        size_ = rhs.size_;
     }
 
     Storage(Storage<T>&& rhs) noexcept {
@@ -251,13 +266,6 @@ public:
         return size_ == 0U;
     }
 
-    bool equals(const Storage<T>& rhs) const {
-        if (size_ != rhs.size_) {
-            return false;
-        }
-        return std::equal(begin(), end(), rhs.begin());
-    }
-
     bool operator==(const Storage<T>& rhs) const {
         return equals(rhs);
     }
@@ -271,8 +279,6 @@ public:
             throw std::logic_error("Storage is empty");
         }
         if (indx + 1U > size_) {
-            dump();
-            std::cout << indx << " " << size_;
             throw std::out_of_range("Index > size - 1");
         }
         return data_[indx];
@@ -440,6 +446,31 @@ class Matrix final
         std::swap(rows_[i], rows_[j]);
     }
 
+    Matrix& transposeSquare() {
+        if (m_ != 1U) {
+            for (size_type i = 0; i < m_; ++i) {
+                for (size_type j = i + 1; j < n_; ++j) {
+                    std::swap((*this)[i][j], (*this)[j][i]);
+                }
+            }
+        }
+        return *this;
+    }
+
+    bool equals(const Matrix& rhs) const {
+        if (m_ != rhs.m_ || n_ != rhs.n_) {
+            return false;
+        }
+        for (size_type i = 0; i < m_; ++i) {
+            for (size_type j = 0; j < n_; ++j) {
+                if (!::matrix::equals((*this)[i][j], rhs[i][j])) {
+                    return false;
+                }
+            }
+        }
+        return true;
+    }
+
     size_type nonZeroRowInCol(size_type k) const {
         if (::matrix::isZero((*this)[k][k])) {
             size_type m = 0;
@@ -532,31 +563,37 @@ public:
         setRows();
     }
 
-    Matrix(size_type m, size_type n, std::initializer_list<value_type> lst):
-        m_(m), n_(n), buffer_(m * n, lst), rows_(m) {
-        setRows();
-    }
-
-    Matrix(std::initializer_list<std::initializer_list<value_type>> lst) {
-        m_ = lst.size();
-        n_ = 0U;
-        for (const auto& nestedLst: lst) {
-            if (nestedLst.size() > n_) {
-                n_ = nestedLst.size();
-            }
-        }
-
-        buffer_ = Storage<value_type>{m_ * n_};
+    Matrix(std::initializer_list<std::initializer_list<value_type>> lst):
+        m_(lst.size()), n_(::matrix::maxNestedLstSize(lst)), buffer_(m_ * n_), rows_(m_) {
         size_type i = 0U;
-        for (const auto& lst_: lst) {
+        for (const auto& nestedLst: lst) {
             size_type j = 0U;
-            for (const auto& elem: lst_) {
+            for (const auto& elem: nestedLst) {
                 buffer_[i * n_ + j++] = elem;
             }
             i++;
         }
-        rows_ = Storage<size_type>{m_};
         setRows();
+    }
+
+    static Matrix eye(size_type size, const value_type& val) {
+        Matrix res{size};
+        for (size_type i = 0; i < size; ++i) {
+            res[i][i] = val;
+        }
+        return res;
+    }
+
+    static Matrix diag(size_type size, std::initializer_list<value_type> lst) {
+        Matrix res{size};
+        size_type i = 0;
+        for (const auto& elem: lst) {
+            if (i == lst.size()) {
+                break;
+            }
+            res[i][i++] = elem;
+        }
+        return res;
     }
 
     ProxyRow operator[](size_type indx) {
@@ -583,18 +620,12 @@ public:
         return n_ == 0U || m_ == 0U;
     }
 
-    bool equals(const Matrix& rhs) const {
-        if (m_ != rhs.m_ || n_ != rhs.n_) {
-            return false;
-        }
-        for (size_type i = 0; i < m_; ++i) {
-            for (size_type j = 0; j < n_; ++j) {
-                if (!::matrix::equals((*this)[i][j], rhs[i][j])) {
-                    return false;
-                }
-            }
-        }
-        return true;
+    bool operator==(const Matrix& rhs) const {
+        return equals(rhs);
+    }
+
+    bool operator!=(const Matrix& rhs) const {
+        return !equals(rhs);
     }
 
     value_type det() const {
@@ -606,6 +637,9 @@ public:
     }
 
     Matrix& transpose() {
+        if (square()) {
+            return transposeSquare();
+        }
         Matrix transposed{n_, m_};
         for (size_type i = 0; i < m_; ++i) {
             for (size_type j = 0; j < n_; ++j) {
@@ -674,6 +708,13 @@ public:
         return *this;
     }
 
+    void clear() {
+        m_ = 0;
+        n_ = 0;
+        buffer_.clear();
+        rows_.clear();
+    }
+
     void dump(std::ostream& os) const {
         os << "M " << m_ << "; N " << n_ << "\n";
         for (size_type i = 0; i < m_; ++i) {
@@ -706,6 +747,48 @@ std::istream& operator>>(std::istream& is, Matrix<T>& mtx)
 {
     mtx.read(is);
     return is;
+}
+
+template<typename T>
+Matrix<T> operator+(const Matrix<T>& lhs, const Matrix<T>& rhs) {
+    Matrix<T> res{lhs};
+    res+=rhs;
+    return res;
+}
+
+template<typename T>
+Matrix<T> operator-(const Matrix<T>& lhs, const Matrix<T>& rhs) {
+    Matrix<T> res{lhs};
+    res-=rhs;
+    return res;
+}
+
+template<typename T>
+Matrix<T> operator*(const Matrix<T>& lhs, const T& rhs) {
+    Matrix<T> res{lhs};
+    res*=rhs;
+    return res;
+}
+
+template<typename T>
+Matrix<T> operator*(const T& lhs, const Matrix<T>& rhs) {
+    Matrix<T> res{rhs};
+    res*=lhs;
+    return res;
+}
+
+template<typename T>
+Matrix<T> operator*(const Matrix<T>& lhs, const Matrix<T>& rhs) {
+    Matrix<T> res{lhs};
+    res*=rhs;
+    return res;
+}
+
+template<typename T>
+Matrix<T> operator/(const Matrix<T>& lhs, const T& rhs) {
+    Matrix<T> res{lhs};
+    res/=rhs;
+    return res;
 }
 
 } //namespace matrix
