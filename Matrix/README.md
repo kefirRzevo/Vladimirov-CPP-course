@@ -25,4 +25,7 @@ To check my tests:
 ```
 
 ## Test Generator
-There is script test/TestGen.py that can generate end2end tests. You can configure tests in file test/config.json.
+There is script test/TestGen.py that can generate end2end tests. You can configure tests in file test/config.json. To generate tests, run:
+```
+        ../run.sh
+```
