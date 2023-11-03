@@ -1,8 +1,25 @@
 #pragma once
 
 /*
+Class Iterator and ConstIterator. Class to iterate over Storage.
 
-Class Storage. 
+Class Storage. Due to this class there is no need to write rule of five.
+
+Class Matrix. Functionality:
+    operator[]
+    size_type rows()
+    size_type cols()
+    bool square()
+    bool empty()
+    bool equals(const Matrix&)
+    value_type det()
+    void transpose()
+    operator+=
+    operator-=
+    operator*=
+    operator/=
+    void dump()
+    void read()
 */
 
 #include <list>
@@ -16,8 +33,6 @@ Class Storage.
 #include <stdexcept>
 #include <initializer_list>
 #include "Utils.hpp"
-
-#define rep std::cout << __LINE__ << std::endl;
 
 namespace matrix {
 
