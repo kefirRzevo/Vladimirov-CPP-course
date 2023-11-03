@@ -190,10 +190,10 @@ class Storage final
     using reference = T &;
     using const_reference = const T &;
 
-    pointer data_ = nullptr;
+    std::unique_ptr<value_type[]> data_;
     size_type size_ = 0U;
 
-    bool equals(const Storage<T>& rhs) const {
+    bool equals(const Storage& rhs) const {
         if (size_ != rhs.size_) {
             return false;
         }
@@ -209,23 +209,23 @@ public:
     Storage() {}
 
     Storage(size_type size) {
-        data_ = new T[size]{};
+        data_ = std::make_unique<value_type[]>(size);
         size_ = size;
     }
 
     Storage(size_type size, const_reference val):
         Storage(size) {
-        std::fill_n(data_, size, val);
+        std::fill_n(data_.get(), size, val);
     }
 
     Storage(size_type size, std::initializer_list<value_type> lst):
         Storage(size) {
-        std::copy_n(lst.begin(), std::min(size, lst.size()), data_);
+        std::copy_n(lst.begin(), std::min(size, lst.size()), data_.get());
     }
 
     Storage(const Storage<T>& rhs):
         Storage(rhs.size_) {
-        std::copy_n(rhs.data_, rhs.size_, data_);
+        std::copy_n(rhs.data_.get(), rhs.size_, data_.get());
     }
 
     Storage(Storage<T>&& rhs) noexcept {
@@ -233,7 +233,7 @@ public:
         std::swap(size_, rhs.size_);
     }
 
-    Storage& operator=(const Storage<T>& rhs) {
+    Storage& operator=(const Storage& rhs) {
         if (this == std::addressof(rhs)) {
             return *this;
         }
@@ -243,7 +243,7 @@ public:
         return *this;
     }
 
-    Storage& operator=(Storage<T>&& rhs) noexcept {
+    Storage& operator=(Storage&& rhs) noexcept {
         if (this == std::addressof(rhs)) {
             return *this;
         }
@@ -253,10 +253,7 @@ public:
         return *this;
     }
 
-    ~Storage() {
-        std::destroy(data_, data_ + size_);
-        delete data_;
-    }
+    ~Storage() = default;
 
     size_type size() const {
         return size_;
@@ -266,61 +263,60 @@ public:
         return size_ == 0U;
     }
 
-    bool operator==(const Storage<T>& rhs) const {
+    bool operator==(const Storage& rhs) const {
         return equals(rhs);
     }
 
-    bool operator!=(const Storage<T>& rhs) const {
+    bool operator!=(const Storage& rhs) const {
         return !equals(rhs);
     }
 
     reference operator[](size_type indx) {
         if (empty()) {
-            throw std::logic_error("Storage is empty");
+            throw std::logic_error("Operator[]: storage is empty");
         }
-        if (indx + 1U > size_) {
-            throw std::out_of_range("Index > size - 1");
+        if (indx >= size_) {
+            throw std::out_of_range("Operator[]: index >= size");
         }
         return data_[indx];
     }
 
     const_reference operator[](size_type indx) const {
         if (empty()) {
-            throw std::logic_error("Storage is empty");
+            throw std::logic_error("Operator[]: storage is empty");
         }
-        if (indx + 1U > size_) {
-            throw std::out_of_range("Index > size - 1");
+        if (indx >= size_) {
+            throw std::out_of_range("Operator[]: index >= size");
         }
         return data_[indx];
     }
 
     iterator begin() {
-        return iterator{data_};
+        return iterator{data_.get()};
     }
 
     iterator end() {
-        return iterator{data_ + size_};
+        return iterator{data_.get() + size_};
     }
 
     const_iterator begin() const {
-        return const_iterator{data_};
+        return const_iterator{data_.get()};
     }
 
     const_iterator end() const {
-        return const_iterator{data_ + size_};;
+        return const_iterator{data_.get() + size_};
     }
 
     void resize(size_type size) {
         Storage temp{size};
-        std::move(data_, data_ + std::min(size_, size), temp.data_);
+        std::move(data_.get(), data_.get() + std::min(size_, size), temp.data_.get());
         std::swap(temp.data_, data_);
         std::swap(temp.size_, size_);
     }
 
     void clear() {
-        Storage temp;
-        std::swap(temp.data_, data_);
-        std::swap(temp.size_, size_);
+        size_ = 0U;
+        data_.reset();
     }
 
     void dump() const {
@@ -365,15 +361,15 @@ class Matrix final
             row_(row), n_(n) {}
 
         reference operator[](size_type indx) {
-            if (indx + 1U > n_) {
-                throw std::out_of_range("Index > n - 1");
+            if (indx >= n_) {
+                throw std::out_of_range("Operator[]: index >= n");
             }
             return row_[indx];
         }
 
         const_reference operator[](size_type indx) const {
-            if (indx + 1U > n_) {
-                throw std::out_of_range("Index > n - 1");
+            if (indx >= n_) {
+                throw std::out_of_range("Operator[]: index >= n");
             }
             return row_[indx];
         }
@@ -411,8 +407,8 @@ class Matrix final
             row_(row), n_(n) {}
 
         const_reference operator[](size_type indx) const {
-            if (indx + 1U > n_) {
-                throw std::out_of_range("Index > n - 1");
+            if (indx >= n_) {
+                throw std::logic_error("Operator[]: index >= n");
             }
             return row_[indx];
         }
@@ -437,12 +433,6 @@ class Matrix final
     }
 
     void swapRows(size_type i, size_type j) {
-        if (i + 1U > m_) {
-            throw std::out_of_range("i > M - 1");
-        }
-        if (j + 1U > m_) {
-            throw std::out_of_range("j > M - 1");
-        }
         std::swap(rows_[i], rows_[j]);
     }
 
@@ -652,7 +642,7 @@ public:
 
     Matrix& operator+=(const Matrix& rhs) {
         if (m_ != rhs.m_ || n_ != rhs.n_) {
-            throw std::out_of_range("Sizes don't match");
+            throw std::logic_error("Operator +=: sizes don't match");
         }
         for (size_type i = 0; i < m_; ++i) {
             for (size_type j = 0; j < n_; ++j) {
@@ -664,7 +654,7 @@ public:
 
     Matrix& operator-=(const Matrix& rhs) {
         if (m_ != rhs.m_ || n_ != rhs.n_) {
-            throw std::out_of_range("Sizes don't match");
+            throw std::logic_error("Operator -=: sizes don't match");
         }
         for (size_type i = 0; i < m_; ++i) {
             for (size_type j = 0; j < n_; ++j) {
@@ -676,7 +666,7 @@ public:
 
     Matrix& operator*=(const Matrix& rhs) {
         if (n_ != rhs.m_) {
-            throw std::out_of_range("Sizes don't match to product");
+            throw std::logic_error("Operator *=: sizes don't match");
         }
         Matrix product{m_, rhs.n_};
         for (size_type i = 0; i < m_; ++i) {
