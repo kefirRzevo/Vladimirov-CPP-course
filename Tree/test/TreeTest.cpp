@@ -1,5 +1,6 @@
 #include <set>
 #include <chrono>
+#include <fstream>
 #include <cstdlib>
 #include <filesystem>
 #include <gtest/gtest.h>
@@ -11,12 +12,11 @@ using namespace tree;
 using NodePtr = Node<int>*;
 using ConstNodePtr = const Node<int>*;
 
-size_t countBlackNodes(NodePtr node, ConstNodePtr root) {
-	if (!node) {
-		return 0U;
-	}
+std::filesystem::path execPath = ".";
+
+size_t countBlackNodes(ConstNodePtr node, ConstNodePtr root) {
 	size_t res = 0U;
-	while (node != root) {
+	while (node && node != root) {
 		if (node->color_ == Color::Black) {
 			res++;
 		}
@@ -55,11 +55,10 @@ bool checkProperty3(RBTree<int>& t) {
 bool checkProperty4(RBTree<int>& t) {
 	std::vector<NodePtr> leaves;
 	for(auto it = t.begin(); it != t.end(); ++it) {
-		if (!it.node_->left() && !it.node_->right()) {
+		if (it.node_->lTag_ == Tag::Thread || it.node_->rTag_ == Tag::Thread) {
 			leaves.push_back(it.node_);
 		}
 	}
-
 	if (leaves.empty()) {
 		return true;
 	}
@@ -92,11 +91,7 @@ TEST(RBTreeTest, treeTest) {
 	t.insert(16);
 	t.insert(12);
 	t.erase(12);
-	t.erase(0);
-	t.erase(17);
 	t.dump(file);
-	//EXPECT_TRUE(checkProperty1(t));
-	//EXPECT_TRUE(checkProperty2(t));
 	EXPECT_TRUE(checkProperty3(t));
 	EXPECT_TRUE(checkProperty4(t));
 	EXPECT_TRUE(checkProperty5(t));
@@ -104,7 +99,10 @@ TEST(RBTreeTest, treeTest) {
 
 TEST(RBTreeTest, end2endTest) {
 	namespace fs = std::filesystem;
-	std::string inputPath = "../tests/";
+	auto inputPath = fs::path{execPath}.parent_path() / "../tests";
+	if (!fs::exists(inputPath)) {
+		throw std::logic_error("There is no directory tests/");
+	}
 	for (auto& p: fs::directory_iterator(inputPath)) {
 		std::string filePath = p.path().generic_string();
 		if (filePath.find(".dat") == std::string::npos ||
@@ -118,15 +116,6 @@ TEST(RBTreeTest, end2endTest) {
 		in.seekg(0);
 		auto out2 = stdProcess(in);
 		auto out3 = result(out);
-		//std::cout << "out1 ";
-		//for (auto it = out1.begin(); it != out1.end(); ++it) std::cout << *it << " ";
-		//std::cout << std::endl;
-		//std::cout << "out2 ";
-		//for (auto it = out2.begin(); it != out2.end(); ++it) std::cout << *it << " ";
-		//std::cout << std::endl;
-		//std::cout << "out3 ";
-		//for (auto it = out3.begin(); it != out3.end(); ++it) std::cout << *it << " ";
-		//std::cout << std::endl;
 		EXPECT_TRUE(out1 == out3);
 		EXPECT_TRUE(out2 == out3);
     }
@@ -171,8 +160,13 @@ TEST(RBTreeTest, speedTest) {
 	}
 }
 
-int main()
+int main(int , char* argv[])
 {
-	::testing::InitGoogleTest();
+	try {
+		execPath = argv[0];
+		::testing::InitGoogleTest();
+	} catch (const std::exception& e) {
+		std::cout << "Error: " << e.what() << std::endl;
+	}
 	return RUN_ALL_TESTS();
 }

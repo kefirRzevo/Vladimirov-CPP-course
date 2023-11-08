@@ -35,8 +35,6 @@ Class Tree. Functionality:
 
 namespace tree {
 
-//#define rep std::cout << "Line " << __LINE__ << std::endl;
-
 template<typename K>
 struct Node;
 template<typename K>
@@ -462,38 +460,41 @@ private:
     void transplant(NodePtr old_, NodePtr new_, bool changeThreads) {
         assert(old_);
         assert(new_);
+        NodePtr* place;
+        NodePtr newThread;
+        Tag* placeTag;
         if (old_ == root_) {
-            root_ = new_;
-            if (new_ != nil_) {
-                new_->parent_ = old_->parent_;
-            }
-            return;
+            place = &root_;
         } else if (old_->isLeftChild()) {
-            if (new_ != nil_) {
-                old_->parent_->left_ = new_;
-            } else {
-                assert(old_->lTag_ == Tag::Thread && old_->rTag_ == Tag::Thread);
-                old_->parent_->lTag_ = Tag::Thread;
-                return;
-            }
+            place = &old_->parent_->left_;
+            placeTag = &old_->parent_->lTag_;
+            newThread = old_->left_;
         } else if (old_->isRightChild()) {
-            if (new_ != nil_) {
-                old_->parent_->right_ = new_;
-            } else {
-                assert(old_->lTag_ == Tag::Thread && old_->rTag_ == Tag::Thread);
-                old_->parent_->rTag_ = Tag::Thread;
-                return;
-            }
+            place = &old_->parent_->right_;
+            placeTag = &old_->parent_->rTag_;
+            newThread = old_->right_;
         } else {
             throw std::out_of_range("Node is not left nor right child");
         }
-        new_->parent_ = old_->parent_;
-        if (changeThreads) {
-            new_->rightMost()->right_ = old_->right_;
+
+        if (new_ != nil_) {
+            *place = new_;
+            new_->parent_ = old_->parent_;
+            if (changeThreads) {
+                new_->rightMost()->right_ = old_->right_;
+            }
+        } else if (old_ == root_) {
+            root_ = nullptr;
+            nil_->parent_ = nullptr;
+        } else {
+            *placeTag = Tag::Thread;
+            if (changeThreads) {
+                *place = newThread;
+            }
         }
     }
 
-    NodePtr prefixErase(NodePtr node, NodePtr x, NodePtr y) {
+    NodePtr preFixErase(NodePtr node, NodePtr x, NodePtr y) {
         NodePtr xParent = nullptr;
         if (node->lTag_ == Tag::Child && node->rTag_ == Tag::Child) {
             if (y->parent_ == node) {
@@ -550,7 +551,7 @@ private:
             yColor = y->color_;
         }
         visit(y->key_, [] (NodePtr& node_) { node_->size_--; });
-        NodePtr xParent = prefixErase(node, x, y);
+        NodePtr xParent = preFixErase(node, x, y);
         deleteNode(node);
         if (yColor == Color::Black) {
             fixErase(x, xParent);

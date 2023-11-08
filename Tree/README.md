@@ -23,6 +23,10 @@ To build program:
 ```
 
 ## Tree test
+To generate tests:
+```
+        ./run.sh
+```
 To check my tests:
 ```
         ./tree_test
