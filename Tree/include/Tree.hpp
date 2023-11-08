@@ -208,13 +208,7 @@ struct Iterator final
         return me;
     }
 
-    bool operator==(const Iterator& rhs) const {
-        return node_ == rhs.node_;
-    }
-
-    bool operator!=(const Iterator& rhs) const {
-        return node_ != rhs.node_;
-    }
+    auto operator<=>(const Iterator& rhs) const = default;
 
     NodePtr node_ = nullptr;
 };
@@ -287,7 +281,8 @@ private:
 		} else if (x->isRightChild()) {
 			x->parent_->right_ = y;
 		} else {
-            throw std::out_of_range("X is not left nor right child");
+            assert(0);
+            throw std::out_of_range("Node is not left nor right child");
         }
 		y->left_ = x;
 		x->parent_ = y;
@@ -365,11 +360,11 @@ private:
     }
 
     void fixMinMaxInsert(NodePtr node) {
-        if (compare_(nil_->right_->key_, node->key_)) {
-            nil_->right_ = node;
-        }
-        if (compare_(node->key_, nil_->left_->key_)) {
+        if (compare_(nil_->left_->key_, node->key_)) {
             nil_->left_ = node;
+        }
+        if (compare_(node->key_, nil_->right_->key_)) {
+            nil_->right_ = node;
         }
     }
 
@@ -448,6 +443,7 @@ private:
                     rotateLeft(nodeGrandparent);
                 }
             } else {
+                assert(0);
                 throw std::out_of_range("Node is not left nor right child");
             }  
             if (node == root_) {
@@ -474,6 +470,7 @@ private:
             placeTag = &old_->parent_->rTag_;
             newThread = old_->right_;
         } else {
+            assert(0);
             throw std::out_of_range("Node is not left nor right child");
         }
 
@@ -523,10 +520,10 @@ private:
 
     void fixMinMaxErase(NodePtr node) {
         if (nil_->left_ == node) {
-            nil_->left_ = root_->leftMost();
+            nil_->left_ = root_ ? root_->rightMost() : nil_;
         }
         if (nil_->right_ == node) {
-            nil_->right_ = root_->rightMost();
+            nil_->right_ = root_ ? root_->leftMost() : nil_;
         }
     }
 
@@ -553,7 +550,7 @@ private:
         visit(y->key_, [] (NodePtr& node_) { node_->size_--; });
         NodePtr xParent = preFixErase(node, x, y);
         deleteNode(node);
-        if (yColor == Color::Black) {
+        if (root_ && yColor == Color::Black) {
             fixErase(x, xParent);
         }
         return next;
@@ -562,7 +559,7 @@ private:
     void fixErase(NodePtr node, NodePtr nodeParent) {
         assert(nodeParent);
         while (node != root_ && node->color_ == Color::Black) {
-            if (node == nodeParent->left_) {
+            if (nodeParent->lTag_ == Tag::Thread || node == nodeParent->left_) {
                 NodePtr w = nodeParent->right_; assert(w);
                 if (w->color_ == Color::Red) {
                     w->color_ = Color::Black;
@@ -590,7 +587,7 @@ private:
                     rotateLeft(nodeParent);
                     break;
                 }
-            } else if (node == nodeParent->right_) {
+            } else if (nodeParent->rTag_ == Tag::Thread || node == nodeParent->right_) {
                 NodePtr w = nodeParent->left_;
                 if (w->color_ == Color::Red) {
                     w->color_ = Color::Black;
@@ -619,6 +616,7 @@ private:
                     break;
                 }
             } else {
+                assert(0);
                 throw std::out_of_range("Node is not left nor right child");
             }
         }
@@ -680,13 +678,17 @@ private:
         return sum;
     }
 
+    bool equal(const RBTree& rhs) const {
+        return size() == rhs.size() && std::equal(begin(), end(), rhs.begin());
+    }
+
 public:
     RBTree() {
         nilInit();
     }
 
     iterator begin() const {
-        return iterator(nil_->left_);
+        return iterator(nil_->right_);
     }
 
     iterator end() const {
@@ -717,6 +719,14 @@ public:
         nodes_.clear();
         nilInit();
         root_ = nullptr;
+    }
+
+    bool operator==(const RBTree& rhs) const {
+        return equal(rhs);
+    }
+
+    bool operator!=(const RBTree& rhs) const {
+        return !equal(rhs);
     }
 
     iterator insert(const K& key) {

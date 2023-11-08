@@ -27,14 +27,14 @@ size_t countBlackNodes(ConstNodePtr node, ConstNodePtr root) {
 
 //https://en.wikipedia.org/wiki/Red–black_tree
 //1. Every node is either red or black.
-//bool checkProperty1(RBTree<int>& t) {
-//	return true; //Due to my solution, as it enum is inherited from bool
-//}
+bool checkProperty1(RBTree<int>&) {
+	return true; //Due to my solution, as it enum is inherited from bool
+}
 
 //2. All NIL nodes (figure 1) are considered black.
-//bool checkProperty2(RBTree<int>& t) {
-//	return true; //Due to my solution, as it is nullptr
-//}
+bool checkProperty2(RBTree<int>&) {
+	return true; //Due to my solution, as it is nullptr
+}
 
 //3. A red node does not have a red child.
 bool checkProperty3(RBTree<int>& t) {
@@ -76,6 +76,255 @@ bool checkProperty5(RBTree<int>& t) {
 	return t.root()->color_ == Color::Black;
 }
 
+TEST(RBTreeTest, treeTestClear) {
+    RBTree<int> t1;
+    for (int i = 1; i <= 10; ++i) {
+        t1.insert(i);
+	}
+    t1.erase(1);
+    t1.erase(7);
+    t1.erase(4);
+    t1.clear();
+
+    EXPECT_TRUE(t1.empty());
+    EXPECT_EQ(t1.begin().node_, t1.end().node_);
+}
+
+TEST(RBTreeTest, treeTestNotEqual) {
+    RBTree<int> t1;
+    for (int i = 1; i <= 10; ++i) {
+        t1.insert(i);
+	}
+    t1.erase(1);
+    t1.erase(7);
+    t1.erase(4);
+
+    RBTree<int> t2;
+    for (int i = 1; i <= 10; ++i) {
+        t2.insert(i);
+	}
+    t2.erase(1);
+    t2.erase(4);
+
+    RBTree<int> t3;
+    for (int i = 1; i <= 10; ++i) {
+        t3.insert(i);
+	}
+    t3.erase(1);
+    t3.erase(7);
+    t3.erase(5);
+
+    EXPECT_FALSE (t1 == t2);
+    EXPECT_FALSE (t1 == t3);
+    EXPECT_FALSE (t2 == t3);
+
+    EXPECT_TRUE (t1 != t2);
+    EXPECT_TRUE (t1 != t3);
+    EXPECT_TRUE (t2 != t3);
+}
+
+TEST(RBTreeTest, treeTestEqual) {
+    RBTree<int> t1;
+    for (int i = 1; i <= 10; ++i) {
+        t1.insert(i);
+	}
+    t1.erase(1);
+    t1.erase(7);
+    t1.erase(4);
+
+    RBTree<int> t2;
+    for (int i = 1; i <= 10; ++i) {
+        t2.insert(i);
+	}
+    t2.erase(7);
+    t2.erase(4);
+	t2.erase(1);
+
+    EXPECT_TRUE(t1 == t2);
+}
+
+TEST(RBTreeTest, treeTestBig5) {
+	RBTree<int> t1;
+    for (int i = 1; i <= 10; ++i) {
+        t1.insert(i);
+	}
+	RBTree<int> t2{t1};
+	EXPECT_TRUE(t1 == t2);
+
+	RBTree<int> t3;
+    for (int i = 10; i <= 20; ++i) {
+        t3.insert(i);
+	}
+	t3 = t1;
+	EXPECT_TRUE(t1 == t3);
+
+	RBTree<int> t4;
+    for (int i = 1; i <= 10; ++i) {
+        t4.insert(i);
+	}
+	RBTree<int> t5{std::move(t4)};
+	EXPECT_TRUE(t1 == t5);
+
+	RBTree<int> t6;
+    for (int i = 10; i <= 20; ++i) {
+        t6.insert(i);
+	}
+	RBTree<int> t7{t1};
+	t6 = std::move(t7);
+	EXPECT_TRUE(t1 == t6);
+}
+
+TEST(RBTreeTest, treeTestUpperBound)
+{
+    RBTree<int> t1;
+    for (int i = 1; i <= 10; ++i) {
+        t1.insert(i);
+	}
+    t1.erase(1);
+    t1.erase(7);
+    t1.erase(4);
+    EXPECT_EQ(t1.upper_bound(11), t1.end());
+    EXPECT_EQ(*t1.upper_bound(2), 3);
+    EXPECT_EQ(*t1.upper_bound(1), 2);
+    EXPECT_EQ(*t1.upper_bound(-1), 2);
+}
+
+TEST(RBTreeTest, treeTestLowerBound)
+{
+    RBTree<int> t1;
+    for (int i = 1; i <= 10; ++i) {
+        t1.insert(i);
+	}
+    t1.erase(1);
+    t1.erase(7);
+    t1.erase(4);
+    EXPECT_EQ(t1.lower_bound(11), t1.end());
+    EXPECT_EQ(*t1.lower_bound(2), 2);
+    EXPECT_EQ(*t1.lower_bound(1), 2);
+    EXPECT_EQ(*t1.lower_bound(-1), 2);
+}
+
+TEST(RBTreeTest, treeTestInsert)
+{
+    RBTree<int> t1;
+    t1.insert(1);
+    EXPECT_EQ(*(t1.begin()), 1);
+}
+
+TEST(RBTreeTest, treeTestEraseLastOne)
+{
+    RBTree<int> t1;
+    t1.insert(1);
+    t1.erase(1);
+
+    EXPECT_TRUE(t1.empty());
+    EXPECT_EQ(t1.begin(), t1.end());
+}
+
+TEST(RBTreeTest, treeTestEraseLeftmost)
+{
+    RBTree<int> t1;
+    for (int i = 6; i <= 10; ++i) {
+        t1.insert(i);
+    }
+
+    EXPECT_EQ(*t1.begin (), 6);
+    t1.erase(6);
+    EXPECT_EQ(*t1.begin(), 7);
+}
+
+TEST(RBTreeTest, treeTestEraseRightmost)
+{
+    RBTree<int> t1;
+    for (int i = 6; i <= 10; ++i) {
+        t1.insert(i);
+    }
+    auto last = std::prev(t1.end());
+    EXPECT_EQ(*last, 10);
+
+    t1.erase(*last);
+    last = std::prev(t1.end());
+    EXPECT_EQ (*last, 9);
+}
+
+TEST(RBTreeTest, treeTestEraseOneKey)
+{
+    RBTree<int> t1;
+    t1.insert(1);
+    t1.erase(1);
+
+    EXPECT_TRUE(t1.empty());
+}
+
+TEST(RBTreeTest, treeTestEraseTwoKey)
+{
+    RBTree<int> t1;
+    t1.insert(1);
+    t1.insert(2);
+
+    EXPECT_EQ(*t1.begin(), 1);
+    EXPECT_EQ(*t1.rbegin(), 2);
+    t1.erase (1);
+
+    EXPECT_EQ(*t1.begin(), 2);
+    EXPECT_EQ(*t1.rbegin(), 2);
+}
+
+TEST(RBTreeTest, treeTestEraseLastKey)
+{
+    RBTree<int> t1;
+    t1.insert(1);
+    t1.insert(2);
+
+    EXPECT_EQ(*t1.begin(), 1);
+    EXPECT_EQ(*t1.rbegin(), 2);
+    t1.erase(2);
+
+    EXPECT_EQ(*t1.begin(), 1);
+    EXPECT_EQ(*t1.rbegin(), 1);
+}
+
+TEST(RBTreeTest, treeTestDoubleInsert)
+{
+    RBTree<int> t1;
+    for (int i = 0; i < 10; ++i) {
+        t1.insert(i);
+    }
+
+    auto oldSize = t1.size();
+    for (int i = 0; i < 10; ++i) {
+        EXPECT_EQ(t1.size(), oldSize);
+    }
+}
+
+TEST(RBTreeTest, treeTestDeleteWrong)
+{
+    RBTree<int> t1;
+    for (int i = 0; i < 10; ++i) {
+        t1.insert(i);
+    }
+
+    auto oldSize = t1.size();
+    for (int i = -1; i < -10; --i) {
+        EXPECT_EQ(t1.size(), oldSize);
+    }
+}
+
+TEST(RBTreeTest, treeTestDeleteAll)
+{
+    RBTree<int> t1;
+    for (int i = 0; i < 10; ++i) {
+        t1.insert(i);
+    }
+
+    for (int i = 0; i < 10; ++i) {
+		EXPECT_NO_THROW(t1.erase(i));
+    }
+
+    EXPECT_EQ(t1.size(), 0);
+    EXPECT_TRUE(t1.empty());
+}
+
 TEST(RBTreeTest, treeTest) {
 	RBTree<int> t;
 	std::fstream file{"../mylog.dot", std::ios::out};
@@ -92,6 +341,8 @@ TEST(RBTreeTest, treeTest) {
 	t.insert(12);
 	t.erase(12);
 	t.dump(file);
+	EXPECT_TRUE(checkProperty1(t));
+	EXPECT_TRUE(checkProperty2(t));
 	EXPECT_TRUE(checkProperty3(t));
 	EXPECT_TRUE(checkProperty4(t));
 	EXPECT_TRUE(checkProperty5(t));
