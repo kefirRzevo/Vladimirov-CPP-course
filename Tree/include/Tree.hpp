@@ -23,6 +23,7 @@ Class Tree. Functionality:
     dump(std::fstream& file) - graphviz dump to the particular file
 */
 
+#include <tuple>
 #include <memory>
 #include <cassert>
 #include <fstream>
@@ -400,49 +401,52 @@ private:
         return node;
     }
 
+    NodePtr fixInsertParentIsLeft(NodePtr node) {
+        NodePtr y = node->parent_->parent_->right_;
+        if (node->parent_->parent_->rTag_ == Tag::Child && y->color_ == Color::Red) {
+            node->parent_->color_ = Color::Black;
+            y->color_ = Color::Black;
+            node->parent_->parent_->color_ = Color::Red;
+            node = node->parent_->parent_;
+        } else {
+            if (node->isRightChild()) {
+                node = node->parent_;
+                rotateLeft(node);
+            }
+            node->parent_->color_ = Color::Black;
+            node->parent_->parent_->color_ = Color::Red;
+            rotateRight(node->parent_->parent_);
+        }
+        return node;
+    }
+
+    NodePtr fixInsertParentIsRight(NodePtr node) {
+        NodePtr y = node->parent_->parent_->left_;
+        if (node->parent_->parent_->lTag_ == Tag::Child && y->color_ == Color::Red) {
+            node->parent_->color_ = Color::Black;
+            y->color_ = Color::Black;
+            node->parent_->parent_->color_ = Color::Red;
+            node = node->parent_->parent_;
+        } else {
+            if (node->isLeftChild()) {
+                node = node->parent_;
+                rotateRight(node);
+            }
+            node->parent_->color_ = Color::Black;
+            node->parent_->parent_->color_ = Color::Red;
+            rotateLeft(node->parent_->parent_);
+        }
+        return node;
+    }
+
     void fixInsert(NodePtr node) {
         assert(node);
         assert(node->parent_);
-        NodePtr nodeParent = node->parent_;
-        while (node != root_ && nodeParent->color_ == Color::Red) {
-            assert(nodeParent->parent_);
-            NodePtr nodeGrandparent = nodeParent->parent_;
-            if (nodeParent->isLeftChild()) {
-                NodePtr y = nodeGrandparent->right_;
-                if (nodeGrandparent->rTag_ == Tag::Child && y->color_ == Color::Red) {
-                    nodeParent->color_ = Color::Black;
-                    y->color_ = Color::Black;
-                    nodeGrandparent->color_ = Color::Red;
-                    node = nodeGrandparent;
-                    nodeParent = node->parent_;
-                } else {
-                    if (node->isRightChild()) {
-                        node = nodeParent;
-                        nodeParent = node->parent_;
-                        rotateLeft(node);
-                    }
-                    nodeParent->color_ = Color::Black;
-                    nodeGrandparent->color_ = Color::Red;
-                    rotateRight(nodeGrandparent);
-                }
-            } else if (nodeParent->isRightChild()) {
-                NodePtr y = nodeGrandparent->left_;
-                if (nodeGrandparent->lTag_ == Tag::Child && y->color_ == Color::Red) {
-                    nodeParent->color_ = Color::Black;
-                    y->color_ = Color::Black;
-                    nodeGrandparent->color_ = Color::Red;
-                    node = nodeGrandparent;
-                    nodeParent = node->parent_;
-                } else {
-                    if (node->isLeftChild()) {
-                        node = nodeParent;
-                        nodeParent = node->parent_;
-                        rotateRight(node);
-                    }
-                    nodeParent->color_ = Color::Black;
-                    nodeGrandparent->color_ = Color::Red;
-                    rotateLeft(nodeGrandparent);
-                }
+        while (node != root_ && node->parent_->color_ == Color::Red) {
+            if (node->parent_->isLeftChild()) {
+                node = fixInsertParentIsLeft(node);
+            } else if (node->parent_->isRightChild()) {
+                node = fixInsertParentIsRight(node);
             } else {
                 assert(0);
                 throw std::out_of_range("Node is not left nor right child");
@@ -557,65 +561,75 @@ private:
         return next;
     }
 
+    std::pair<NodePtr, NodePtr> fixEraseNodeIsLeft(NodePtr node, NodePtr nodeParent) {
+        NodePtr w = nodeParent->right_; assert(w);
+        if (w->color_ == Color::Red) {
+            w->color_ = Color::Black;
+            nodeParent->color_ = Color::Red;
+            rotateLeft(nodeParent);
+            w = nodeParent->right_; assert(w);
+        }
+        if ((w->lTag_ == Tag::Thread || w->left_->color_ == Color::Black) &&
+            (w->rTag_ == Tag::Thread || w->right_->color_ == Color::Black)) {
+            w->color_ = Color::Red;
+            node = nodeParent;
+            nodeParent = node->parent_;
+        } else {
+            if (w->rTag_ == Tag::Thread || w->right_->color_ == Color::Black) {
+                w->left_->color_ = Color::Black;
+                w->color_ = Color::Red;
+                rotateRight(w);
+                w = nodeParent->right_; assert(w);
+            }
+            w->color_ = nodeParent->color_;
+            nodeParent->color_ = Color::Black;
+            if (w->right()) {
+                w->right_->color_ = Color::Black;
+            }
+            rotateLeft(nodeParent);
+            node = root_;
+        }
+        return std::make_pair(node, nodeParent);
+    }
+
+    std::pair<NodePtr, NodePtr> fixEraseNodeIsRight(NodePtr node, NodePtr nodeParent) {
+        NodePtr w = nodeParent->left_;
+        if (w->color_ == Color::Red) {
+            w->color_ = Color::Black;
+            nodeParent->color_ = Color::Red;
+            rotateRight(nodeParent);
+            w = nodeParent->left_; assert(w);
+        }
+        if ((w->lTag_ == Tag::Thread || w->left_->color_ == Color::Black) &&
+            (w->rTag_ == Tag::Thread || w->right_->color_ == Color::Black)) {
+            w->color_ = Color::Red;
+            node = nodeParent;
+            nodeParent = nodeParent->parent_;
+        } else {
+            if (w->lTag_ == Tag::Thread || w->left_->color_ == Color::Black) {
+                w->right_->color_ = Color::Black;
+                w->color_ = Color::Red;
+                rotateLeft(w);
+                w = nodeParent->left_; assert(w);
+            }
+            w->color_ = nodeParent->color_;
+            nodeParent->color_ = Color::Black;
+            if (w->left()) {
+                w->left_->color_ = Color::Black;
+            }
+            rotateRight(nodeParent);
+            node = root_;
+        }
+        return std::make_pair(node, nodeParent);
+    }
+
     void fixErase(NodePtr node, NodePtr nodeParent) {
         assert(nodeParent);
         while (node != root_ && node->color_ == Color::Black) {
             if (nodeParent->lTag_ == Tag::Thread || node == nodeParent->left_) {
-                NodePtr w = nodeParent->right_; assert(w);
-                if (w->color_ == Color::Red) {
-                    w->color_ = Color::Black;
-                    nodeParent->color_ = Color::Red;
-                    rotateLeft(nodeParent);
-                    w = nodeParent->right_; assert(w);
-                }
-                if ((w->lTag_ == Tag::Thread || w->left_->color_ == Color::Black) &&
-                    (w->rTag_ == Tag::Thread || w->right_->color_ == Color::Black)) {
-                    w->color_ = Color::Red;
-                    node = nodeParent;
-                    nodeParent = node->parent_;
-                } else {
-                    if (w->rTag_ == Tag::Thread || w->right_->color_ == Color::Black) {
-                        w->left_->color_ = Color::Black;
-                        w->color_ = Color::Red;
-                        rotateRight(w);
-                        w = nodeParent->right_; assert(w);
-                    }
-                    w->color_ = nodeParent->color_;
-                    nodeParent->color_ = Color::Black;
-                    if (w->right()) {
-                        w->right_->color_ = Color::Black;
-                    }
-                    rotateLeft(nodeParent);
-                    break;
-                }
+                std::tie(node, nodeParent) = fixEraseNodeIsLeft(node, nodeParent);
             } else if (nodeParent->rTag_ == Tag::Thread || node == nodeParent->right_) {
-                NodePtr w = nodeParent->left_;
-                if (w->color_ == Color::Red) {
-                    w->color_ = Color::Black;
-                    nodeParent->color_ = Color::Red;
-                    rotateRight(nodeParent);
-                    w = nodeParent->left_; assert(w);
-                }
-                if ((w->lTag_ == Tag::Thread || w->left_->color_ == Color::Black) &&
-                    (w->rTag_ == Tag::Thread || w->right_->color_ == Color::Black)) {
-                    w->color_ = Color::Red;
-                    node = nodeParent;
-                    nodeParent = nodeParent->parent_;
-                } else {
-                    if (w->lTag_ == Tag::Thread || w->left_->color_ == Color::Black) {
-                        w->right_->color_ = Color::Black;
-                        w->color_ = Color::Red;
-                        rotateLeft(w);
-                        w = nodeParent->left_; assert(w);
-                    }
-                    w->color_ = nodeParent->color_;
-                    nodeParent->color_ = Color::Black;
-                    if (w->left()) {
-                        w->left_->color_ = Color::Black;
-                    }
-                    rotateRight(nodeParent);
-                    break;
-                }
+                std::tie(node, nodeParent) = fixEraseNodeIsRight(node, nodeParent);
             } else {
                 assert(0);
                 throw std::out_of_range("Node is not left nor right child");

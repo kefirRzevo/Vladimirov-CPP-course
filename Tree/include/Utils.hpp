@@ -17,10 +17,10 @@ inline std::vector<int> myProcess(std::istream& in) {
     RBTree<int> tree;
     std::vector<int> output;
 
+    int key = 0;
     char cmd = 0;
     while (in >> cmd) {
         if (cmd == 'k') {
-            int key = 0;
             in >> key;
             tree.insert(key);
         } else if (cmd == 'q') {
@@ -47,10 +47,10 @@ inline std::vector<int> stdProcess(std::istream& in) {
     std::set<int> tree;
     std::vector<int> output;
 
+    int key = 0;
     char cmd = 0;
     while (in >> cmd) {
         if (cmd == 'k') {
-            int key = 0;
             in >> key;
             tree.insert(key);
         } else if (cmd == 'q') {
