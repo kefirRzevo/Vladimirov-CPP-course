@@ -230,8 +230,8 @@ public:
 private:
     struct keyHash
     {
-        std::size_t operator() (const Node<K>& node) const {
-            return std::hash<K>() (node.key_);
+        std::size_t operator()(const Node<K>& node) const {
+            return std::hash<K>()(node.key_);
         }
     };
 
@@ -268,24 +268,24 @@ private:
 
     void rotateLeft(NodePtr x) {
         assert(x);
-		NodePtr y = x->right_;
-		x->right_ = y->left_;
+        NodePtr y = x->right_;
+        x->right_ = y->left_;
         if (y->left()) {
             y->left_->parent_ = x;
         }
-		y->parent_ = x->parent_;
-		if (x == root_) {
-			root_ = y;
-		} else if (x->isLeftChild()) {
-			x->parent_->left_ = y;
-		} else if (x->isRightChild()) {
-			x->parent_->right_ = y;
-		} else {
+        y->parent_ = x->parent_;
+        if (x == root_) {
+            root_ = y;
+        } else if (x->isLeftChild()) {
+            x->parent_->left_ = y;
+        } else if (x->isRightChild()) {
+            x->parent_->right_ = y;
+        } else {
             assert(0);
             throw std::out_of_range("Node is not left nor right child");
         }
-		y->left_ = x;
-		x->parent_ = y;
+        y->left_ = x;
+        x->parent_ = y;
 
         if (y->lTag_ == Tag::Thread) {
             y->lTag_ = Tag::Child;
@@ -298,23 +298,23 @@ private:
 
     void rotateRight(NodePtr x) {
         assert(x);
-		NodePtr y = x->left_;
-		x->left_ = y->right_;
-		if (y->right()) {
-			y->right_->parent_ = x;
-		}
-		y->parent_ = x->parent_;
-		if (x == root_) {
-			root_ = y;
-		} else if (x->isRightChild()) {
-			x->parent_->right_ = y;
-		} else if (x->isLeftChild()) {
-			x->parent_->left_ = y;
-		} else {
+        NodePtr y = x->left_;
+        x->left_ = y->right_;
+        if (y->right()) {
+            y->right_->parent_ = x;
+        }
+        y->parent_ = x->parent_;
+        if (x == root_) {
+            root_ = y;
+        } else if (x->isRightChild()) {
+            x->parent_->right_ = y;
+        } else if (x->isLeftChild()) {
+            x->parent_->left_ = y;
+        } else {
             throw std::out_of_range("Node is not left nor right child");
         }
-		y->right_ = x;
-		x->parent_ = y;
+        y->right_ = x;
+        x->parent_ = y;
 
         if (y->rTag_ == Tag::Thread) {
             y->rTag_ = Tag::Child;
@@ -329,17 +329,17 @@ private:
     std::pair<bool, NodePtr> visit(const K& key, A action) {
         NodePtr prev = nil_;
         NodePtr curr = root_;
-		while (curr) {
+        while (curr) {
             prev = curr;
             action(curr);
-			if (compare_(curr->key_, key)) {
-				curr = curr->right();
-			} else if (compare_(key, curr->key_)) {
-				curr = curr->left();
-			} else {
+            if (compare_(curr->key_, key)) {
+                curr = curr->right();
+            } else if (compare_(key, curr->key_)) {
+                curr = curr->left();
+            } else {
                 return std::make_pair(true, curr);
             }
-		}
+        }
         return std::make_pair(false, prev);
     }
 
@@ -368,13 +368,13 @@ private:
         }
     }
 
-	NodePtr insertImpl(const K& key) {
+    NodePtr insertImpl(const K& key) {
         auto [found, y] = visit(key, [] (NodePtr&) {});
         if (found) {
             return y;
         }
 
-		NodePtr node = createNode(key);
+        NodePtr node = createNode(key);
         node->parent_ = y;
         if (y == nil_) {
             return insertFirstNode(node);
@@ -385,25 +385,26 @@ private:
             y->lTag_ = Tag::Child;
             node->left_ = y->left_;
             node->right_ = y;
-			y->left_ = node;
-		} else if (compare_(y->key_, node->key_)) {
+            y->left_ = node;
+        } else if (compare_(y->key_, node->key_)) {
             y->rTag_ = Tag::Child;
             node->right_ = y->right_;
             node->left_ = y;
-			y->right_ = node;
-		} else {
-            assert(0 && "Unreachable");
+            y->right_ = node;
+        } else {
+            assert(0);
+            throw ("Node was found in tree");
         }
         fixMinMaxInsert(node);
-		fixInsert(node);
+        fixInsert(node);
         return node;
-	}
+    }
 
-	void fixInsert(NodePtr node) {
+    void fixInsert(NodePtr node) {
         assert(node);
         assert(node->parent_);
         NodePtr nodeParent = node->parent_;
-		while (node != root_ && nodeParent->color_ == Color::Red) {
+        while (node != root_ && nodeParent->color_ == Color::Red) {
             assert(nodeParent->parent_);
             NodePtr nodeGrandparent = nodeParent->parent_;
             if (nodeParent->isLeftChild()) {
@@ -449,25 +450,25 @@ private:
             if (node == root_) {
                 break;
             }
-		}
-		root_->color_ = Color::Black;
-	}
+        }
+        root_->color_ = Color::Black;
+    }
 
     void transplant(NodePtr old_, NodePtr new_, bool changeThreads) {
         assert(old_);
         assert(new_);
-        NodePtr* place;
+        NodePtr* place = nullptr;
         NodePtr newThread;
-        Tag* placeTag;
+        Tag* placeTag = nullptr;
         if (old_ == root_) {
-            place = &root_;
+            place = std::addressof(root_);
         } else if (old_->isLeftChild()) {
-            place = &old_->parent_->left_;
-            placeTag = &old_->parent_->lTag_;
+            place = std::addressof(old_->parent_->left_);
+            placeTag = std::addressof(old_->parent_->lTag_);
             newThread = old_->left_;
         } else if (old_->isRightChild()) {
-            place = &old_->parent_->right_;
-            placeTag = &old_->parent_->rTag_;
+            place = std::addressof(old_->parent_->right_);
+            placeTag = std::addressof(old_->parent_->rTag_);
             newThread = old_->right_;
         } else {
             assert(0);
