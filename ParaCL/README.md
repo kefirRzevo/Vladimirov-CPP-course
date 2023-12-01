@@ -25,8 +25,8 @@ For example,
 ## Build
 To build program:
 ```
-        git clone https://github.com/kefirRzevo/Vladimirov-CPP-course.git
-        cd Vladimirov-CPP-course/ParaCL
+        git clone https://github.com/kefirRzevo/ParaCL.git
+        cd ParaCL
         mkdir build
         cd build
         cmake ..
