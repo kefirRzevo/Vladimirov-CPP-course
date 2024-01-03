@@ -5,7 +5,7 @@
 namespace paracl
 {
 
-class NodeCodegenerator final : public NodeVisitor
+class NodeCodegen final : public NodeVisitor
 {
 private:
 

@@ -36,9 +36,9 @@
 
     namespace paracl
     {
-    
+
     inline paracl::Parser::symbol_type yylex(paracl::Driver& driver) {
-        return driver.getLexer()->getNextToken();
+        return driver.getNextToken();
     }
 
     } // namespace paracl
@@ -140,66 +140,66 @@
 %%
 
     primary_expression
-        : IDENTIFIER                { $$ = driver.getAST()->createNode<VariableExpression>(@1, $1); }
-        | CONSTANT                  { $$ = driver.getAST()->createNode<ConstantExpression>(@1, $1); }
-        | QMARK                     { $$ = driver.getAST()->createNode<InputExpression>(@$); }
+        : IDENTIFIER                { $$ = driver.createNode<VariableExpression>(@1, $1); }
+        | CONSTANT                  { $$ = driver.createNode<ConstantExpression>(@1, $1); }
+        | QMARK                     { $$ = driver.createNode<InputExpression>(@$); }
         | LPAREN expression RPAREN  { $$ = $2; }
 
     postfix_expression
         : primary_expression        { $$ = $1; }
-        | postfix_expression INC_OP { $$ = driver.getAST()->createNode<UnaryExpression>(@$, UnaryOperation::UN_POSTFIX_INC, $1); }
-        | postfix_expression DEC_OP { $$ = driver.getAST()->createNode<UnaryExpression>(@$, UnaryOperation::UN_POSTFIX_DEC, $1); }
+        | postfix_expression INC_OP { $$ = driver.createNode<UnaryExpression>(@$, UnaryOperator::UN_POSTFIX_INC, $1); }
+        | postfix_expression DEC_OP { $$ = driver.createNode<UnaryExpression>(@$, UnaryOperator::UN_POSTFIX_DEC, $1); }
 
     unary_expression
         : postfix_expression        { $$ = $1; }
-        | INC_OP unary_expression   { $$ = driver.getAST()->createNode<UnaryExpression>(@$, UnaryOperation::UN_PREFIX_INC, $2); }
-        | DEC_OP unary_expression   { $$ = driver.getAST()->createNode<UnaryExpression>(@$, UnaryOperation::UN_PREFIX_DEC, $2); }
-        | ADD_OP unary_expression   { $$ = driver.getAST()->createNode<UnaryExpression>(@$, UnaryOperation::UN_ADD, $2); }
-        | SUB_OP unary_expression   { $$ = driver.getAST()->createNode<UnaryExpression>(@$, UnaryOperation::UN_SUB, $2); }
-        | NOT_OP unary_expression   { $$ = driver.getAST()->createNode<UnaryExpression>(@$, UnaryOperation::UN_NOT, $2); }
+        | INC_OP unary_expression   { $$ = driver.createNode<UnaryExpression>(@$, UnaryOperator::UN_PREFIX_INC, $2); }
+        | DEC_OP unary_expression   { $$ = driver.createNode<UnaryExpression>(@$, UnaryOperator::UN_PREFIX_DEC, $2); }
+        | ADD_OP unary_expression   { $$ = driver.createNode<UnaryExpression>(@$, UnaryOperator::UN_ADD, $2); }
+        | SUB_OP unary_expression   { $$ = driver.createNode<UnaryExpression>(@$, UnaryOperator::UN_SUB, $2); }
+        | NOT_OP unary_expression   { $$ = driver.createNode<UnaryExpression>(@$, UnaryOperator::UN_NOT, $2); }
 
     multiplicative_expression
         : unary_expression                                  { $$ = $1; }
-        | multiplicative_expression MUL_OP unary_expression { $$ = driver.getAST()->createNode<BinaryExpression>(@$, BinaryOperation::BIN_MUL, $1, $3); }
-        | multiplicative_expression DIV_OP unary_expression { $$ = driver.getAST()->createNode<BinaryExpression>(@$, BinaryOperation::BIN_DIV, $1, $3); }
-        | multiplicative_expression MOD_OP unary_expression { $$ = driver.getAST()->createNode<BinaryExpression>(@$, BinaryOperation::BIN_MOD, $1, $3); }
+        | multiplicative_expression MUL_OP unary_expression { $$ = driver.createNode<BinaryExpression>(@$, BinaryOperator::BIN_MUL, $1, $3); }
+        | multiplicative_expression DIV_OP unary_expression { $$ = driver.createNode<BinaryExpression>(@$, BinaryOperator::BIN_DIV, $1, $3); }
+        | multiplicative_expression MOD_OP unary_expression { $$ = driver.createNode<BinaryExpression>(@$, BinaryOperator::BIN_MOD, $1, $3); }
 
     additive_expression
         : multiplicative_expression                             { $$ = $1; }
-        | additive_expression ADD_OP multiplicative_expression  { $$ = driver.getAST()->createNode<BinaryExpression>(@$, BinaryOperation::BIN_ADD, $1, $3); }
-        | additive_expression SUB_OP multiplicative_expression  { $$ = driver.getAST()->createNode<BinaryExpression>(@$, BinaryOperation::BIN_SUB, $1, $3); }
+        | additive_expression ADD_OP multiplicative_expression  { $$ = driver.createNode<BinaryExpression>(@$, BinaryOperator::BIN_ADD, $1, $3); }
+        | additive_expression SUB_OP multiplicative_expression  { $$ = driver.createNode<BinaryExpression>(@$, BinaryOperator::BIN_SUB, $1, $3); }
 
     relational_expression
         : additive_expression                               { $$ = $1; }
-        | relational_expression L_OP additive_expression    { $$ = driver.getAST()->createNode<BinaryExpression>(@$, BinaryOperation::BIN_L, $1, $3); }
-        | relational_expression G_OP additive_expression    { $$ = driver.getAST()->createNode<BinaryExpression>(@$, BinaryOperation::BIN_G, $1, $3); }
-        | relational_expression LE_OP additive_expression   { $$ = driver.getAST()->createNode<BinaryExpression>(@$, BinaryOperation::BIN_LE, $1, $3); }
-        | relational_expression GE_OP additive_expression   { $$ = driver.getAST()->createNode<BinaryExpression>(@$, BinaryOperation::BIN_GE, $1, $3); }
+        | relational_expression L_OP additive_expression    { $$ = driver.createNode<BinaryExpression>(@$, BinaryOperator::BIN_L, $1, $3); }
+        | relational_expression G_OP additive_expression    { $$ = driver.createNode<BinaryExpression>(@$, BinaryOperator::BIN_G, $1, $3); }
+        | relational_expression LE_OP additive_expression   { $$ = driver.createNode<BinaryExpression>(@$, BinaryOperator::BIN_LE, $1, $3); }
+        | relational_expression GE_OP additive_expression   { $$ = driver.createNode<BinaryExpression>(@$, BinaryOperator::BIN_GE, $1, $3); }
 
     equality_expression
         : relational_expression                             { $$ = $1; }
-        | equality_expression EQ_OP relational_expression   { $$ = driver.getAST()->createNode<BinaryExpression>(@$, BinaryOperation::BIN_EQ, $1, $3); }
-        | equality_expression NE_OP relational_expression   { $$ = driver.getAST()->createNode<BinaryExpression>(@$, BinaryOperation::BIN_NE, $1, $3); }
+        | equality_expression EQ_OP relational_expression   { $$ = driver.createNode<BinaryExpression>(@$, BinaryOperator::BIN_EQ, $1, $3); }
+        | equality_expression NE_OP relational_expression   { $$ = driver.createNode<BinaryExpression>(@$, BinaryOperator::BIN_NE, $1, $3); }
 
     logical_and_expression
         : equality_expression                               { $$ = $1; }
-        | logical_and_expression AND_OP equality_expression { $$ = driver.getAST()->createNode<BinaryExpression>(@$, BinaryOperation::BIN_AND, $1, $3); }
+        | logical_and_expression AND_OP equality_expression { $$ = driver.createNode<BinaryExpression>(@$, BinaryOperator::BIN_AND, $1, $3); }
 
     logical_or_expression
         : logical_and_expression                                { $$ = $1; }
-        | logical_or_expression OR_OP logical_and_expression    { $$ = driver.getAST()->createNode<BinaryExpression>(@$, BinaryOperation::BIN_OR, $1, $3); }
+        | logical_or_expression OR_OP logical_and_expression    { $$ = driver.createNode<BinaryExpression>(@$, BinaryOperator::BIN_OR, $1, $3); }
 
     conditional_expression
         : logical_or_expression                                                 { $$ = $1; }
-        | logical_or_expression QMARK expression COLON conditional_expression   { $$ = driver.getAST()->createNode<TernaryExpression>(@$, $1, $3, $5); }
+        | logical_or_expression QMARK expression COLON conditional_expression   { $$ = driver.createNode<TernaryExpression>(@$, $1, $3, $5); }
 
     assignment_expression
         : conditional_expression                        { $$ = $1; }
-        | unary_expression ASSIGN assignment_expression { $$ = driver.getAST()->createNode<BinaryExpression>(@$, BinaryOperation::BIN_ASSIGN, $1, $3); }
+        | unary_expression ASSIGN assignment_expression { $$ = driver.createNode<BinaryExpression>(@$, BinaryOperator::BIN_ASSIGN, $1, $3); }
 
     expression
         : assignment_expression                     { $$ = $1; }
-        | expression COMMA assignment_expression    { $$ = driver.getAST()->createNode<BinaryExpression>(@$, BinaryOperation::BIN_COMMA, $1, $3); }
+        | expression COMMA assignment_expression    { $$ = driver.createNode<BinaryExpression>(@$, BinaryOperator::BIN_COMMA, $1, $3); }
 
     //constant_expression
     //    : conditional_expression    { $$ = $1; }
@@ -210,36 +210,36 @@
         | selection_statement       { $$ = $1; }
         | iteration_statement       { $$ = $1; }
         | jump_statement            { $$ = $1; }
-        | PRINT expression SEMICOL  { $$ = driver.getAST()->createNode<OutputStatement>(@$, $2); }
+        | PRINT expression SEMICOL  { $$ = driver.createNode<OutputStatement>(@$, $2); }
 
     compound_statement
-        : LCURLY RCURLY                 { $$ = driver.getAST()->createNode<BlockStatement>(@$); }
+        : LCURLY RCURLY                 { $$ = driver.createNode<BlockStatement>(@$); }
         | LCURLY statement_list RCURLY  { $$ = $2; }
 
     statement_list
-        : statement                     { auto block = driver.getAST()->createNode<BlockStatement>(@$); block->statements_.push_back($1); $$ = block; }
+        : statement                     { auto block = driver.createNode<BlockStatement>(@$); block->statements_.push_back($1); $$ = block; }
         | statement_list statement      { $1->statements_.push_back($2); $$ = $1; }
         | statement_list error SEMICOL  { $$ = $1; yyerrok; }
 
     expression_statement
         : SEMICOL               { }
-        | expression SEMICOL    { $$ = driver.getAST()->createNode<ExpressionStatement>(@$, $1); }
+        | expression SEMICOL    { $$ = driver.createNode<ExpressionStatement>(@$, $1); }
 
     selection_statement
-        : IF LPAREN expression RPAREN statement %prec IFX       { $$ = driver.getAST()->createNode<IfStatement>(@$, $3, $5); }
-        | IF LPAREN expression RPAREN statement ELSE statement  { $$ = driver.getAST()->createNode<IfElseStatement>(@$, $3, $5, $7); }
+        : IF LPAREN expression RPAREN statement %prec IFX       { $$ = driver.createNode<IfStatement>(@$, $3, $5); }
+        | IF LPAREN expression RPAREN statement ELSE statement  { $$ = driver.createNode<IfElseStatement>(@$, $3, $5, $7); }
 
     iteration_statement
-        : WHILE LPAREN expression RPAREN statement  { $$ = driver.getAST()->createNode<WhileStatement>(@$, $3, $5); }
+        : WHILE LPAREN expression RPAREN statement  { $$ = driver.createNode<WhileStatement>(@$, $3, $5); }
 
     jump_statement
-        : CONTINUE SEMICOL  { $$ = driver.getAST()->createNode<ContinueStatement>(@$); }
-        | BREAK SEMICOL     { $$ = driver.getAST()->createNode<BreakStatement>(@$); }
+        : CONTINUE SEMICOL  { $$ = driver.createNode<ContinueStatement>(@$); }
+        | BREAK SEMICOL     { $$ = driver.createNode<BreakStatement>(@$); }
 
     translation_unit
-        : statement_list { $$ = $1; driver.getAST()->setRoot($1); }
+        : statement_list { $$ = $1; driver.setRoot($1); }
 %%
 
 void paracl::Parser::error(const location& loc, const std::string& msg) {
-    driver.getReporter()->reportError<Syntax>(loc, msg);
+    driver.reportError<Syntax>(loc, msg);
 }

@@ -1,6 +1,5 @@
 #pragma once
 
-#include <deque>
 #include <memory>
 #include <string>
 #include <vector>
@@ -10,12 +9,18 @@
 
 #include "location.hpp"
 #include "SymTable.hpp"
+#include "Operators.hpp"
 
 namespace paracl
 {
 
 class NodeVisitor;
 class SymTable;
+
+#define VISITABLE                               \
+void accept(NodeVisitor& visitor) override {    \
+    visitor.visit(this);                        \
+}
 
 struct INode
 {
@@ -24,10 +29,34 @@ struct INode
     INode(const location &loc) :
         loc_(loc) {}
 
-    virtual void accept(NodeVisitor& visitor);
+    virtual void accept(NodeVisitor& visitor) = 0;
 
     virtual ~INode() {}
 };
+
+struct Expression;
+struct UnaryExpression;
+struct BinaryExpression;
+struct TernaryExpression;
+struct ConstantExpression;
+struct VariableExpression;
+struct InputExpression;
+struct Statement;
+struct BlockStatement;
+struct ExpressionStatement;
+struct IfStatement;
+struct IfElseStatement;
+struct WhileStatement;
+struct OutputStatement;
+struct BreakStatement;
+struct ContinueStatement;
+
+} // namespace paracl
+
+#include "NodeVisitor.hpp"
+
+namespace paracl
+{
 
 struct Expression : public INode
 {
@@ -37,62 +66,31 @@ struct Expression : public INode
         INode(loc) {}
 };
 
-enum class UnaryOperation
-{
-    UN_SUB,
-    UN_ADD,
-    UN_NOT,
-
-    UN_PREFIX_INC,
-    UN_PREFIX_DEC,
-    UN_POSTFIX_INC,
-    UN_POSTFIX_DEC,
-};
-
 struct UnaryExpression : public Expression
 {
     using Expression::loc_;
 
-    UnaryOperation op_;
+    UnaryOperator op_;
     Expression* expr_ = nullptr;
 
-    UnaryExpression(const location& loc, UnaryOperation op, Expression* expr) :
+    UnaryExpression(const location& loc, UnaryOperator op, Expression* expr) :
         Expression(loc), op_(op), expr_(expr) {}
-};
 
-enum class BinaryOperation
-{
-    BIN_MUL,
-    BIN_DIV,
-    BIN_MOD,
-
-    BIN_ADD,
-    BIN_SUB,
-
-    BIN_L,
-    BIN_G,
-    BIN_LE,
-    BIN_GE,
-
-    BIN_EQ,
-    BIN_NE,
-    BIN_AND,
-    BIN_OR,
-
-    BIN_ASSIGN,
-    BIN_COMMA,
+    VISITABLE;
 };
 
 struct BinaryExpression : public Expression
 {
     using Expression::loc_;
 
-    BinaryOperation op_;
+    BinaryOperator op_;
     Expression* left_ = nullptr;
     Expression* right_ = nullptr;
 
-    BinaryExpression(const location& loc, BinaryOperation op, Expression* left, Expression* right) :
+    BinaryExpression(const location& loc, BinaryOperator op, Expression* left, Expression* right) :
         Expression(loc), op_(op), left_(left), right_(right) {}
+
+    VISITABLE;
 };
 
 struct TernaryExpression : public Expression
@@ -105,6 +103,8 @@ struct TernaryExpression : public Expression
 
     TernaryExpression(const location& loc, Expression* condition, Expression* onTrue, Expression* onFalse) :
         Expression(loc), condition_(condition), onTrue_(onTrue), onFalse_(onFalse) {}
+
+    VISITABLE;
 };
 
 struct ConstantExpression : public Expression
@@ -115,6 +115,8 @@ struct ConstantExpression : public Expression
 
     ConstantExpression(const location& loc, const int& value) :
         Expression(loc), value_(value) {}
+
+    VISITABLE;
 };
 
 struct VariableExpression : public Expression
@@ -125,6 +127,8 @@ struct VariableExpression : public Expression
 
     VariableExpression(const location& loc, const std::string& name) :
         Expression(loc), name_(name) {}
+
+    VISITABLE;
 };
 
 struct InputExpression : public Expression
@@ -133,6 +137,8 @@ struct InputExpression : public Expression
 
     InputExpression(const location& loc):
         Expression(loc) {}
+
+    VISITABLE;
 };
 
 struct Statement : public INode
@@ -148,10 +154,12 @@ struct BlockStatement : public Statement
     using Statement::loc_;
 
     SymTable table_;
-    std::deque<Statement* > statements_;
+    std::vector<Statement* > statements_;
 
     BlockStatement(const location& loc) :
         Statement(loc) {}
+
+    VISITABLE;
 };
 
 struct ExpressionStatement : public Statement
@@ -162,6 +170,8 @@ struct ExpressionStatement : public Statement
 
     ExpressionStatement(const location& loc, Expression* expr) :
         Statement(loc), expr_(expr) {}
+
+    VISITABLE;
 };
 
 struct IfStatement : public Statement
@@ -173,6 +183,8 @@ struct IfStatement : public Statement
 
     IfStatement(const location& loc, Expression* condition, Statement* trueBlock) :
         Statement(loc), condition_(condition), trueBlock_(trueBlock) {}
+
+    VISITABLE;
 };
 
 struct IfElseStatement : public IfStatement
@@ -185,6 +197,8 @@ struct IfElseStatement : public IfStatement
 
     IfElseStatement(const location& loc, Expression* condition, Statement* trueBlock, Statement* falseBlock) :
         IfStatement(loc, condition, trueBlock), falseBlock_(falseBlock) {}
+
+    VISITABLE;
 };
 
 struct WhileStatement : public Statement
@@ -196,6 +210,8 @@ struct WhileStatement : public Statement
 
     WhileStatement(const location& loc, Expression* condition, Statement* block) :
         Statement(loc), condition_(condition), block_(block) {}
+
+    VISITABLE;
 };
 
 struct OutputStatement : public Statement
@@ -206,6 +222,8 @@ struct OutputStatement : public Statement
 
     OutputStatement(const location& loc, Expression* expr) :
         Statement(loc), expr_(expr) {}
+
+    VISITABLE;
 };
 
 struct BreakStatement : public Statement
@@ -216,6 +234,8 @@ struct BreakStatement : public Statement
 
     BreakStatement(const location& loc) :
         Statement(loc) {}
+
+    VISITABLE;
 };
 
 struct ContinueStatement : public Statement
@@ -226,6 +246,8 @@ struct ContinueStatement : public Statement
 
     ContinueStatement(const location& loc) :
         Statement(loc) {}
+
+    VISITABLE;
 };
 
 } // namespace paracl

@@ -141,20 +141,16 @@ private:
     std::vector<std::unique_ptr<Error>> errors_;
 
 public:
-    ErrorReporter() {}
+    ErrorReporter() = default;
+
+    bool hasErrors() const {
+        return errors_.size();
+    }
 
     template<typename ErrorType, typename... ErrorArgs>
     void reportError(ErrorArgs&&... args) {
         auto uptr = std::make_unique<ErrorType>(std::forward<ErrorArgs>(args)...);
         errors_.push_back(std::move(uptr));
-    }
-
-    Error* lastError() {
-        return errors_.empty() ? nullptr : errors_.back().get();
-    }
-
-    bool hasErrors() const {
-        return errors_.size();
     }
 
     void reportAllErrors(std::ostream& os) const {

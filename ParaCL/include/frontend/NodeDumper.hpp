@@ -11,9 +11,6 @@ namespace paracl
 class NodeDumper final : public NodeVisitor
 {
 private:
-    using NodeVisitor::postOrderTraversal;
-    using NodeVisitor::visit;
-
     std::ostream& os_;
 
     void printLink(INode* parent, INode* child) {
@@ -24,64 +21,6 @@ private:
         os_ << "\tnode_" << node << "[fillcolor=" << color << ", label = \"" << node->loc_ << " | " << label << "\"];\n";
     }
 
-    std::string unOper(UnaryOperation op) {
-        switch (op) {
-        case UnaryOperation::UN_SUB:
-            return "-";
-        case UnaryOperation::UN_ADD:
-            return "+";
-        case UnaryOperation::UN_NOT:
-            return "!";
-        case UnaryOperation::UN_PREFIX_INC:
-            return "++^";
-        case UnaryOperation::UN_PREFIX_DEC:
-            return "--^";
-        case UnaryOperation::UN_POSTFIX_INC:
-            return "^++";
-        case UnaryOperation::UN_POSTFIX_DEC:
-            return "^--";
-        default:
-            return "Unknown";
-        }
-    }
-
-    std::string binOper(BinaryOperation op) {
-        switch (op) {
-        case BinaryOperation::BIN_MUL:
-            return "*";
-        case BinaryOperation::BIN_DIV:
-            return "/";
-        case BinaryOperation::BIN_MOD:
-            return "%";
-        case BinaryOperation::BIN_ADD:
-            return "+";
-        case BinaryOperation::BIN_SUB:
-            return "-";
-        case BinaryOperation::BIN_L:
-            return "\\<";
-        case BinaryOperation::BIN_G:
-            return "\\>";
-        case BinaryOperation::BIN_LE:
-            return "\\<=";
-        case BinaryOperation::BIN_GE:
-            return "\\>=";
-        case BinaryOperation::BIN_EQ:
-            return "==";
-        case BinaryOperation::BIN_NE:
-            return "!=";
-        case BinaryOperation::BIN_AND:
-            return "&&";
-        case BinaryOperation::BIN_OR:
-            return "||";
-        case BinaryOperation::BIN_ASSIGN:
-            return "=";
-        case BinaryOperation::BIN_COMMA:
-            return ",";
-        default:
-            return "Unknown";
-        }
-    }
-
 public:
     NodeDumper(std::ostream& os)
     : os_(os) {}
@@ -89,86 +28,106 @@ public:
     void dump(INode* root) {
         os_ << "digraph {\n";
         os_ << "\tnode[shape=record, style=filled, fontcolor=black];\n";
-        auto nodes = postOrderTraversal(root);
-        for (auto node: nodes) {
-            visit(node);
-        }
+        root->accept(*this);
         os_ << "}" << std::endl;
     }
 
-protected:
-    virtual void visit(UnaryExpression* node) {
-        printNode(node, "orange", unOper(node->op_));
+    void visit(UnaryExpression* node) override {
+        std::string res;
+        if (isPrefix(node->op_)) {
+            res = "^";
+        }
+        res += toString(node->op_);
+        if (isPostfix(node->op_)) {
+            res += "^";
+        }
+        printNode(node, "orange", res);
         printLink(node, node->expr_);
+        node->expr_->accept(*this);
     }
 
-    virtual void visit(BinaryExpression* node) {
-        printNode(node, "orange", binOper(node->op_));
+    void visit(BinaryExpression* node) override {
+        printNode(node, "orange", toString(node->op_));
         printLink(node, node->left_);
         printLink(node, node->right_);
+        node->left_->accept(*this);
+        node->right_->accept(*this);
     }
 
-    virtual void visit(TernaryExpression* node) {
+    void visit(TernaryExpression* node) override {
         printNode(node, "orange", "? :");
         printLink(node, node->condition_);
         printLink(node, node->onTrue_);
         printLink(node, node->onFalse_);
+        node->condition_->accept(*this);
+        node->onTrue_->accept(*this);
+        node->onFalse_->accept(*this);
     }
 
-    virtual void visit(ConstantExpression* node) {
+    void visit(ConstantExpression* node) override {
         printNode(node, "yellow", std::to_string(node->value_));
     }
 
-    virtual void visit(VariableExpression* node) {
+    void visit(VariableExpression* node) override {
         printNode(node, "pink", node->name_);
     }
 
-    virtual void visit(InputExpression* node) {
-        printNode(node, "orange", "Input");
+    void visit(InputExpression* node) override {
+        printNode(node, "orange", "input");
     }
 
-    virtual void visit(BlockStatement* node) {
+    void visit(BlockStatement* node) override {
         printNode(node, "green", "Statement Block");
-        for (auto& statement: node->statements_) {
+        for (auto statement: node->statements_) {
             printLink(node, statement);
+            statement->accept(*this);
         }
     }
 
-    virtual void visit(ExpressionStatement* node) {
+    void visit(ExpressionStatement* node) override {
         printNode(node, "green", "Expression Statement");
         printLink(node, node->expr_);
+        node->expr_->accept(*this);
     }
 
-    virtual void visit(IfStatement* node) {
+    void visit(IfStatement* node) override {
         printNode(node, "green", "if");
         printLink(node, node->condition_);
         printLink(node, node->trueBlock_);
+        node->condition_->accept(*this);
+        node->trueBlock_->accept(*this);
     }
 
-    virtual void visit(IfElseStatement* node) {
+    void visit(IfElseStatement* node) override {
         printNode(node, "green", "if else");
         printLink(node, node->condition_);
         printLink(node, node->trueBlock_);
         printLink(node, node->falseBlock_);
+        node->condition_->accept(*this);
+        node->trueBlock_->accept(*this);
+        node->falseBlock_->accept(*this);
     }
 
-    virtual void visit(WhileStatement* node) {
+    void visit(WhileStatement* node) override {
         printNode(node, "green", "while");
         printLink(node, node->condition_);
         printLink(node, node->block_);
+        node->condition_->accept(*this);
+        node->block_->accept(*this);
     }
 
-    virtual void visit(OutputStatement* node) {
-        printNode(node, "greenn", "Output");
+    void visit(OutputStatement* node) override {
+        printNode(node, "green", "output");
         printLink(node, node->expr_);
+        node->expr_->accept(*this);
     }
 
-    virtual void visit(BreakStatement* node) {
-        printNode(node, "green", "Break");
+    void visit(BreakStatement* node) override {
+        printNode(node, "green", "break");
     }
 
-    virtual void visit(ContinueStatement* node) {
-        printNode(node, "green", "Break");
+    void visit(ContinueStatement* node) override {
+        printNode(node, "green", "continue");
     }
 };
 

@@ -44,20 +44,56 @@ public:
         return std::addressof(filepath_);
     }
 
-    AST* getAST() {
-        return tree_.get();
+    template<typename NodeType, typename... NodeArgs>
+    NodeType* createNode(NodeArgs&&... args) {
+        return tree_->createNode<NodeType>(std::forward<NodeArgs>(args)...);
     }
 
-    Lexer* getLexer() {
-        return lexer_.get();
+    void setRoot(INode* root) {
+        tree_->setRoot(root);
     }
 
-    Parser* getParser() {
-        return parser_.get();
+    INode* getRoot() {
+        return tree_->getRoot();
     }
 
-    ErrorReporter* getReporter() {
-        return reporter_.get();
+    void clearAST() {
+        return tree_->clear();
+    }
+
+    void dumpAST(std::ostream& os) const {
+        tree_->dump(os);
+    }
+
+    void decodeAST(const std::string& filepath) const {
+        tree_->decode(filepath);
+    }
+
+    void semanticAnalyze() {
+        tree_->semanticAnalyze(*this);
+    }
+
+    Parser::symbol_type getNextToken();
+
+    void parse() {
+        parser_->parse();
+    }
+
+    bool hasErrors() const {
+        return reporter_->hasErrors();
+    }
+
+    template<typename ErrorType, typename... ErrorArgs>
+    void reportError(ErrorArgs&&... args) {
+        reporter_->reportError<ErrorType>(std::forward<ErrorArgs>(args)...);
+    }
+
+    void reportAllErrors(std::ostream& os) const {
+        reporter_->reportAllErrors(os);
+    }
+
+    void clearReporter() {
+        reporter_->clear();
     }
 };
 

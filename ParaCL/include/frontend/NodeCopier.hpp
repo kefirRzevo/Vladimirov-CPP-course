@@ -8,9 +8,6 @@ namespace paracl
 class NodeCopier final : public NodeVisitor
 {
 private:
-    using NodeVisitor::postOrderTraversal;
-    using NodeVisitor::visit;
-
     AST& tree_;
     std::vector<INode*> copied_;
 
@@ -19,15 +16,15 @@ public:
     : tree_(tree) {}
 
     INode* copy(INode* root) {
-        auto nodes = postOrderTraversal(root);
-        for (auto& node: nodes) {
-            visit(node);
-        }
-        return copied_.back();
+        root->accept(*this);
+        INode* copiedRoot = copied_.back();
+        copied_.pop_back();
+        assert(copied_.empty());
+        return copiedRoot;
     }
 
-protected:
     void visit(UnaryExpression* node) override {
+        node->expr_->accept(*this);
         Expression* expr = static_cast<Expression*>(copied_.back());
         copied_.pop_back();
         UnaryExpression* un = tree_.createNode<UnaryExpression>(node->loc_, node->op_, expr);
@@ -35,8 +32,10 @@ protected:
     }
 
     void visit(BinaryExpression* node) override {
+        node->right_->accept(*this);
         Expression* right = static_cast<Expression*>(copied_.back());
         copied_.pop_back();
+        node->left_->accept(*this);
         Expression* left = static_cast<Expression*>(copied_.back());
         copied_.pop_back();
         BinaryExpression* bin = tree_.createNode<BinaryExpression>(node->loc_, node->op_, left, right);
@@ -44,10 +43,13 @@ protected:
     }
 
     void visit(TernaryExpression* node) override {
+        node->onFalse_->accept(*this);
         Expression* onFalse = static_cast<Expression*>(copied_.back());
         copied_.pop_back();
+        node->onTrue_->accept(*this);
         Expression* onTrue = static_cast<Expression*>(copied_.back());
         copied_.pop_back();
+        node->condition_->accept(*this);
         Expression* condition = static_cast<Expression*>(copied_.back());
         copied_.pop_back();
         TernaryExpression* ter = tree_.createNode<TernaryExpression>(node->loc_, condition, onTrue, onFalse);
@@ -71,15 +73,17 @@ protected:
 
     void visit(BlockStatement* node) override {
         BlockStatement* block = tree_.createNode<BlockStatement>(node->loc_);
-        for (size_t i = 0; i < node->statements_.size(); ++i) {
+        for (auto childIt = node->statements_.rbegin(); childIt != node->statements_.rend(); ++childIt) {
+            (*childIt)->accept(*this);
             Statement* stat = static_cast<Statement*>(copied_.back());
             copied_.pop_back();
-            block->statements_.push_front(stat);
+            block->statements_.push_back(stat);
         }
         copied_.push_back(block);
     }
 
     void visit(ExpressionStatement* node) override {
+        node->expr_->accept(*this);
         Expression* expr = static_cast<Expression*>(copied_.back());
         copied_.pop_back();
         ExpressionStatement* exprStat = tree_.createNode<ExpressionStatement>(node->loc_, expr);
@@ -87,8 +91,10 @@ protected:
     }
 
     void visit(IfStatement* node) override {
+        node->trueBlock_->accept(*this);
         Statement* trueBlock = static_cast<Statement*>(copied_.back());
         copied_.pop_back();
+        node->condition_->accept(*this);
         Expression* condition = static_cast<Expression*>(copied_.back());
         copied_.pop_back();
         IfStatement* ifStat = tree_.createNode<IfStatement>(node->loc_, condition, trueBlock);
@@ -96,10 +102,13 @@ protected:
     }
 
     void visit(IfElseStatement* node) override {
+        node->falseBlock_->accept(*this);
         Statement* falseBlock = static_cast<Statement*>(copied_.back());
         copied_.pop_back();
+        node->trueBlock_->accept(*this);
         Statement* trueBlock = static_cast<Statement*>(copied_.back());
         copied_.pop_back();
+        node->condition_->accept(*this);
         Expression* condition = static_cast<Expression*>(copied_.back());
         copied_.pop_back();
         IfElseStatement* ifElseStat = tree_.createNode<IfElseStatement>(node->loc_, condition, trueBlock, falseBlock);
@@ -107,8 +116,10 @@ protected:
     }
 
     void visit(WhileStatement* node) override {
+        node->block_->accept(*this);
         Statement* block = static_cast<Statement*>(copied_.back());
         copied_.pop_back();
+        node->condition_->accept(*this);
         Expression* condition = static_cast<Expression*>(copied_.back());
         copied_.pop_back();
         WhileStatement* whileStat = tree_.createNode<WhileStatement>(node->loc_, condition, block);
@@ -116,6 +127,7 @@ protected:
     }
 
     void visit(OutputStatement* node) override {
+        node->expr_->accept(*this);
         Expression* expr = static_cast<Expression*>(copied_.back());
         copied_.pop_back();
         OutputStatement* out = tree_.createNode<OutputStatement>(node->loc_, expr);

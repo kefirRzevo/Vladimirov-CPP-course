@@ -26,49 +26,44 @@ public:
     NodeSemanticAnalyzer(Driver& driver)
     : driver_(driver) {}
 
-    void clear() {
-        scopes_.clear();
-    }
-
     void analyze(INode* root) {
-        visit(root);
+        root->accept(*this);
     }
 
-protected:
     void visit(UnaryExpression* node) override {
         switch(node->op_) {
-            case UnaryOperation::UN_PREFIX_INC:
-            case UnaryOperation::UN_PREFIX_DEC:
-            case UnaryOperation::UN_POSTFIX_INC:
-            case UnaryOperation::UN_POSTFIX_DEC:
+            case UnaryOperator::UN_PREFIX_INC:
+            case UnaryOperator::UN_PREFIX_DEC:
+            case UnaryOperator::UN_POSTFIX_INC:
+            case UnaryOperator::UN_POSTFIX_DEC:
                 if (typeid(*node->expr_) != typeid(VariableExpression)) {
-                    driver_.getReporter()->reportError<UnassignableExpression>(node->loc_);
+                    driver_.reportError<UnassignableExpression>(node->loc_);
                 }
                 break;
             default:
                 break;
         }
-        visit(node->expr_);
+        node->expr_->accept(*this);
     }
 
     void visit(BinaryExpression* node) override {
-        visit(node->right_);
-        if (node->op_ == BinaryOperation::BIN_ASSIGN) {
+        node->right_->accept(*this);
+        if (node->op_ == BinaryOperator::BIN_ASSIGN) {
             declareMode = true;
             if (typeid(*node->left_) != typeid(VariableExpression)) {
-                driver_.getReporter()->reportError<UnassignableExpression>(node->loc_);
+                driver_.reportError<UnassignableExpression>(node->loc_);
             }
-            visit(node->left_);
+            node->left_->accept(*this);
             declareMode = false;
         } else {
-            visit(node->left_);
+            node->left_->accept(*this);
         }
     }
 
     void visit(TernaryExpression* node) override {
-        visit(node->condition_);
-        visit(node->onTrue_);
-        visit(node->onFalse_);
+        node->condition_->accept(*this);
+        node->onTrue_->accept(*this);
+        node->onFalse_->accept(*this);
     }
 
     void visit(ConstantExpression* ) override {}
@@ -77,7 +72,7 @@ protected:
         if (declareMode) {
             scopes_.declare(node->name_, node);
         } else if (!scopes_.declared(node->name_)) {
-            driver_.getReporter()->reportError<UndeclaredIdentifier>(node->loc_, node->name_);
+            driver_.reportError<UndeclaredIdentifier>(node->loc_, node->name_);
         }
     }
 
@@ -86,40 +81,40 @@ protected:
     void visit(BlockStatement* node) override {
         scopes_.beginScope(std::addressof(node->table_));
         for (auto statement: node->statements_) {
-            visit(statement);
+            statement->accept(*this);
         }
         scopes_.endScope();
     }
 
     void visit(ExpressionStatement* node) override {
-        visit(node->expr_);
+        node->expr_->accept(*this);
     }
 
     void visit(IfStatement* node) override {
-        visit(node->condition_);
-        visit(node->trueBlock_);
+        node->condition_->accept(*this);
+        node->trueBlock_->accept(*this);
     }
 
     void visit(IfElseStatement* node) override {
-        visit(node->condition_);
-        visit(node->trueBlock_);
-        visit(node->falseBlock_);
+        node->condition_->accept(*this);
+        node->trueBlock_->accept(*this);
+        node->falseBlock_->accept(*this);
     }
 
     void visit(WhileStatement* node) override {
         whiles_.push_back(node);
-        visit(node->condition_);
-        visit(node->block_);
+        node->condition_->accept(*this);
+        node->block_->accept(*this);
         whiles_.pop_back();
     }
 
     void visit(OutputStatement* node) override {
-        visit(node->expr_);
+        node->expr_->accept(*this);
     }
 
     void visit(BreakStatement* node) override {
         if (whiles_.empty()) {
-            driver_.getReporter()->reportError<OutOfLoopStatement>(node->loc_, "break");
+            driver_.reportError<OutOfLoopStatement>(node->loc_, "break");
         } else {
             node->whileStat = static_cast<WhileStatement*>(whiles_.back());
         }
@@ -127,7 +122,7 @@ protected:
 
     void visit(ContinueStatement* node) override {
         if (whiles_.empty()) {
-            driver_.getReporter()->reportError<OutOfLoopStatement>(node->loc_, "continue");
+            driver_.reportError<OutOfLoopStatement>(node->loc_, "continue");
         } else {
             node->whileStat = static_cast<WhileStatement*>(whiles_.back());
         }

@@ -1,177 +1,89 @@
+#pragma once
+
 #include <iostream>
-#include <string>
 #include <unordered_map>
-#include <vector>
-#include <stack>
 
+#include "Constants.hpp"
+#include "Instructions.hpp"
 
-// ALLOC : ID VAL
-// JUMP : STR_NUM
-// PRINT : ID
-// LOAD : ID
-// ADD, SUB, MUL, DIV : ID_res, ID_op1, ID_op2
-// ASSIGN : ID, val/id
-
-namespace Virtual_Machine
+namespace paracl
 {
-    enum class Command
-    {
-        ALLOC,
-        JUMP,
-        ASSIGN,
-        PRINT,
-        ADD,
-        SUB,
-        MUL,
-        DIV
-    };
 
-    class Operand
-    {   
-        public:
-        virtual int get_val(const std::unordered_map<std::string, int> &variables) const = 0;
-        virtual std::string get_name() const = 0;
-        virtual ~Operand() { };
-    };
+class Image
+{
+private:
+    std::vector<std::unique_ptr<Instruction>> instrs_;
+    std::vector<std::unique_ptr<Const>> consts_;
 
-    class Const_operand : public Operand
-    {
-        int val;
-        public:
-        virtual int get_val(const std::unordered_map<std::string, int> &variables) const override { return val; };
-        ~Const_operand() { }
-    };
+    size_t curAddr_ = 0U;
 
-    class Variable_operand : public Operand
-    {
-        std::string var;
-        public:
-        virtual int get_val(const std::unordered_map<std::string, int> &variables) const override
-        {   //add check for end of map
-            return variables.find(var)->second;
-        };
-        virtual std::string get_name() const override { return var; };
+public:
+    Image() = default;
 
-        ~Variable_operand() { }
-    };
+    void readImage(std::istream& is) {
 
-    class Expression
-    {
-        public:
-        Command action;
-        std::vector<Operand> args;
-    };
+    }
 
-    class Stack_Frame final
-    {   
+    void writeImage(std::ostream& os) {
+
+    }
+
+    template<typename ConstType, typename... ConstArgs>
+    size_t addConst(ConstArgs&&... args) {
+        auto uptr = std::make_unique<ConstType>(std::forward<ConstArgs>(args)...);
+        auto ptr = uptr.get();
+        ptr->setAddress(curAddr_);
+        curAddr_ += ptr->getSize();
+        consts_.push_back(std::move(uptr));
+        return consts_.size() - 1U;
+    }
+
+    template<typename InstrType, typename... InstrArgs>
+    size_t addInstruction(InstrArgs&&... args) {
+        auto uptr = std::make_unique<InstrType>(std::forward<InstrArgs>(args)...);
+        auto ptr = uptr.get();
+        instrs_.push_back(std::move(uptr));
+        return instrs_.size() - 1U;
+    }
+
+    size_t curInstr() const {
+        return instrs_.size() - 1U;
+    }
+
+    size_t curConst() const {
+        return consts_.size() - 1U;
+    }
+
+    Const* getConst(size_t id) {
+        return consts_[id].get();
+    }
+};
+
+class VirtualMachine
+{
+private:
+    using value_type = int;
+    using byte = char;
+
+    static constexpr size_t stack_size = 65536;
+    static constexpr size_t num_registers = 2;
+
+    std::array<byte, stack_size> stack_;
+    std::array<value_type, num_registers> registers_;
+
+public:
+    VirtualMachine() = default;
+
+    void loadImage(Image& image) {
+
+    }
+
+    void execute() {
         
-        std::unordered_map<std::string, int> variables;
-        
-        // int push_stack_frame();
+    }
 
-        void jump(const std::vector<Operand> &operand)
-        {
-            
-        }
+    value_type& sp() { return registers_[0]; }
+    value_type& ip() { return registers_[1]; }
+};
 
-        void alloc(const std::vector<Operand> &operand)
-        {
-            std::string var = operand[0].get_name();    
-            int val = operand[1].get_val(variables);
-            variables[var] = val;
-        }
-
-        void print(const std::vector<Operand> &operand) const
-        {
-            int val = operand[0].get_val(variables);
-            std::cout << val << std::endl;
-        }
-        void add(const std::vector<Operand> &operand)
-        {
-            std::string var = operand[0].get_name();
-            int val1 = operand[1].get_val(variables);
-            int val2 = operand[2].get_val(variables);
-            variables[var] = val1 + val2;
-        }
-        void sub(const std::vector<Operand> &operand)
-        {
-            std::string var = operand[0].get_name();
-            int val1 = operand[1].get_val(variables);
-            int val2 = operand[2].get_val(variables);
-            variables[var] = val1 - val2;
-        }
-        void mul(const std::vector<Operand> &operand)
-        {
-            std::string var = operand[0].get_name();
-            int val1 = operand[1].get_val(variables);
-            int val2 = operand[2].get_val(variables);
-            variables[var] = val1 * val2;
-        }
-        void div(const std::vector<Operand> &operand)
-        {
-            std::string var = operand[0].get_name();
-            int val1 = operand[1].get_val(variables);
-            int val2 = operand[2].get_val(variables);
-            // if(val2 == 0)
-            // throw
-            variables[var] = val1 / val2;
-        }
-
-        void assign(const std::vector<Operand> &operand)
-        {
-            std::string var = operand[0].get_name();
-            int val = operand[1].get_val(variables);
-            variables[var] = val;
-        }
-
-        public:
-        Stack_Frame() { };
-
-        void execute(Expression & expr)
-        {
-            switch(expr.action)
-            {
-                case Command::ASSIGN:
-                    assign(expr.args);
-                    break;
-                case Command::ALLOC:
-                    alloc(expr.args);
-                    break;
-                case Command::PRINT:
-                    print(expr.args);
-                    break;
-                case Command::ADD:
-                    add(expr.args);
-                    break;
-                case Command::SUB:
-                    sub(expr.args);
-                    break;
-                case Command::MUL:
-                    mul(expr.args);
-                    break;
-                case Command::DIV:
-                    div(expr.args);
-                    break;
-                case Command::JUMP:
-                    jump(expr.args);
-            }
-        }
-    };
-
-    class Loader
-    {
-        std::vector<Expression> instructions;
-        void load_instructions_from_stream(std::istream & is)
-        {
-
-        }
-    };
-
-    class Executer
-    {
-        int stack_pointer = 0;
-
-        
-    };
-
-}
+} // namespace paracl

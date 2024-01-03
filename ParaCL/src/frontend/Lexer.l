@@ -30,7 +30,7 @@ comment_single  ([/][/].*)
 
 <comment_multiline><<EOF>>      {
   auto loc = updateLocation();
-  driver_.getReporter()->reportError<UnterminatedComment>(loc);
+  driver_.reportError<UnterminatedComment>(loc);
   return Parser::make_EOF(loc);
 }
 
@@ -81,7 +81,7 @@ comment_single  ([/][/].*)
 
 . {
   auto loc = updateLocation();
-  driver_.getReporter()->reportError<UnknownToken>(loc, yytext);
+  driver_.reportError<UnknownToken>(loc, yytext);
 }
 
 <<EOF>>         { return Parser::make_EOF(updateLocation()); }

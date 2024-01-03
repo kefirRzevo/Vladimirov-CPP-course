@@ -1,14 +1,14 @@
 #include "frontend/AST.hpp"
-#include "frontend/NodeVisitor.hpp"
 #include "frontend/NodeCopier.hpp"
 #include "frontend/NodeDumper.hpp"
-#include "frontend/NodeSemanticAnalyzer.hpp"
+#include "frontend/NodeDecoder.hpp"
+#include "frontend/NodeAnalyzer.hpp"
 
 namespace paracl
 {
 
-void INode::accept(NodeVisitor& visitor) {
-    visitor.visit(this);
+Parser::symbol_type Driver::getNextToken() {
+    return lexer_->getNextToken();
 }
 
 AST::AST(const AST& rhs) {
@@ -19,6 +19,11 @@ AST::AST(const AST& rhs) {
 void AST::dump(std::ostream& os) const {
     NodeDumper dumper{os};
     dumper.dump(root_);
+}
+
+void AST::decode(const std::string& filepath) const {
+    NodeDecoder dumper{filepath};
+    dumper.decode(root_);
 }
 
 void AST::semanticAnalyze(Driver& driver) {

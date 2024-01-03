@@ -2,7 +2,6 @@
 
 #include <memory>
 #include <string>
-#include <vector>
 #include <fstream>
 #include <utility>
 #include <iostream>
@@ -62,6 +61,8 @@ public:
     }
 
     void dump(std::ostream& os) const;
+
+    void decode(const std::string& filepath) const;
 
     void semanticAnalyze(Driver& driver);
 };
