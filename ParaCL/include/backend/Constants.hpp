@@ -4,6 +4,8 @@
 #include <memory>
 #include <iostream>
 
+#include "Utils.hpp"
+
 namespace paracl
 {
 
@@ -14,22 +16,26 @@ enum class Constant : char
     STR,
 };
 
-std::istream& operator<<(std::istream& is, Constant& val) {
-    return is >> (char&)val;
-}
+//inline std::istream& operator>>(std::istream& is, Constant& val) {
+//    return is >> (char&)val;
+//}
+
+//inline std::ostream& operator<<(std::ostream& os, const Constant& val) {
+//    return os << (char&)val;
+//}
 
 class Const
 {
 protected:
-    size_t address_ = 0U;
-    size_t size_ = 0U;
+    size_t address_;
+    size_t size_;
     Constant type_;
 
 public:
     Const(size_t size, Constant type) :
         size_(size), type_(type) {}
 
-    static std::unique_ptr<Const> create(Constant type);
+    //static std::unique_ptr<Const> create(Constant type);
 
     size_t getAddress() const {
         return address_;
@@ -47,7 +53,7 @@ public:
         address_ = address;
     }
 
-    virtual void read(std::istream& ) = 0;
+    //virtual void read(std::istream& ) = 0;
 
     virtual void write(std::ostream& ) const = 0;
 
@@ -65,7 +71,7 @@ private:
 
 public:
     ConstInt() :
-        Const(sizeof(Constant) + sizeof(int), Constant::INT) {}
+        Const(sizeof(int), Constant::INT) {}
 
     ConstInt(int val)
     : ConstInt{} {
@@ -80,12 +86,12 @@ public:
         val_ = val;
     }
 
-    void read(std::istream& is) override {
-        is >> val_;
-    }
+    //void read(std::istream& is) override {
+    //    is >> val_;
+    //}
 
     void write(std::ostream& os) const override {
-        os << toChar(Constant::INT) << val_;
+        utils::write(os, val_);
     }
 };
 
@@ -100,12 +106,10 @@ private:
 
 public:
     ConstStr() :
-        Const(sizeof(Constant) + sizeof(size_t), Constant::STR) {}
+        Const(sizeof(size_t), Constant::STR) {}
 
-    ConstStr(const std::string& val)
-    : ConstStr{} {
-        val_ = val;
-    }
+    ConstStr(const std::string& val) :
+        Const(sizeof(size_t) + val.size(), Constant::STR), val_(val) {}
 
     std::string getVal() const {
         return val_;
@@ -115,13 +119,14 @@ public:
         val_ = val;
     }
 
-    void read(std::istream& is) override {
-        is >> val_;
-        size_ = sizeof(Constant) + sizeof(size_t) + val_.size();
-    }
+    //void read(std::istream& is) override {
+    //    is >> val_;
+    //    size_ = sizeof(Constant) + sizeof(size_t) + val_.size();
+    //}
 
     void write(std::ostream& os) const override {
-        os << toChar(Constant::STR) << size_ << val_;
+        utils::write(os, size_);
+        os.write(val_.c_str(), val_.size());
     }
 };
 
@@ -136,7 +141,7 @@ private:
 
 public:
     ConstFloat() :
-        Const(sizeof(Constant) + sizeof(float), Constant::FLOAT) {}
+        Const(sizeof(float), Constant::FLOAT) {}
 
     ConstFloat(float val)
     : ConstFloat{} {
@@ -151,16 +156,16 @@ public:
         val_ = val;
     }
 
-    void read(std::istream& is) override {
-        is >> val_;
-    }
+    //void read(std::istream& is) override {
+    //    is >> val_;
+    //}
 
     void write(std::ostream& os) const override {
-        os << toChar(Constant::FLOAT) << val_;
+        utils::write(os, val_);
     }
 };
-
-std::unique_ptr<Const> Const::create(Constant type) {
+/*
+inline std::unique_ptr<Const> Const::create(Constant type) {
     switch(type) {
     case Constant::INT:
         return std::make_unique<ConstInt>();
@@ -172,5 +177,5 @@ std::unique_ptr<Const> Const::create(Constant type) {
         throw std::logic_error("Unknown type");
     }
 }
-
+*/
 } // namespace paracl
