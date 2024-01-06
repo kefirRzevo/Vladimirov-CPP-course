@@ -40,21 +40,26 @@ inline std::ostream& operator<<(std::ostream& os, const Opcode& val) {
 class Instruction
 {
 protected:
+    size_t size_;
     Opcode opcode_;
 
 public:
-    Instruction(Opcode opcode) :
-        opcode_(opcode) {}
+    Instruction(size_t size, Opcode opcode) :
+        size_(size), opcode_(opcode) {}
+
+    size_t getSize() const {
+        return size_;
+    }
 
     Opcode getOpcode() const {
         return opcode_;
     }
 
-    //static std::unique_ptr<Instruction> create(Opcode code);
+    static std::unique_ptr<Instruction> create(Opcode code);
 
     virtual void execute(VirtualMachine& machine) = 0;
 
-    //virtual void read(std::istream& is) = 0;
+    virtual void read(const char* buf) = 0;
 
     virtual void write(std::ostream& os) = 0;
 
@@ -68,11 +73,9 @@ protected:
 
 public:
     Nonargument(Opcode opcode) :
-        Instruction(opcode) {}
+        Instruction(sizeof(Opcode), opcode) {}
 
-    //void read(std::istream& is) override {
-    //    is.seekg(Instruction::size - sizeof(Opcode), std::ios::cur);
-    //}
+    void read(const char* ) override {}
 
     void write(std::ostream& os) override {
         utils::write(os, opcode_);
@@ -88,11 +91,11 @@ protected:
 
 public:
     Argument(Opcode opcode, const T& val) :
-        Instruction(opcode), val_(val) {}
+        Instruction(sizeof(Opcode) + sizeof(T), opcode), val_(val) {}
 
-    //void read(std::istream& is) override {
-    //    is >> val_;
-    //}
+    void read(const char* buf) override {
+        utils::read<T>(buf, val_);
+    }
 
     void write(std::ostream& os) override {
         utils::write(os, opcode_);
@@ -216,11 +219,11 @@ public:
 
     void execute(VirtualMachine& machine) override;
 };
-/*
+
 inline std::unique_ptr<Instruction> Instruction::create(Opcode code) {
     switch(code) {
-    case Opcode::ALLOC:
-        return std::make_unique<Alloc>();
+    //case Opcode::ALLOC:
+        //return std::make_unique<Alloc>();
     case Opcode::iPUSH_ADDR:
         return std::make_unique<iPushAddr>(0U);
     case Opcode::iPUSH_VAL:
@@ -237,6 +240,8 @@ inline std::unique_ptr<Instruction> Instruction::create(Opcode code) {
         return std::make_unique<iDiv>();
     case Opcode::iOUT:
         return std::make_unique<iOut>();
+    case Opcode::strOUT:
+        return std::make_unique<strOut>(0U);
     case Opcode::iIN:
         return std::make_unique<iIn>();
     case Opcode::HLT:
@@ -245,5 +250,5 @@ inline std::unique_ptr<Instruction> Instruction::create(Opcode code) {
         throw std::logic_error("Unknown opcode");
     }
 }
-*/
+
 } // namespace paracl

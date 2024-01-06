@@ -27,7 +27,6 @@ enum class Constant : char
 class Const
 {
 protected:
-    size_t address_;
     size_t size_;
     Constant type_;
 
@@ -37,10 +36,6 @@ public:
 
     //static std::unique_ptr<Const> create(Constant type);
 
-    size_t getAddress() const {
-        return address_;
-    }
-
     size_t getSize() const {
         return size_;
     }
@@ -49,13 +44,9 @@ public:
         return type_;
     }
 
-    void setAddress(size_t address) {
-        address_ = address;
-    }
+    virtual void read(std::istream& ) = 0;
 
-    //virtual void read(std::istream& ) = 0;
-
-    virtual void write(std::ostream& ) const = 0;
+    virtual void write(std::ostream& os) const = 0;
 
     virtual ~Const() = default;
 };
@@ -63,7 +54,6 @@ public:
 class ConstInt final : public Const
 {
 private:
-    using Const::address_;
     using Const::size_;
     using Const::type_;
 
@@ -78,17 +68,9 @@ public:
         val_ = val;
     }
 
-    int getVal() const {
-        return val_;
+    void read(std::istream& is) override {
+        utils::read(is, val_);
     }
-
-    void setVal(int val) {
-        val_ = val;
-    }
-
-    //void read(std::istream& is) override {
-    //    is >> val_;
-    //}
 
     void write(std::ostream& os) const override {
         utils::write(os, val_);
@@ -98,7 +80,6 @@ public:
 class ConstStr final : public Const
 {
 private:
-    using Const::address_;
     using Const::size_;
     using Const::type_;
 
@@ -111,18 +92,13 @@ public:
     ConstStr(const std::string& val) :
         Const(sizeof(size_t) + val.size(), Constant::STR), val_(val) {}
 
-    std::string getVal() const {
-        return val_;
+    void read(std::istream& is) override {
+        size_t size = 0U;
+        utils::read(is, size);
+        val_.reserve(size);
+        is.read(const_cast<char*>(val_.c_str()), size);
+        size_ = sizeof(size_t) + val_.size();
     }
-
-    void setVal(const std::string& val) {
-        val_ = val;
-    }
-
-    //void read(std::istream& is) override {
-    //    is >> val_;
-    //    size_ = sizeof(Constant) + sizeof(size_t) + val_.size();
-    //}
 
     void write(std::ostream& os) const override {
         utils::write(os, size_);
@@ -133,7 +109,6 @@ public:
 class ConstFloat final : public Const
 {
 private:
-    using Const::address_;
     using Const::size_;
     using Const::type_;
 
@@ -148,17 +123,10 @@ public:
         val_ = val;
     }
 
-    float getVal() const {
-        return val_;
+    void read(std::istream& is) override {
+        is >> val_;
+        utils::read(is, val_);
     }
-
-    void setVal(float val) {
-        val_ = val;
-    }
-
-    //void read(std::istream& is) override {
-    //    is >> val_;
-    //}
 
     void write(std::ostream& os) const override {
         utils::write(os, val_);

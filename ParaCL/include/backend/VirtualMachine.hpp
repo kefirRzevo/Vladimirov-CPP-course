@@ -2,6 +2,7 @@
 
 #include <sstream>
 #include <fstream>
+#include <utility>
 #include <iostream>
 #include <stdexcept>
 #include <algorithm>
@@ -18,34 +19,57 @@ class VirtualMachine;
 class Image
 {
 private:
-    std::vector<std::unique_ptr<Instruction>> instrs_;
-    std::vector<std::unique_ptr<Const>> consts_;
+    using addr_t = size_t;
+    using instr_value = std::pair<addr_t, std::unique_ptr<Instruction>>;
+    using const_value = std::pair<addr_t, std::unique_ptr<Const>>;
 
-    size_t maxAddr_;
-    size_t curAddr_;
+    std::vector<instr_value> instrs_;
+    std::vector<const_value> consts_;
+
+    addr_t begInstr_;
+    addr_t endInstr_;
+    addr_t begConst_;
+    addr_t endConst_;
 
 private:
-    std::vector<std::unique_ptr<Instruction>> getInstructions() && {
+    auto getInstructions() && {
         return std::move(instrs_);
     }
 
-    std::vector<std::unique_ptr<Const>> getConstants() && {
+    auto getConstants() && {
         return std::move(consts_);
     }
 
-    size_t getConstBeginAddr() && {
-        return curAddr_;
+    addr_t getInstrBegAddr() && {
+        return begInstr_;
+    }
+    
+    addr_t getInstrEndAddr() && {
+        return endInstr_;
     }
 
-    size_t getConstEndAddr() && {
-        return maxAddr_;
+    addr_t getConstBegAddr() && {
+        return begConst_;
+    }
+
+    addr_t getConstEndAddr() && {
+        return endConst_;
+    }
+
+    void clear() {
+        instrs_.clear();
+        consts_.clear();
+        begInstr_ = 0U;
+        endInstr_ = 0U;
+        begConst_ = 0U;
+        endConst_ = 0U;
     }
 
     friend class VirtualMachine;
 
 public:
-    Image(size_t size) :
-        maxAddr_(size), curAddr_(size) {}
+    Image(addr_t size) :
+        begInstr_(0U), endInstr_(0U),  begConst_(size), endConst_(size) {}
 /*
     void readImage(std::istream& is) {
         size_t numConstants = 0U, numInstrs = 0U;
@@ -66,7 +90,7 @@ public:
             instrs_.push_back(std::move(instr));
         }
     }
-*/
+
     void writeImage(std::ostream& os) {
         os << consts_.size();
         for (auto& const_: consts_) {
@@ -77,39 +101,52 @@ public:
             instr->write(os);
         }
     }
-
+*/
     template<typename ConstType, typename... ConstArgs>
     void addConst(ConstArgs&&... args) {
         auto uptr = std::make_unique<ConstType>(std::forward<ConstArgs>(args)...);
-        auto ptr = uptr.get();
-        if (ptr->getSize() > curAddr_) {
+        if (uptr->getSize() > endConst_) {
             throw std::logic_error("Too many constants");
         }
-        curAddr_ -= ptr->getSize();
-        ptr->setAddress(curAddr_);
-        consts_.push_back(std::move(uptr));
+        endConst_ -= uptr->getSize();
+        if (endConst_ < endInstr_) {
+            throw std::logic_error("Too many constants");
+        }
+        consts_.push_back(std::move(std::make_pair(endConst_, std::move(uptr))));
     }
 
     template<typename InstrType, typename... InstrArgs>
     void addInstruction(InstrArgs&&... args) {
         auto uptr = std::make_unique<InstrType>(std::forward<InstrArgs>(args)...);
-        instrs_.push_back(std::move(uptr));
+        endInstr_ += uptr->getSize();
+        if (endInstr_ > endConst_) {
+            throw std::logic_error("Too many instructions");
+        }
+        instrs_.push_back(std::move(std::make_pair(endInstr_, std::move(uptr))));
     }
 
-    size_t curInstr() const {
-        return instrs_.size() - 1U;
+    addr_t getInstrCurAddr() const {
+        return endInstr_;
     }
 
-    size_t curConst() const {
-        return consts_.size() - 1U;
+    addr_t getConstCurAddr() const {
+        return endConst_;
+    }
+
+    Instruction* getInstr(size_t id) {
+        return instrs_[id].second.get();
+    }
+
+    addr_t getInstrAddr(size_t id) {
+        return instrs_[id].first;
     }
 
     Const* getConst(size_t id) {
-        return consts_[id].get();
+        return consts_[id].second.get();
     }
 
-    Instruction* getInstruction(size_t id) {
-        return instrs_[id].get();
+    addr_t getConstAddr(size_t id) {
+        return consts_[id].first;
     }
 };
 
@@ -117,39 +154,55 @@ class VirtualMachine
 {
 private:
     using value_type = size_t;
-    using byte = char;
+    using byte_type = char;
 
-    std::vector<std::unique_ptr<Instruction>> instrs_;
-    std::vector<byte> stack_;
+    std::vector<byte_type> stack_;
     std::vector<value_type> registers_{2U};
 
+    size_t instrBeg_ = 0U;
+    size_t instrEnd_ = 0U;
     size_t constEnd_ = 0U;
-    size_t constBegin_ = 0U;
+    size_t constBeg_ = 0U;
     bool halted = false;
 
 public:
     VirtualMachine() = default;
 
     void loadImage(Image&& image) {
-        instrs_ = std::move(image).getInstructions();
-        auto consts_ = std::move(image).getConstants();
+        auto instrs = std::move(image).getInstructions();
+        auto consts = std::move(image).getConstants();
+        instrBeg_ = std::move(image).getInstrBegAddr();
+        instrEnd_ = std::move(image).getInstrEndAddr();
+        constBeg_ = std::move(image).getConstBegAddr();
         constEnd_ = std::move(image).getConstEndAddr();
-        constBegin_ = std::move(image).getConstBeginAddr();
-        stack_.reserve(constEnd_);
-        std::ostringstream ss{};
-        for (auto it = consts_.rbegin(); it != consts_.rend(); ++it) {
-            (*it)->write(ss);
+        image.clear();
+        stack_.reserve(constBeg_);
+        std::ostringstream oss{};
+        for (auto it = instrs.begin(); it != instrs.end(); ++it) {
+            (*it).second->write(oss);
         }
-        std::string str = ss.str();
-        std::copy_n(str.c_str(), constEnd_ - constBegin_, std::addressof(stack_[constBegin_]));
+        byte_type clear = 0;
+        for (size_t i = 0U; i < constEnd_ - instrEnd_; ++i) {
+            utils::write(oss, clear);
+        }
+        for (auto it = consts.rbegin(); it != consts.rend(); ++it) {
+            (*it).second->write(oss);
+        }
+        std::string str = oss.str();
+        std::memcpy(std::addressof(stack_[instrBeg_]), str.c_str(), constBeg_ - instrBeg_);
     }
 
     void execute() {
-        ip() = 0U;
-        sp() = 0U;
+        ip() = instrBeg_;
+        sp() = instrEnd_;
+        Opcode opcode;
         while (!halted) {
-            instrs_[ip()++]->execute(*this);
-            if (ip() > instrs_.size()) {
+            utils::read(absoluteAddr(ip()), opcode);
+            auto instr = Instruction::create(opcode);
+            instr->read(absoluteAddr(ip() + sizeof(Opcode)));
+            instr->execute(*this);
+            ip() += instr->getSize();
+            if (ip() > instrEnd_) {
                 throw std::logic_error("Unavailable instruction");
             }
         }
@@ -161,7 +214,7 @@ public:
 
     template<typename T>
     void toStack(size_t indx, const T& val) {
-        if (indx + sizeof(T) > constEnd_) {
+        if (indx + sizeof(T) > constBeg_) {
             throw std::logic_error("Can't look to stack");
         }
         std::memcpy(std::addressof(stack_[indx]), std::addressof(val), sizeof(T));
@@ -169,7 +222,7 @@ public:
 
     template<typename T>
     T fromStack(size_t indx) {
-        if (indx + sizeof(T) > constEnd_) {
+        if (indx + sizeof(T) > constBeg_) {
             throw std::logic_error("Can't look from stack");
         }
         T val{0};
@@ -177,8 +230,8 @@ public:
         return val;
     }
 
-    byte* absoluteAddr(size_t addr) {
-        return reinterpret_cast<byte*>(std::addressof(stack_[addr]));
+    byte_type* absoluteAddr(size_t addr) {
+        return reinterpret_cast<byte_type*>(std::addressof(stack_[addr]));
     }
 
     template<typename T>
