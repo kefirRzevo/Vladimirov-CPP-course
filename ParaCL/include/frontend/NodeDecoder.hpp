@@ -18,7 +18,9 @@ public:
     : filepath_(filepath), os_{filepath} {}
 
     void decode(INode* root) {
-        root->accept(*this);
+        if (root) {
+            root->accept(*this);
+        }
         os_.flush();
         std::string cmd = "clang-format -i " + filepath_;
         std::system(cmd.c_str());

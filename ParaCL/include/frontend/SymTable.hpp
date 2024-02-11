@@ -10,72 +10,76 @@ namespace paracl
 
 struct VariableExpression;
 
-class SymTable final
+struct StringHash
+{
+    std::size_t operator()(const std::string_view& key) const {
+        return std::hash<std::string_view>()(key);
+    }
+};;
+
+struct StringEqual
+{
+    bool operator()(const std::string_view& lhs, const std::string_view& rhs) const {
+        return lhs == rhs;
+    }
+};
+
+class Scope final
 {
 private:
-    struct keyHash
-    {
-        std::size_t operator()(const std::string_view& key) const {
-            return std::hash<std::string_view>()(key);
-        }
-    };
+    using VarsMap = std::unordered_map<std::string_view, VariableExpression*, StringHash, StringEqual>;
 
-    struct keyEqual
-    {
-        bool operator()(const std::string_view& lhs, const std::string_view& rhs) const {
-            return lhs == rhs;
-        }
-    };
-
-    using Map = std::unordered_map<std::string_view, VariableExpression*, keyHash, keyEqual>;
-
-    Map table_;
+    VarsMap map_;
 
 public:
-    SymTable() = default;
+    Scope() = default;
 
     void declare(std::string_view name, VariableExpression* node) {
-        table_.emplace(name, node);
+        map_.emplace(name, node);
     }
 
     bool declared(std::string_view name) const {
-        return table_.count(name);
+        return map_.count(name);
     }
 
-    std::optional<VariableExpression*> lookupVariable(std::string_view name) const {
-        auto found = table_.find(name);
-        if (found == table_.end()) {
+    std::optional<VariableExpression*> lookupVar(std::string_view name) const {
+        auto found = map_.find(name);
+        if (found == map_.end()) {
             return std::nullopt;
         }
         return found->second;
     }
 
     auto begin() const {
-        return table_.begin();
+        return map_.begin();
     }
 
     auto end() const {
-        return table_.end();
+        return map_.end();
     }
 
     size_t size() const {
-        return table_.size();
+        return map_.size();
     }
 
     void clear() {
-        table_.clear();
+        map_.clear();
     }
 };
 
-class ScopeChecker final
+class ScopeStack final
 {
 private:
-    std::vector<SymTable*> scopes_;
+    std::vector<Scope> scopes_;
 
 public:
-    ScopeChecker() = default;
+    ScopeStack() = default;
 
-    void beginScope(SymTable* table) {
+    void beginScope() {
+        scopes_.emplace_back();
+    }
+
+    void beginScope(const Scope& table) {
         scopes_.push_back(table);
     }
 
@@ -83,18 +87,9 @@ public:
         scopes_.pop_back();
     }
 
-    std::optional<SymTable*> lookupScope(std::string_view name) const {
-        for (auto it = scopes_.rbegin(); it != scopes_.rend(); ++it) {
-            if ((*it)->declared(name)) {
-                return *it;
-            }
-        }
-        return std::nullopt;
-    }
-
     void declare(std::string_view name, VariableExpression* node) {
         if (!scopes_.empty()) {
-            scopes_.back()->declare(name, node);
+            scopes_.back().declare(name, node);
         }
     }
 
@@ -102,9 +97,18 @@ public:
         return lookupScope(name) != std::nullopt;
     }
 
-    std::optional<VariableExpression*> lookupVariable(std::string_view name) const {
+    std::optional<Scope> lookupScope(std::string_view name) const {
         for (auto it = scopes_.rbegin(); it != scopes_.rend(); ++it) {
-            auto found = (*it)->lookupVariable(name);
+            if ((*it).declared(name)) {
+                return *it;
+            }
+        }
+        return std::nullopt;
+    }
+
+    std::optional<VariableExpression*> lookupVar(std::string_view name) const {
+        for (auto it = scopes_.rbegin(); it != scopes_.rend(); ++it) {
+            auto found = (*it).lookupVar(name);
             if (found) {
                 return found;
             }
@@ -126,6 +130,85 @@ public:
 
     void clear() {
         scopes_.clear();
+    }
+};
+
+class AddrBlock
+{
+private:
+    using addr_t = size_t;
+    using AddrMap = std::unordered_map<std::string_view, addr_t, StringHash, StringEqual>;
+
+    addr_t addr_;
+    AddrMap map_;
+
+public:
+    AddrBlock(addr_t addrBeg) :
+        addr_(addrBeg) {}
+
+    void pushVar(std::string_view name) {
+        map_.emplace(name, addr_);
+        addr_ += sizeof(int);
+    }
+
+    std::optional<addr_t> lookupAddr(std::string_view name) const {
+        auto found = map_.find(name);
+        if (found == map_.end()) {
+            return std::nullopt;
+        }
+        return found->second;
+    }
+
+    addr_t getAddr() const {
+        return addr_;
+    }
+};
+
+class AddrBlockStack final
+{
+private:
+    using addr_t = size_t;
+
+    std::vector<AddrBlock> blocks_;
+
+public:
+    AddrBlockStack() = default;
+
+    void beginScope() {
+        blocks_.emplace_back(getAddr());
+    }
+
+    void beginScope(const Scope& scope) {
+        blocks_.emplace_back(getAddr());
+        auto& back = blocks_.back();
+        for (const auto& var: scope) {
+            back.pushVar(var.first);
+        }
+    }
+
+    void endScope() {
+        blocks_.pop_back();
+    }
+
+    void pushVar(std::string_view name) {
+        if (!blocks_.empty()) {
+            auto& back = blocks_.back();
+            back.pushVar(name);
+        }
+    }
+
+    std::optional<addr_t> lookupVar(std::string_view name) const {
+        for (auto it = blocks_.rbegin(); it != blocks_.rend(); ++it) {
+            auto found = (*it).lookupAddr(name);
+            if (found) {
+                return found;
+            }
+        }
+        return std::nullopt;
+    }
+
+    addr_t getAddr() const {
+        return blocks_.empty() ? 0U : blocks_.back().getAddr();
     }
 };
 

@@ -15,7 +15,7 @@ namespace paracl
 {
 
 class NodeVisitor;
-class SymTable;
+class Scope;
 
 #define VISITABLE                               \
 void accept(NodeVisitor& visitor) override {    \
@@ -153,7 +153,7 @@ struct BlockStatement : public Statement
 {
     using Statement::loc_;
 
-    SymTable table_;
+    Scope table_;
     std::vector<Statement* > statements_;
 
     BlockStatement(const location& loc) :
@@ -230,7 +230,7 @@ struct BreakStatement : public Statement
 {
     using Statement::loc_;
 
-    WhileStatement* whileStat = nullptr;
+    WhileStatement* loop_ = nullptr;
 
     BreakStatement(const location& loc) :
         Statement(loc) {}
@@ -242,7 +242,7 @@ struct ContinueStatement : public Statement
 {
     using Statement::loc_;
 
-    WhileStatement* whileStat = nullptr;
+    WhileStatement* loop_ = nullptr;
 
     ContinueStatement(const location& loc) :
         Statement(loc) {}

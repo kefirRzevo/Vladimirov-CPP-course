@@ -6,13 +6,13 @@ using namespace paracl;
 
 int main() {
     try {
-        Driver drv{"../tests/ex1.cl"};
+        Driver drv{"../test/ex1.cl"};
         drv.parse();
+        drv.semanticAnalyze();
         if (drv.hasErrors()) {
             drv.reportAllErrors(std::cout);
         } else {
             std::cout << "Nice" << std::endl;
-            drv.semanticAnalyze();
             std::fstream dumpFile{"../res/dump_ex1.dot", std::ios::out};
             drv.dumpAST(dumpFile);
             drv.decodeAST("../res/decode_ex1.cl");

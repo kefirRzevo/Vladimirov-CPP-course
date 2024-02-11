@@ -16,13 +16,13 @@ enum class Constant : char
     STR,
 };
 
-//inline std::istream& operator>>(std::istream& is, Constant& val) {
-//    return is >> (char&)val;
-//}
+inline std::istream& operator>>(std::istream& is, Constant& val) {
+    return is >> (std::underlying_type_t<Constant>&)val;
+}
 
-//inline std::ostream& operator<<(std::ostream& os, const Constant& val) {
-//    return os << (char&)val;
-//}
+inline std::ostream& operator<<(std::ostream& os, const Constant& val) {
+    return os << (std::underlying_type_t<Constant>&)val;
+}
 
 class Const
 {
@@ -34,8 +34,6 @@ public:
     Const(size_t size, Constant type) :
         size_(size), type_(type) {}
 
-    //static std::unique_ptr<Const> create(Constant type);
-
     size_t getSize() const {
         return size_;
     }
@@ -44,9 +42,11 @@ public:
         return type_;
     }
 
-    virtual void read(std::istream& ) = 0;
+    virtual void read(const char* buf) = 0;
 
-    virtual void write(std::ostream& os) const = 0;
+    virtual void write(char* buf) const = 0;
+
+    virtual void disassemble(std::ostream& os) const = 0;
 
     virtual ~Const() = default;
 };
@@ -68,12 +68,16 @@ public:
         val_ = val;
     }
 
-    void read(std::istream& is) override {
-        utils::read(is, val_);
+    void read(const char* buf) override {
+        utils::read(buf, val_);
     }
 
-    void write(std::ostream& os) const override {
-        utils::write(os, val_);
+    void write(char* buf) const override {
+        utils::write(buf, val_);
+    }
+
+    void disassemble(std::ostream& os) const override {
+        os << "int " << val_;
     }
 };
 
@@ -92,17 +96,23 @@ public:
     ConstStr(const std::string& val) :
         Const(sizeof(size_t) + val.size(), Constant::STR), val_(val) {}
 
-    void read(std::istream& is) override {
+    void read(const char* buf) override {
         size_t size = 0U;
-        utils::read(is, size);
-        val_.reserve(size);
-        is.read(const_cast<char*>(val_.c_str()), size);
+        utils::read(buf, size);
+        val_.clear();
+        val_.append(buf + sizeof(size), size);
         size_ = sizeof(size_t) + val_.size();
     }
 
-    void write(std::ostream& os) const override {
-        utils::write(os, size_);
-        os.write(val_.c_str(), val_.size());
+    void write(char* buf) const override {
+        utils::write(buf, size_);
+        for (size_t i = 0; i < val_.size(); ++i) {
+            utils::write(buf + sizeof(size_t) + i, val_.at(i));
+        }
+    }
+
+    void disassemble(std::ostream& os) const override {
+        os << "string \"" << val_ << "\"";
     }
 };
 
@@ -123,27 +133,17 @@ public:
         val_ = val;
     }
 
-    void read(std::istream& is) override {
-        is >> val_;
-        utils::read(is, val_);
+    void read(const char* buf) override {
+        utils::read(buf, val_);
     }
 
-    void write(std::ostream& os) const override {
-        utils::write(os, val_);
+    void write(char* buf) const override {
+        utils::write(buf, val_);
+    }
+
+    void disassemble(std::ostream& os) const override {
+        os << "float " << val_;
     }
 };
-/*
-inline std::unique_ptr<Const> Const::create(Constant type) {
-    switch(type) {
-    case Constant::INT:
-        return std::make_unique<ConstInt>();
-    case Constant::STR:
-        return std::make_unique<ConstStr>();
-    case Constant::FLOAT:
-        return std::make_unique<ConstFloat>();
-    default:
-        throw std::logic_error("Unknown type");
-    }
-}
-*/
+
 } // namespace paracl

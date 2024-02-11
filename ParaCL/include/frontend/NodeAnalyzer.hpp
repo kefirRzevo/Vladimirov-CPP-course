@@ -18,8 +18,8 @@ private:
     using NodeVisitor::visit;
 
     Driver& driver_;
-    ScopeChecker scopes_;
-    std::vector<INode*> whiles_;
+    ScopeStack scopes_;
+    std::vector<INode*> loops_;
     bool declareMode = false;
 
 public:
@@ -27,7 +27,9 @@ public:
     : driver_(driver) {}
 
     void analyze(INode* root) {
-        root->accept(*this);
+        if (root) {
+            root->accept(*this);
+        }
     }
 
     void visit(UnaryExpression* node) override {
@@ -79,7 +81,7 @@ public:
     void visit(InputExpression* ) override {}
 
     void visit(BlockStatement* node) override {
-        scopes_.beginScope(std::addressof(node->table_));
+        scopes_.beginScope(node->table_);
         for (auto statement: node->statements_) {
             statement->accept(*this);
         }
@@ -91,40 +93,48 @@ public:
     }
 
     void visit(IfStatement* node) override {
+        scopes_.beginScope();
         node->condition_->accept(*this);
         node->trueBlock_->accept(*this);
+        scopes_.endScope();
     }
 
     void visit(IfElseStatement* node) override {
+        scopes_.beginScope();
         node->condition_->accept(*this);
         node->trueBlock_->accept(*this);
         node->falseBlock_->accept(*this);
+        scopes_.endScope();
     }
 
     void visit(WhileStatement* node) override {
-        whiles_.push_back(node);
+        scopes_.beginScope();
+        loops_.push_back(node);
         node->condition_->accept(*this);
         node->block_->accept(*this);
-        whiles_.pop_back();
+        loops_.pop_back();
+        scopes_.endScope();
     }
 
     void visit(OutputStatement* node) override {
+        scopes_.beginScope();
         node->expr_->accept(*this);
+        scopes_.endScope();
     }
 
     void visit(BreakStatement* node) override {
-        if (whiles_.empty()) {
+        if (loops_.empty()) {
             driver_.reportError<OutOfLoopStatement>(node->loc_, "break");
         } else {
-            node->whileStat = static_cast<WhileStatement*>(whiles_.back());
+            node->loop_ = static_cast<WhileStatement*>(loops_.back());
         }
     }
 
     void visit(ContinueStatement* node) override {
-        if (whiles_.empty()) {
+        if (loops_.empty()) {
             driver_.reportError<OutOfLoopStatement>(node->loc_, "continue");
         } else {
-            node->whileStat = static_cast<WhileStatement*>(whiles_.back());
+            node->loop_ = static_cast<WhileStatement*>(loops_.back());
         }
     }
 };

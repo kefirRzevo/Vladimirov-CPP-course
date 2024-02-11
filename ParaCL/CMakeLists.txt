@@ -2,7 +2,7 @@ cmake_minimum_required(VERSION 3.16)
 
 project(paracl)
 
-set(CMAKE_CXX_STANDARD 20)
+set(CMAKE_CXX_STANDARD 17)
 set(CMAKE_C_COMPILER gcc)
 set(CMAKE_CXX_COMPILER g++)
 
@@ -46,3 +46,15 @@ add_executable(
 target_compile_features(${INTERPETER} PRIVATE cxx_std_20)
 target_include_directories(${INTERPETER} PRIVATE includes ${CMAKE_CURRENT_BINARY_DIR})
 target_link_libraries(${INTERPETER} PRIVATE ${Boost_LIBRARIES} ${llvm_libs})
+
+#tests
+#enable_testing()
+#find_package(GTest REQUIRED)
+
+#set (TARGET vm_test)
+#set (TEST_SOURCES src/backend/Instructions.cpp test/backend/VMTest.cpp)
+#add_executable(${TARGET} ${TEST_SOURCES})
+#target_compile_features(${TARGET} PRIVATE cxx_std_20)
+#include_directories(${GTEST_INCLUDE_DIRS})
+#target_include_directories (${TARGET} PRIVATE includes include/)
+#target_link_libraries (${TARGET} ${GTEST_LIBRARIES})

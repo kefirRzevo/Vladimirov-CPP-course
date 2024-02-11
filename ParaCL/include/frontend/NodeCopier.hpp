@@ -16,6 +16,9 @@ public:
     : tree_(tree) {}
 
     INode* copy(INode* root) {
+        if (!root) {
+            return nullptr;
+        }
         root->accept(*this);
         INode* copiedRoot = copied_.back();
         copied_.pop_back();

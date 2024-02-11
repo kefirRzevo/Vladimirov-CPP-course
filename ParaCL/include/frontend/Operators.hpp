@@ -118,4 +118,25 @@ inline std::string toString(BinaryOperator op) {
     }
 }
 
+inline bool isArithmetic(BinaryOperator op) {
+    switch (op) {
+    case BinaryOperator::BIN_MUL:
+    case BinaryOperator::BIN_DIV:
+    case BinaryOperator::BIN_MOD:
+    case BinaryOperator::BIN_ADD:
+    case BinaryOperator::BIN_SUB:
+    case BinaryOperator::BIN_L:
+    case BinaryOperator::BIN_G:
+    case BinaryOperator::BIN_LE:
+    case BinaryOperator::BIN_GE:
+    case BinaryOperator::BIN_EQ:
+    case BinaryOperator::BIN_NE:
+    case BinaryOperator::BIN_AND:
+    case BinaryOperator::BIN_OR:
+        return true;
+    default:
+        return false;
+    }
+}
+
 } // namespace paracl

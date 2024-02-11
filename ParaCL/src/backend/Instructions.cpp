@@ -5,12 +5,12 @@ namespace paracl
 {
 
 //void Alloc::execute(VirtualMachine& ) {
-    //auto fir = machine.pop<size_t>();
-    //machine.push<size_t>(fir);
+//  auto fir = machine.pop<size_t>();
+//  machine.push<size_t>(fir);
 //}
 
 void iPushAddr::execute(VirtualMachine& machine) {
-    auto val = machine.fromStack<int>(val_);
+    auto val = machine.atMemory<int>(val_);
     machine.push<int>(val);
 }
 
@@ -23,16 +23,14 @@ void iPopAddr::execute(VirtualMachine& machine) {
     machine.toStack<int>(val_, val);
 }
 
-void iAdd::execute(VirtualMachine& machine) {
-    auto sec = machine.pop<int>();
-    auto fir = machine.pop<int>();
-    machine.push<int>(fir + sec);
+void iPopVal::execute(VirtualMachine& machine) {
+    machine.pop<int>();
 }
 
-void iSub::execute(VirtualMachine& machine) {
-    auto sec = machine.pop<int>();
-    auto fir = machine.pop<int>();
-    machine.push<int>(fir - sec);
+void iMov::execute(VirtualMachine& machine) {
+    auto topAddr = machine.sp() - sizeof(int);
+    auto val = machine.atMemory<int>(topAddr);
+    machine.toStack<int>(val_, val);
 }
 
 void iMul::execute(VirtualMachine& machine) {
@@ -47,21 +45,112 @@ void iDiv::execute(VirtualMachine& machine) {
     machine.push<int>(fir / sec);
 }
 
-void iOut::execute(VirtualMachine& machine) {
-    auto val = machine.pop<int>();
-    std::cout << val;
+void iMod::execute(VirtualMachine& machine) {
+    auto sec = machine.pop<int>();
+    auto fir = machine.pop<int>();
+    machine.push<int>(fir % sec);
 }
 
-void strOut::execute(VirtualMachine& machine) {
-    auto size = machine.fromStack<size_t>(val_);
-    std::string val{machine.absoluteAddr(val_), size};
-    std::cout << val;
+void iAdd::execute(VirtualMachine& machine) {
+    auto sec = machine.pop<int>();
+    auto fir = machine.pop<int>();
+    machine.push<int>(fir + sec);
+}
+
+void iSub::execute(VirtualMachine& machine) {
+    auto sec = machine.pop<int>();
+    auto fir = machine.pop<int>();
+    machine.push<int>(fir - sec);
+}
+
+void iCmpL::execute(VirtualMachine& machine) {
+    auto sec = machine.pop<int>();
+    auto fir = machine.pop<int>();
+    machine.push<int>(fir < sec);
+}
+
+void iCmpG::execute(VirtualMachine& machine) {
+    auto sec = machine.pop<int>();
+    auto fir = machine.pop<int>();
+    machine.push<int>(fir > sec);
+}
+
+void iCmpLE::execute(VirtualMachine& machine) {
+    auto sec = machine.pop<int>();
+    auto fir = machine.pop<int>();
+    machine.push<int>(fir <= sec);
+}
+
+void iCmpGE::execute(VirtualMachine& machine) {
+    auto sec = machine.pop<int>();
+    auto fir = machine.pop<int>();
+    machine.push<int>(fir >= sec);
+}
+
+void iCmpEQ::execute(VirtualMachine& machine) {
+    auto sec = machine.pop<int>();
+    auto fir = machine.pop<int>();
+    machine.push<int>(fir == sec);
+}
+
+void iCmpNE::execute(VirtualMachine& machine) {
+    auto sec = machine.pop<int>();
+    auto fir = machine.pop<int>();
+    machine.push<int>(fir != sec);
+}
+
+void iAnd::execute(VirtualMachine& machine) {
+    auto sec = machine.pop<int>();
+    auto fir = machine.pop<int>();
+    machine.push<int>(fir && sec);
+}
+
+void iOr::execute(VirtualMachine& machine) {
+    auto sec = machine.pop<int>();
+    auto fir = machine.pop<int>();
+    machine.push<int>(fir || sec);
+}
+
+void iNot::execute(VirtualMachine& machine) {
+    auto val = machine.pop<int>();
+    machine.push<int>(!val);
+}
+
+void iOut::execute(VirtualMachine& machine) {
+    auto val = machine.pop<int>();
+    std::cout << val << std::endl;
 }
 
 void iIn::execute(VirtualMachine& machine) {
     int val = 0;
     std::cin >> val;
     machine.push<int>(val);
+}
+
+void strOut::execute(VirtualMachine& machine) {
+    auto addr = machine.pop<size_t>();
+    auto size = machine.atMemory<size_t>(addr);
+    std::string res;
+    for (size_t i = 0U; i < size; ++i) {
+        char sym = machine.atMemory<char>(addr + sizeof(size_t) + i);
+        res.push_back(sym);
+    }
+    std::cout << res << std::endl;
+}
+
+void Alloca::execute(VirtualMachine& machine) {
+    machine.sp() += val_;
+}
+
+void Jmp::execute(VirtualMachine& machine) {
+    machine.ip() = val_;
+}
+
+void JmpTrue::execute(VirtualMachine& machine) {
+    auto val = machine.pop<int>();
+    if (val) {
+        machine.ip() = val_;
+    }
 }
 
 void Hlt::execute(VirtualMachine& machine) {

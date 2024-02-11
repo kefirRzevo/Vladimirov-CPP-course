@@ -28,7 +28,9 @@ public:
     void dump(INode* root) {
         os_ << "digraph {\n";
         os_ << "\tnode[shape=record, style=filled, fontcolor=black];\n";
-        root->accept(*this);
+        if (root) {
+            root->accept(*this);
+        }
         os_ << "}" << std::endl;
     }
 

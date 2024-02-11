@@ -15,26 +15,40 @@ class VirtualMachine;
 
 enum class Opcode : char
 {
-    //ALLOC,
     iPUSH_ADDR,
     iPUSH_VAL,
     iPOP_ADDR,
-    iADD,
-    iSUB,
+    iPOP_VAL,
+    iMOV,
     iMUL,
     iDIV,
+    iMOD,
+    iADD,
+    iSUB,
+    iCMP_L,
+    iCMP_G,
+    iCMP_LE,
+    iCMP_GE,
+    iCMP_EQ,
+    iCMP_NE,
+    iAND,
+    iOR,
+    iNOT,
     iOUT,
-    strOUT,
     iIN,
+    strOUT,
+    ALLOCA,
+    JMP,
+    JMP_TRUE,
     HLT,
 };
 
 inline std::istream& operator>>(std::istream& is, Opcode& val) {
-    return is >> (char&)val;
+    return is >> (std::underlying_type_t<Opcode>&)val;
 }
 
 inline std::ostream& operator<<(std::ostream& os, const Opcode& val) {
-    return os << (char&)val;
+    return os << (std::underlying_type_t<Opcode>&)val;
 }
 
 class Instruction
@@ -61,7 +75,9 @@ public:
 
     virtual void read(const char* buf) = 0;
 
-    virtual void write(std::ostream& os) = 0;
+    virtual void write(char* buf) const = 0;
+
+    virtual void disassemble(std::ostream& os) const = 0;
 
     virtual ~Instruction() = default;
 };
@@ -77,8 +93,8 @@ public:
 
     void read(const char* ) override {}
 
-    void write(std::ostream& os) override {
-        utils::write(os, opcode_);
+    void write(char* buf) const override {
+        utils::write(buf, opcode_);
     }
 };
 
@@ -94,34 +110,29 @@ public:
         Instruction(sizeof(Opcode) + sizeof(T), opcode), val_(val) {}
 
     void read(const char* buf) override {
-        utils::read<T>(buf, val_);
+        utils::read(buf, val_);
     }
 
-    void write(std::ostream& os) override {
-        utils::write(os, opcode_);
-        utils::write(os, val_);
+    void write(char* buf) const override {
+        utils::write(buf, opcode_);
+        utils::write(buf + sizeof(Opcode), val_);
     }
 };
-/*
-class Alloc final : public Nonargument
-{
-public:
-    Alloc() :
-        Nonargument(Opcode::ALLOC) {}
 
-    void execute(VirtualMachine& machine) override;
-};
-*/
 class iPushAddr final : public Argument<size_t>
 {
 private:
     using Argument::val_;
 
 public:
-    iPushAddr(size_t addr) :
+    iPushAddr(size_t addr = 0U) :
         Argument(Opcode::iPUSH_ADDR, addr) {} 
 
     void execute(VirtualMachine& machine) override;
+
+    void disassemble(std::ostream& os) const override {
+        os << "int_push [" << val_ << "]";
+    }
 };
 
 class iPushVal final : public Argument<int>
@@ -130,10 +141,14 @@ private:
     using Argument::val_;
 
 public:
-    iPushVal(int val) :
-        Argument(Opcode::iPUSH_VAL, val) {} 
+    iPushVal(int val = 0) :
+        Argument(Opcode::iPUSH_VAL, val) {}
 
     void execute(VirtualMachine& machine) override;
+
+    void disassemble(std::ostream& os) const override {
+        os << "int_push " << val_;
+    }
 };
 
 class iPopAddr final : public Argument<size_t>
@@ -142,28 +157,40 @@ private:
     using Argument::val_;
 
 public:
-    iPopAddr(size_t addr) :
+    iPopAddr(size_t addr = 0U) :
         Argument(Opcode::iPOP_ADDR, addr) {} 
 
     void execute(VirtualMachine& machine) override;
+
+    void disassemble(std::ostream& os) const override {
+        os << "int_pop [" << val_ << "]";
+    }
 };
 
-class iAdd final : public Nonargument
+class iPopVal final : public Nonargument
 {
 public:
-    iAdd() :
-        Nonargument(Opcode::iADD) {}
+    iPopVal() :
+        Nonargument(Opcode::iPOP_VAL) {} 
 
     void execute(VirtualMachine& machine) override;
+
+    void disassemble(std::ostream& os) const override {
+        os << "int_pop";
+    }
 };
 
-class iSub final : public Nonargument
+class iMov final : public Argument<size_t>
 {
 public:
-    iSub() :
-        Nonargument(Opcode::iSUB) {}
+    iMov(size_t addr = 0U) :
+        Argument(Opcode::iMOV, addr) {} 
 
     void execute(VirtualMachine& machine) override;
+
+    void disassemble(std::ostream& os) const override {
+        os << "int_mov [" << val_ << "]";
+    }
 };
 
 class iMul final : public Nonargument
@@ -173,6 +200,10 @@ public:
         Nonargument(Opcode::iMUL) {}
 
     void execute(VirtualMachine& machine) override;
+
+    void disassemble(std::ostream& os) const override {
+        os << "int_mul";
+    }
 };
 
 class iDiv final : public Nonargument
@@ -182,6 +213,166 @@ public:
         Nonargument(Opcode::iDIV) {}
 
     void execute(VirtualMachine& machine) override;
+
+    void disassemble(std::ostream& os) const override {
+        os << "int_div";
+    }
+};
+
+class iMod final : public Nonargument
+{
+public:
+    iMod() :
+        Nonargument(Opcode::iMOD) {}
+
+    void execute(VirtualMachine& machine) override;
+
+    void disassemble(std::ostream& os) const override {
+        os << "int_mod";
+    }
+};
+
+class iAdd final : public Nonargument
+{
+public:
+    iAdd() :
+        Nonargument(Opcode::iADD) {}
+
+    void execute(VirtualMachine& machine) override;
+
+    void disassemble(std::ostream& os) const override {
+        os << "int_add";
+    }
+};
+
+class iSub final : public Nonargument
+{
+public:
+    iSub() :
+        Nonargument(Opcode::iSUB) {}
+
+    void execute(VirtualMachine& machine) override;
+
+    void disassemble(std::ostream& os) const override {
+        os << "int_sub";
+    }
+};
+
+class iCmpL final : public Nonargument
+{
+public:
+    iCmpL() :
+        Nonargument(Opcode::iCMP_L) {}
+
+    void execute(VirtualMachine& machine) override;
+
+    void disassemble(std::ostream& os) const override {
+        os << "int_cmp_l";
+    }
+};
+
+class iCmpG final : public Nonargument
+{
+public:
+    iCmpG() :
+        Nonargument(Opcode::iCMP_G) {}
+
+    void execute(VirtualMachine& machine) override;
+
+    void disassemble(std::ostream& os) const override {
+        os << "int_cmp_g";
+    }
+};
+
+class iCmpLE final : public Nonargument
+{
+public:
+    iCmpLE() :
+        Nonargument(Opcode::iCMP_LE) {}
+
+    void execute(VirtualMachine& machine) override;
+
+    void disassemble(std::ostream& os) const override {
+        os << "int_cmp_le";
+    }
+};
+
+class iCmpGE final : public Nonargument
+{
+public:
+    iCmpGE() :
+        Nonargument(Opcode::iCMP_GE) {}
+
+    void execute(VirtualMachine& machine) override;
+
+    void disassemble(std::ostream& os) const override {
+        os << "int_cmp_ge";
+    }
+};
+
+class iCmpEQ final : public Nonargument
+{
+public:
+    iCmpEQ() :
+        Nonargument(Opcode::iCMP_EQ) {}
+
+    void execute(VirtualMachine& machine) override;
+
+    void disassemble(std::ostream& os) const override {
+        os << "int_cmp_eq";
+    }
+};
+
+class iCmpNE final : public Nonargument
+{
+public:
+    iCmpNE() :
+        Nonargument(Opcode::iCMP_NE) {}
+
+    void execute(VirtualMachine& machine) override;
+
+    void disassemble(std::ostream& os) const override {
+        os << "int_cmp_ne";
+    }
+};
+
+class iAnd final : public Nonargument
+{
+public:
+    iAnd() :
+        Nonargument(Opcode::iAND) {}
+
+    void execute(VirtualMachine& machine) override;
+
+    void disassemble(std::ostream& os) const override {
+        os << "int_and";
+    }
+};
+
+class iOr final : public Nonargument
+{
+public:
+    iOr() :
+        Nonargument(Opcode::iOR) {}
+
+    void execute(VirtualMachine& machine) override;
+
+    void disassemble(std::ostream& os) const override {
+        os << "int_or";
+    }
+};
+
+class iNot final : public Nonargument
+{
+public:
+    iNot() :
+        Nonargument(Opcode::iNOT) {}
+
+    void execute(VirtualMachine& machine) override;
+
+    void disassemble(std::ostream& os) const override {
+        os << "int_not";
+    }
 };
 
 class iOut final : public Nonargument
@@ -191,15 +382,10 @@ public:
         Nonargument(Opcode::iOUT) {}
 
     void execute(VirtualMachine& machine) override;
-};
 
-class strOut final : public Argument<size_t>
-{
-public:
-    strOut(size_t addr) :
-        Argument(Opcode::strOUT, addr) {}
-
-    void execute(VirtualMachine& machine) override;
+    void disassemble(std::ostream& os) const override {
+        os << "int_print";
+    }
 };
 
 class iIn final : public Nonargument
@@ -209,6 +395,70 @@ public:
         Nonargument(Opcode::iIN) {}
 
     void execute(VirtualMachine& machine) override;
+
+    void disassemble(std::ostream& os) const override {
+        os << "int_read";
+    }
+};
+
+class strOut final : public Nonargument
+{
+public:
+    strOut() :
+        Nonargument(Opcode::strOUT) {}
+
+    void execute(VirtualMachine& machine) override;
+
+    void disassemble(std::ostream& os) const override {
+        os << "string_print";
+    }
+};
+
+class Alloca final : public Argument<int>
+{
+public:
+    Alloca(int offset = 0) :
+        Argument(Opcode::ALLOCA, offset) {}
+
+    void execute(VirtualMachine& machine) override;
+
+    void disassemble(std::ostream& os) const override {
+        os << "alloca " << val_;
+    }
+};
+
+class Jmp final : public Argument<size_t>
+{
+public:
+    Jmp(size_t addr = 0U) :
+        Argument(Opcode::JMP, addr) {}
+
+    void setAddr(size_t addr) {
+        val_ = addr;
+    }
+
+    void execute(VirtualMachine& machine) override;
+
+    void disassemble(std::ostream& os) const override {
+        os << "jmp " << val_;
+    }
+};
+
+class JmpTrue final : public Argument<size_t>
+{
+public:
+    JmpTrue(size_t addr = 0U) :
+        Argument(Opcode::JMP_TRUE, addr) {}
+
+    void setAddr(size_t addr) {
+        val_ = addr;
+    }
+
+    void execute(VirtualMachine& machine) override;
+
+    void disassemble(std::ostream& os) const override {
+        os << "jmp_true " << val_;
+    }
 };
 
 class Hlt final : public Nonargument
@@ -218,18 +468,20 @@ public:
         Nonargument(Opcode::HLT) {}
 
     void execute(VirtualMachine& machine) override;
+
+    void disassemble(std::ostream& os) const override {
+        os << "hlt";
+    }
 };
 
 inline std::unique_ptr<Instruction> Instruction::create(Opcode code) {
     switch(code) {
-    //case Opcode::ALLOC:
-        //return std::make_unique<Alloc>();
     case Opcode::iPUSH_ADDR:
-        return std::make_unique<iPushAddr>(0U);
+        return std::make_unique<iPushAddr>();
     case Opcode::iPUSH_VAL:
-        return std::make_unique<iPushVal>(0);
+        return std::make_unique<iPushVal>();
     case Opcode::iPOP_ADDR:
-        return std::make_unique<iPopAddr>(0U);
+        return std::make_unique<iPopAddr>();
     case Opcode::iADD:
         return std::make_unique<iAdd>();
     case Opcode::iSUB:
@@ -241,11 +493,13 @@ inline std::unique_ptr<Instruction> Instruction::create(Opcode code) {
     case Opcode::iOUT:
         return std::make_unique<iOut>();
     case Opcode::strOUT:
-        return std::make_unique<strOut>(0U);
+        return std::make_unique<strOut>();
     case Opcode::iIN:
         return std::make_unique<iIn>();
     case Opcode::HLT:
         return std::make_unique<Hlt>();
+    case Opcode::JMP_TRUE:
+        return std::make_unique<JmpTrue>();
     default:
         throw std::logic_error("Unknown opcode");
     }
