@@ -4,11 +4,6 @@
 namespace paracl
 {
 
-//void Alloc::execute(VirtualMachine& ) {
-//  auto fir = machine.pop<size_t>();
-//  machine.push<size_t>(fir);
-//}
-
 void iPushAddr::execute(VirtualMachine& machine) {
     auto val = machine.atMemory<int>(val_);
     machine.push<int>(val);
@@ -25,12 +20,6 @@ void iPopAddr::execute(VirtualMachine& machine) {
 
 void iPopVal::execute(VirtualMachine& machine) {
     machine.pop<int>();
-}
-
-void iMov::execute(VirtualMachine& machine) {
-    auto topAddr = machine.sp() - sizeof(int);
-    auto val = machine.atMemory<int>(topAddr);
-    machine.toStack<int>(val_, val);
 }
 
 void iMul::execute(VirtualMachine& machine) {
@@ -149,6 +138,13 @@ void Jmp::execute(VirtualMachine& machine) {
 void JmpTrue::execute(VirtualMachine& machine) {
     auto val = machine.pop<int>();
     if (val) {
+        machine.ip() = val_;
+    }
+}
+
+void JmpFalse::execute(VirtualMachine& machine) {
+    auto val = machine.pop<int>();
+    if (!val) {
         machine.ip() = val_;
     }
 }

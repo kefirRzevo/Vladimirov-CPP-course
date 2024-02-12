@@ -217,8 +217,8 @@
         | LCURLY statement_list RCURLY  { $$ = $2; }
 
     statement_list
-        : statement                     { auto block = driver.createNode<BlockStatement>(@$); block->statements_.push_back($1); $$ = block; }
-        | statement_list statement      { $1->statements_.push_back($2); $$ = $1; }
+        : statement                     { auto block = driver.createNode<BlockStatement>(@$); block->addStatement($1); $$ = block; }
+        | statement_list statement      { $1->addStatement($2); $$ = $1; }
         | statement_list error SEMICOL  { $$ = $1; yyerrok; }
 
     expression_statement

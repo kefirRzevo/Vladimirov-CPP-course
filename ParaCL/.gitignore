@@ -2,6 +2,5 @@
 build/
 include/backend/Instructions2.hpp
 res/
-src/
 test/
 test.cpp

@@ -2,10 +2,24 @@
 
 #include <cassert>
 
-#include "INode.hpp"
-
 namespace paracl
 {
+
+struct UnaryExpression;
+struct BinaryExpression;
+struct TernaryExpression;
+struct ConstantExpression;
+struct VariableExpression;
+struct InputExpression;
+struct Statement;
+struct BlockStatement;
+struct ExpressionStatement;
+struct IfStatement;
+struct IfElseStatement;
+struct WhileStatement;
+struct OutputStatement;
+struct BreakStatement;
+struct ContinueStatement;
 
 class NodeVisitor
 {

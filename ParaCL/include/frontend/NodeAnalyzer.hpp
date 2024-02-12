@@ -2,7 +2,6 @@
 
 #include <vector>
 
-#include "NodeVisitor.hpp"
 #include "SymTable.hpp"
 #include "INode.hpp"
 #include "Driver.hpp"
@@ -81,7 +80,7 @@ public:
     void visit(InputExpression* ) override {}
 
     void visit(BlockStatement* node) override {
-        scopes_.beginScope(node->table_);
+        scopes_.beginScope();
         for (auto statement: node->statements_) {
             statement->accept(*this);
         }

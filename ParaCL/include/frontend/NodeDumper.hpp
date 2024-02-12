@@ -3,7 +3,7 @@
 #include <vector>
 #include <iostream>
 
-#include "NodeVisitor.hpp"
+#include "INode.hpp"
 
 namespace paracl
 {

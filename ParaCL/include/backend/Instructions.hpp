@@ -19,7 +19,6 @@ enum class Opcode : char
     iPUSH_VAL,
     iPOP_ADDR,
     iPOP_VAL,
-    iMOV,
     iMUL,
     iDIV,
     iMOD,
@@ -40,6 +39,7 @@ enum class Opcode : char
     ALLOCA,
     JMP,
     JMP_TRUE,
+    JMP_FALSE,
     HLT,
 };
 
@@ -177,19 +177,6 @@ public:
 
     void disassemble(std::ostream& os) const override {
         os << "int_pop";
-    }
-};
-
-class iMov final : public Argument<size_t>
-{
-public:
-    iMov(size_t addr = 0U) :
-        Argument(Opcode::iMOV, addr) {} 
-
-    void execute(VirtualMachine& machine) override;
-
-    void disassemble(std::ostream& os) const override {
-        os << "int_mov [" << val_ << "]";
     }
 };
 
@@ -461,6 +448,23 @@ public:
     }
 };
 
+class JmpFalse final : public Argument<size_t>
+{
+public:
+    JmpFalse(size_t addr = 0U) :
+        Argument(Opcode::JMP_FALSE, addr) {}
+
+    void setAddr(size_t addr) {
+        val_ = addr;
+    }
+
+    void execute(VirtualMachine& machine) override;
+
+    void disassemble(std::ostream& os) const override {
+        os << "jmp_false " << val_;
+    }
+};
+
 class Hlt final : public Nonargument
 {
 public:
@@ -482,24 +486,52 @@ inline std::unique_ptr<Instruction> Instruction::create(Opcode code) {
         return std::make_unique<iPushVal>();
     case Opcode::iPOP_ADDR:
         return std::make_unique<iPopAddr>();
-    case Opcode::iADD:
-        return std::make_unique<iAdd>();
-    case Opcode::iSUB:
-        return std::make_unique<iSub>();
+    case Opcode::iPOP_VAL:
+        return std::make_unique<iPopVal>();
     case Opcode::iMUL:
         return std::make_unique<iMul>();
     case Opcode::iDIV:
         return std::make_unique<iDiv>();
+    case Opcode::iMOD:
+        return std::make_unique<iMod>();
+    case Opcode::iADD:
+        return std::make_unique<iAdd>();
+    case Opcode::iSUB:
+        return std::make_unique<iSub>();
+    case Opcode::iCMP_L:
+        return std::make_unique<iCmpL>();
+    case Opcode::iCMP_G:
+        return std::make_unique<iCmpG>();
+    case Opcode::iCMP_LE:
+        return std::make_unique<iCmpLE>();
+    case Opcode::iCMP_GE:
+        return std::make_unique<iCmpGE>();
+    case Opcode::iCMP_EQ:
+        return std::make_unique<iCmpEQ>();
+    case Opcode::iCMP_NE:
+        return std::make_unique<iCmpNE>();
+    case Opcode::iAND:
+        return std::make_unique<iAnd>();
+    case Opcode::iOR:
+        return std::make_unique<iOr>();
+    case Opcode::iNOT:
+        return std::make_unique<iNot>();
     case Opcode::iOUT:
         return std::make_unique<iOut>();
-    case Opcode::strOUT:
-        return std::make_unique<strOut>();
     case Opcode::iIN:
         return std::make_unique<iIn>();
-    case Opcode::HLT:
-        return std::make_unique<Hlt>();
+    case Opcode::strOUT:
+        return std::make_unique<strOut>();
+    case Opcode::ALLOCA:
+        return std::make_unique<Alloca>();
+    case Opcode::JMP:
+        return std::make_unique<Jmp>();
     case Opcode::JMP_TRUE:
         return std::make_unique<JmpTrue>();
+    case Opcode::JMP_FALSE:
+        return std::make_unique<JmpFalse>();
+    case Opcode::HLT:
+        return std::make_unique<Hlt>();
     default:
         throw std::logic_error("Unknown opcode");
     }

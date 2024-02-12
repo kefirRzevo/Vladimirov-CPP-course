@@ -41,10 +41,11 @@ add_executable(
   ${BISON_parser_OUTPUTS}
   ${FLEX_scanner_OUTPUTS}
   src/frontend/AST.cpp ParaCL.cpp
+  src/backend/Instructions.cpp
 )
 
 target_compile_features(${INTERPETER} PRIVATE cxx_std_20)
-target_include_directories(${INTERPETER} PRIVATE includes ${CMAKE_CURRENT_BINARY_DIR})
+target_include_directories(${INTERPETER} PRIVATE includes ${CMAKE_CURRENT_BINARY_DIR} include)
 target_link_libraries(${INTERPETER} PRIVATE ${Boost_LIBRARIES} ${llvm_libs})
 
 #tests
@@ -56,5 +57,5 @@ target_link_libraries(${INTERPETER} PRIVATE ${Boost_LIBRARIES} ${llvm_libs})
 #add_executable(${TARGET} ${TEST_SOURCES})
 #target_compile_features(${TARGET} PRIVATE cxx_std_20)
 #include_directories(${GTEST_INCLUDE_DIRS})
-#target_include_directories (${TARGET} PRIVATE includes include/)
+#target_include_directories (${TARGET} PRIVATE includes include)
 #target_link_libraries (${TARGET} ${GTEST_LIBRARIES})

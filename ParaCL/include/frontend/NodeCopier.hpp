@@ -1,6 +1,6 @@
 #pragma once
 
-#include "NodeVisitor.hpp"
+#include "INode.hpp"
 
 namespace paracl
 {

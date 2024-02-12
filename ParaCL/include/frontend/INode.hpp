@@ -8,14 +8,11 @@
 #include <iostream>
 
 #include "location.hpp"
-#include "SymTable.hpp"
 #include "Operators.hpp"
+#include "NodeVisitor.hpp"
 
 namespace paracl
 {
-
-class NodeVisitor;
-class Scope;
 
 #define VISITABLE                               \
 void accept(NodeVisitor& visitor) override {    \
@@ -33,30 +30,6 @@ struct INode
 
     virtual ~INode() {}
 };
-
-struct Expression;
-struct UnaryExpression;
-struct BinaryExpression;
-struct TernaryExpression;
-struct ConstantExpression;
-struct VariableExpression;
-struct InputExpression;
-struct Statement;
-struct BlockStatement;
-struct ExpressionStatement;
-struct IfStatement;
-struct IfElseStatement;
-struct WhileStatement;
-struct OutputStatement;
-struct BreakStatement;
-struct ContinueStatement;
-
-} // namespace paracl
-
-#include "NodeVisitor.hpp"
-
-namespace paracl
-{
 
 struct Expression : public INode
 {
@@ -153,11 +126,14 @@ struct BlockStatement : public Statement
 {
     using Statement::loc_;
 
-    Scope table_;
     std::vector<Statement* > statements_;
 
     BlockStatement(const location& loc) :
         Statement(loc) {}
+
+    void addStatement(Statement* statement) {
+        statements_.push_back(statement);
+    }
 
     VISITABLE;
 };

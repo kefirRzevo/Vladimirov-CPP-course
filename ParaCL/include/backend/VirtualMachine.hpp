@@ -1,126 +1,15 @@
 #pragma once
 
-#include <sstream>
-#include <fstream>
+#include <array>
 #include <utility>
-#include <iostream>
 #include <stdexcept>
 #include <algorithm>
 #include <unordered_map>
 
-#include "Constants.hpp"
-#include "Instructions.hpp"
+#include "Image.hpp"
 
 namespace paracl
 {
-
-class VirtualMachine;
-
-class Image
-{
-private:
-    using addr_t = size_t;
-    using instr_value = std::pair<addr_t, std::unique_ptr<Instruction>>;
-    using const_value = std::pair<addr_t, std::unique_ptr<Const>>;
-
-    std::vector<instr_value> instrs_;
-    std::vector<const_value> consts_;
-
-    const addr_t stackEndPtr_;
-    const addr_t instrEndPtr_;
-    const addr_t constEndPtr_;
-
-    addr_t instrCurPtr_;
-    addr_t constCurPtr_;
-
-    void clear() {
-        instrs_.clear();
-        consts_.clear();
-        constCurPtr_ = instrEndPtr_;
-        instrCurPtr_ = stackEndPtr_;
-    }
-
-    friend class VirtualMachine;
-
-// |             |                       |                     |
-// |0    stackEnd|instrsBeg     instrsEnd|constsBeg   constsEnd|size
-// |_____________|_______________________|_____________________|
-// | stack       | program               | constants           |
-// |_____________|_______________________|_____________________|
-// |             |                       |                     |
-
-public:
-    Image(size_t stackSize = 49152U, size_t instrsSize = 15360U, size_t constsSize = 1024U)
-    : stackEndPtr_(stackSize),
-      instrEndPtr_(stackSize + instrsSize),
-      constEndPtr_(stackSize + instrsSize + constsSize) {
-        instrCurPtr_ = stackEndPtr_;
-        constCurPtr_ = instrEndPtr_;
-    }
-
-    void disassembble(std::ostream& os) const {
-        os << "Literals" << std::endl;
-        for (const auto& constant: consts_) {
-            os << std::left << std::setw(8) << constant.first;
-            constant.second->disassemble(os);
-            os << std::endl;
-        }
-        os << "Instructions" << std::endl;
-        for (const auto& instr: instrs_) {
-            os <<std::left << std::setw(8) << instr.first;
-            instr.second->disassemble(os);
-            os << std::endl;
-        }
-    }
-
-    template<typename ConstType, typename... ConstArgs>
-    addr_t addConst(ConstArgs&&... args) {
-        auto uptr = std::make_unique<ConstType>(std::forward<ConstArgs>(args)...);
-        auto constPtr = constCurPtr_;
-        if (constPtr + uptr->getSize() > constEndPtr_) {
-            throw std::logic_error("Too many constants");
-        }
-        consts_.push_back(std::move(std::make_pair(constPtr, std::move(uptr))));
-        constCurPtr_ = constPtr + consts_.back().second->getSize();
-        return constPtr;
-    }
-
-    template<typename InstrType, typename... InstrArgs>
-    size_t addInstr(InstrArgs&&... args) {
-        auto uptr = std::make_unique<InstrType>(std::forward<InstrArgs>(args)...);
-        auto instrPtr = instrCurPtr_;
-        if (instrPtr + uptr->getSize() > instrEndPtr_) {
-            throw std::logic_error("Too many instructions");
-        }
-        instrs_.push_back(std::move(std::make_pair(instrPtr, std::move(uptr))));
-        instrCurPtr_ = instrPtr + instrs_.back().second->getSize();
-        return instrs_.size() - 1U;
-    }
-
-    addr_t getInstrCurAddr() const {
-        return instrCurPtr_;
-    }
-
-    addr_t getConstCurAddr() const {
-        return constCurPtr_;
-    }
-
-    Instruction* getInstr(size_t id) {
-        return instrs_[id].second.get();
-    }
-
-    addr_t getInstrAddr(size_t id) {
-        return instrs_[id].first;
-    }
-
-    Const* getConst(size_t id) {
-        return consts_[id].second.get();
-    }
-
-    addr_t getConstAddr(size_t id) {
-        return consts_[id].first;
-    }
-};
 
 class VirtualMachine
 {

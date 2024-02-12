@@ -1,24 +1,53 @@
 #pragma once
 
-#include "frontend/SymTable.hpp"
 #include "frontend/NodeVisitor.hpp"
-#include "backend/VirtualMachine.hpp"
+#include "backend/StackFrame.hpp"
 
 namespace paracl
 {
+
+class Image;
+
+class ConstantPool final
+{
+private:
+    using addr_t = size_t;
+    using Pool = std::unordered_map<int, addr_t>;
+
+    Pool pool_;
+    Image& im_;
+
+public:
+    ConstantPool(Image& image) :
+        im_(image) {}
+
+    std::optional<addr_t> lookupConst(int value) {
+        auto found = pool_.find(value);
+        if (found != pool_.cend()) {
+            return found->second;
+        }
+        return std::nullopt;
+    }
+
+    std::optional<addr_t> pushConst(int value) {
+        auto addr = im_.addConst<ConstInt>(value);
+        pool_.emplace(value, addr);
+        return addr;
+    }
+};
 
 class NodeCodegen final : public NodeVisitor
 {
 private:
     using NodeVisitor::visit;
+    using addr_t = size_t;
 
-
-    Image im;
+    Image im_;
 
     std::vector<UnaryExpression*> postfixes_;
 
-    AddrBlock globals_;
-    AddrBlockStack scopes_;
+    StackFrame frame_;
+    ConstantPool consts_;
 
     void codegenPostfixes() {
         if (postfixes_.empty()) {
@@ -29,21 +58,21 @@ private:
             node->expr_->accept(*this);
             switch (node->op_) {
             case UnaryOperator::UN_POSTFIX_INC:
-                im.addInstr<iPushVal>(1);
-                im.addInstr<iAdd>();
+                im_.addInstr<iPushVal>(1);
+                im_.addInstr<iAdd>();
                 break;
             case UnaryOperator::UN_POSTFIX_DEC:
-                im.addInstr<iPushVal>(1);
-                im.addInstr<iSub>();
+                im_.addInstr<iPushVal>(1);
+                im_.addInstr<iSub>();
                 break;
             default:
                 throw std::logic_error("Operator is not postfix");
             }
-            auto addr = scopes_.lookupVar(var->name_);
+            auto addr = frame_.lookupVar(var->name_);
             if (!addr) {
                 throw std::logic_error("Variable not found");
             }
-            im.addInstr<iPopAddr>(addr.value());
+            im_.addInstr<iPopAddr>(addr.value());
         }
         postfixes_.clear();
     }
@@ -53,21 +82,21 @@ private:
         node->expr_->accept(*this);
         switch (node->op_) {
         case UnaryOperator::UN_PREFIX_INC:
-            im.addInstr<iPushVal>(1);
-            im.addInstr<iAdd>();
+            im_.addInstr<iPushVal>(1);
+            im_.addInstr<iAdd>();
             break;
         case UnaryOperator::UN_PREFIX_DEC:
-            im.addInstr<iPushVal>(1);
-            im.addInstr<iSub>();
+            im_.addInstr<iPushVal>(1);
+            im_.addInstr<iSub>();
             break;
         default:
             throw std::logic_error("Operator is not prefix");
         }
-        auto addr = scopes_.lookupVar(var->name_);
+        auto addr = frame_.lookupVar(var->name_);
         if (!addr) {
             throw std::logic_error("Variable not found");
         }
-        im.addInstr<iPopAddr>(addr.value());
+        im_.addInstr<iPopAddr>(addr.value());
     }
 
     void codegenArithmetic(BinaryExpression* node) {
@@ -75,43 +104,43 @@ private:
         node->right_->accept(*this);
         switch (node->op_) {
         case BinaryOperator::BIN_MUL:
-            im.addInstr<iMul>();
+            im_.addInstr<iMul>();
             break;
         case BinaryOperator::BIN_DIV:
-            im.addInstr<iDiv>();
+            im_.addInstr<iDiv>();
             break;
         case BinaryOperator::BIN_MOD:
-            im.addInstr<iMod>();
+            im_.addInstr<iMod>();
             break;
         case BinaryOperator::BIN_ADD:
-            im.addInstr<iAdd>();
+            im_.addInstr<iAdd>();
             break;
         case BinaryOperator::BIN_SUB:
-            im.addInstr<iSub>();
+            im_.addInstr<iSub>();
             break;
         case BinaryOperator::BIN_L:
-            im.addInstr<iCmpL>();
+            im_.addInstr<iCmpL>();
             break;
         case BinaryOperator::BIN_G:
-            im.addInstr<iCmpG>();
+            im_.addInstr<iCmpG>();
             break;
         case BinaryOperator::BIN_LE:
-            im.addInstr<iCmpLE>();
+            im_.addInstr<iCmpLE>();
             break;
         case BinaryOperator::BIN_GE:
-            im.addInstr<iCmpGE>();
+            im_.addInstr<iCmpGE>();
             break;
         case BinaryOperator::BIN_EQ:
-            im.addInstr<iCmpEQ>();
+            im_.addInstr<iCmpEQ>();
             break;
         case BinaryOperator::BIN_NE:
-            im.addInstr<iCmpNE>();
+            im_.addInstr<iCmpNE>();
             break;
         case BinaryOperator::BIN_AND:
-            im.addInstr<iAnd>();
+            im_.addInstr<iAnd>();
             break;
         case BinaryOperator::BIN_OR:
-            im.addInstr<iOr>();
+            im_.addInstr<iOr>();
             break;
         default:
             throw std::logic_error("Operator is not arithmetic");
@@ -119,13 +148,15 @@ private:
     }
 
 public:
-    NodeCodegen() = default;
+    NodeCodegen() :
+        im_(), frame_(im_), consts_(im_) {}
 
     Image codegen(INode* root) {
         if (root) {
             root->accept(*this);
         }
-        return im;
+        im_.addInstr<Hlt>();
+        return std::move(im_);
     }
 
     void visit(UnaryExpression* node) {
@@ -137,16 +168,16 @@ public:
         } else {
             switch (node->op_) {
             case UnaryOperator::UN_SUB:
-                im.addInstr<iPushVal>(0);
+                im_.addInstr<iPushVal>(0);
                 node->expr_->accept(*this);
-                im.addInstr<iSub>();
+                im_.addInstr<iSub>();
                 break;
             case UnaryOperator::UN_ADD:
                 node->expr_->accept(*this);
                 break;
             case UnaryOperator::UN_NOT:
                 node->expr_->accept(*this);
-                im.addInstr<iNot>();
+                im_.addInstr<iNot>();
                 break;
             default:
                 throw std::logic_error("Unknown unary operator");
@@ -161,20 +192,26 @@ public:
             switch (node->op_) {
             case BinaryOperator::BIN_COMMA: {
                 node->right_->accept(*this);
-                im.addInstr<iPopVal>();
+                im_.addInstr<iPopVal>();
                 node->left_->accept(*this);
                 break;
             }
             case BinaryOperator::BIN_ASSIGN: {
-                node->right_->accept(*this);
                 auto lhs = static_cast<VariableExpression*>(node->left_);
-                auto addr = scopes_.lookupVar(lhs->name_);
+                auto addr = frame_.lookupVar(lhs->name_);
                 if (!addr) {
-                    throw std::logic_error("Variable not found");
+                    addr = frame_.pushVar(lhs->name_);
+                    if (!addr) {
+                        throw std::runtime_error("Can't push variable");
+                    }
                 }
-                im.addInstr<iMov>(addr.value());
+                node->right_->accept(*this);
+                im_.addInstr<iPopAddr>(addr.value());
+                im_.addInstr<iPushAddr>(addr.value());
                 break;
             }
+            default:
+                throw std::logic_error("Unknown binary operator");
             }
         }
     }
@@ -182,61 +219,128 @@ public:
     void visit(TernaryExpression* node) {
         node->condition_->accept(*this);
         codegenPostfixes();
-        auto jmpTrueIndx = im.addInstr<JmpTrue>();
+        auto jmpTrueIndx = im_.addInstr<JmpTrue>();
         node->onFalse_->accept(*this);
         codegenPostfixes();
-        auto jmpIndx = im.addInstr<Jmp>();
+        auto jmpIndx = im_.addInstr<Jmp>();
+        auto trueAddr = im_.getInstrCurAddr();
 
-        auto trueAddr = im.getInstrCurAddr();
         node->onTrue_->accept(*this);
         codegenPostfixes();
-        auto exitAddr = im.getInstrCurAddr();
+        auto exitAddr = im_.getInstrCurAddr();
 
-        auto jmpTrue = static_cast<JmpTrue*>(im.getInstr(jmpTrueIndx));
+        auto jmpTrue = static_cast<JmpTrue*>(im_.getInstr(jmpTrueIndx));
         jmpTrue->setAddr(exitAddr);
-        auto jmp = static_cast<Jmp*>(im.getInstr(jmpIndx));
+        auto jmp = static_cast<Jmp*>(im_.getInstr(jmpIndx));
         jmp->setAddr(trueAddr);
     }
 
     void visit(ConstantExpression* node) {
-
+        auto addr = consts_.lookupConst(node->value_);
+        if (!addr) {
+            addr = consts_.pushConst(node->value_);
+            if (!addr) {
+                throw std::runtime_error("Can't push const");
+            }
+        }
+        im_.addInstr<iPushAddr>(addr.value());
     }
 
     void visit(VariableExpression* node) {
+        auto addr = frame_.lookupVar(node->name_);
+        if (!addr) {
+            addr = frame_.pushVar(node->name_);
+            if (!addr) {
+                throw std::runtime_error("Can't push variable");
+            }
+        }
+        im_.addInstr<iPushAddr>(addr.value());
     }
 
     void visit(InputExpression* ) {
-        im.addInstr<iIn>();
+        im_.addInstr<iIn>();
     }
 
     void visit(BlockStatement* node) {
-
+        frame_.beginScope();
+        for (auto statement: node->statements_) {
+            statement->accept(*this);
+        }
+        frame_.endScope();
     }
 
     void visit(ExpressionStatement* node) {
         node->expr_->accept(*this);
         codegenPostfixes();
-        im.addInstr<iPopVal>();
+        im_.addInstr<iPopVal>();
     }
 
     void visit(IfStatement* node) {
+        frame_.beginScope();
+        node->condition_->accept(*this);
+        codegenPostfixes();
+        auto jmpFalseIndx = im_.addInstr<JmpFalse>();
+        node->trueBlock_->accept(*this);
+        codegenPostfixes();
+        auto exitAddr = im_.getInstrCurAddr();
 
+        auto jmpFalse = static_cast<JmpFalse*>(im_.getInstr(jmpFalseIndx));
+        jmpFalse->setAddr(exitAddr);
+        frame_.endScope();
     }
 
     void visit(IfElseStatement* node) {
+        frame_.beginScope();
+        node->condition_->accept(*this);
+        codegenPostfixes();
+        auto jmpTrueIndx = im_.addInstr<JmpTrue>();
+        node->falseBlock_->accept(*this);
+        codegenPostfixes();
+        auto jmpIndx = im_.addInstr<Jmp>();
+        auto trueAddr = im_.getInstrCurAddr();
+
+        node->trueBlock_->accept(*this);
+        codegenPostfixes();
+        auto exitAddr = im_.getInstrCurAddr();
+
+        auto jmpTrue = static_cast<JmpTrue*>(im_.getInstr(jmpTrueIndx));
+        jmpTrue->setAddr(trueAddr);
+        auto jmp = static_cast<Jmp*>(im_.getInstr(jmpIndx));
+        jmp->setAddr(exitAddr);
+        frame_.endScope();
     }
 
     void visit(WhileStatement* node) {
+        frame_.beginScope();
+        auto condAddr = im_.getInstrCurAddr();
+
+        node->condition_->accept(*this);
+        codegenPostfixes();
+        auto jmpFalseIndx = im_.addInstr<JmpFalse>();
+        node->block_->accept(*this);
+        auto jmpIndx = im_.addInstr<Jmp>();
+        auto exitAddr = im_.getInstrCurAddr();
+
+        auto jmpFalse = static_cast<JmpFalse*>(im_.getInstr(jmpFalseIndx));
+        jmpFalse->setAddr(exitAddr);
+        auto jmp = static_cast<Jmp*>(im_.getInstr(jmpIndx));
+        jmp->setAddr(condAddr);
+        frame_.endScope();
     }
 
     void visit(OutputStatement* node) {
+        frame_.beginScope();
+        node->expr_->accept(*this);
+        im_.addInstr<iOut>();
+        frame_.endScope();
     }
 
-    void visit(BreakStatement* node) {
+    void visit(BreakStatement* ) {
 
     }
 
-    void visit(ContinueStatement* node) {
+    void visit(ContinueStatement* ) {
+
     }
 };
 
