@@ -13,28 +13,25 @@ find_package(BISON REQUIRED)
 
 set(CMAKE_BUILD_TYPE Debug)
 if ("${CMAKE_BUILD_TYPE}" STREQUAL "Debug")
-    set(COMPILER_SETTINGS -g -Wall -Wextra -Wpedantic)  
+    set(COMPILER_SETTINGS -g -O0 -Wall -Wextra -Wpedantic)  
 else ()
     set(COMPILER_SETTINGS -O2 -Wall -Wextra -Wpedantic)
 endif ()
+
 add_compile_options(${COMPILER_SETTINGS})
-
 include_directories(include)
-
 flex_target(
   scanner
   src/frontend/Lexer.l
   ${CMAKE_CURRENT_BINARY_DIR}/lexer.cc
 )
-
 bison_target(
   parser
   src/frontend/Parser.y
   ${CMAKE_CURRENT_BINARY_DIR}/parser.cc
   COMPILE_FLAGS "-Wcounterexamples --defines=${CMAKE_CURRENT_BINARY_DIR}/parser.tab.hh"
 )
-
-add_flex_bison_dependency(scanner parser)
+#add_flex_bison_dependency(scanner parser)
 
 add_executable(
   ${INTERPETER}
@@ -43,19 +40,16 @@ add_executable(
   src/frontend/AST.cpp ParaCL.cpp
   src/backend/Instructions.cpp
 )
-
-target_compile_features(${INTERPETER} PRIVATE cxx_std_20)
 target_include_directories(${INTERPETER} PRIVATE includes ${CMAKE_CURRENT_BINARY_DIR} include)
 target_link_libraries(${INTERPETER} PRIVATE ${Boost_LIBRARIES} ${llvm_libs})
 
 #tests
-#enable_testing()
-#find_package(GTest REQUIRED)
+enable_testing()
+find_package(GTest REQUIRED)
 
-#set (TARGET vm_test)
-#set (TEST_SOURCES src/backend/Instructions.cpp test/backend/VMTest.cpp)
-#add_executable(${TARGET} ${TEST_SOURCES})
-#target_compile_features(${TARGET} PRIVATE cxx_std_20)
-#include_directories(${GTEST_INCLUDE_DIRS})
-#target_include_directories (${TARGET} PRIVATE includes include)
-#target_link_libraries (${TARGET} ${GTEST_LIBRARIES})
+set(TARGET vm_test)
+set(TEST_SOURCES src/backend/Instructions.cpp test/VMTest.cpp)
+add_executable(${TARGET} ${TEST_SOURCES})
+include_directories(${GTEST_INCLUDE_DIRS})
+target_include_directories (${TARGET} PRIVATE includes)
+target_link_libraries (${TARGET} ${GTEST_LIBRARIES})

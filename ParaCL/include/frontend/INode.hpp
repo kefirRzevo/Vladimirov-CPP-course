@@ -8,8 +8,8 @@
 #include <iostream>
 
 #include "location.hpp"
-#include "Operators.hpp"
-#include "NodeVisitor.hpp"
+#include "frontend/Operators.hpp"
+#include "frontend/NodeVisitor.hpp"
 
 namespace paracl
 {

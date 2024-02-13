@@ -3,7 +3,7 @@
 #include <vector>
 #include <iostream>
 
-#include "INode.hpp"
+#include "frontend/INode.hpp"
 
 namespace paracl
 {
@@ -11,7 +11,8 @@ namespace paracl
 class NodeDumper final : public NodeVisitor
 {
 private:
-    std::ostream& os_;
+    std::string filepath_;
+    std::ofstream os_;
 
     void printLink(INode* parent, INode* child) {
         os_ << "\tnode_" << parent << " -> node_" << child << ";\n";
@@ -22,8 +23,8 @@ private:
     }
 
 public:
-    NodeDumper(std::ostream& os)
-    : os_(os) {}
+    NodeDumper(const std::string& filepath)
+    : os_(filepath) {}
 
     void dump(INode* root) {
         os_ << "digraph {\n";
@@ -32,6 +33,7 @@ public:
             root->accept(*this);
         }
         os_ << "}" << std::endl;
+        os_.flush();
     }
 
     void visit(UnaryExpression* node) override {

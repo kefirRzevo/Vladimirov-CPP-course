@@ -40,18 +40,18 @@ inline std::string toString(UnaryOperator op) {
 
 inline bool isPrefix(UnaryOperator op) {
     switch (op) {
-        case UnaryOperator::UN_POSTFIX_DEC:
-        case UnaryOperator::UN_POSTFIX_INC:
-            return false;
-        default:
+        case UnaryOperator::UN_PREFIX_INC:
+        case UnaryOperator::UN_PREFIX_DEC:
             return true;
+        default:
+            return false;
     }
 }
 
 inline bool isPostfix(UnaryOperator op) {
     switch (op) {
-        case UnaryOperator::UN_POSTFIX_DEC:
         case UnaryOperator::UN_POSTFIX_INC:
+        case UnaryOperator::UN_POSTFIX_DEC:
             return true;
         default:
             return false;

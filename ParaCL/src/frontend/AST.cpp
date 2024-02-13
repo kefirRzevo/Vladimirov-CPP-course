@@ -7,6 +7,12 @@
 namespace paracl
 {
 
+void Driver::setFilepath(const std::string& filepath) {
+    lexer_->setFilepath(filepath);
+    tree_->clear();
+    reporter_->clear();
+}
+
 Parser::symbol_type Driver::getNextToken() {
     return lexer_->getNextToken();
 }
@@ -16,8 +22,8 @@ AST::AST(const AST& rhs) {
     root_ = copier.copy(rhs.root_);
 }
 
-void AST::dump(std::ostream& os) const {
-    NodeDumper dumper{os};
+void AST::dump(const std::string& filepath) const {
+    NodeDumper dumper{filepath};
     dumper.dump(root_);
 }
 

@@ -107,12 +107,12 @@ void iNot::execute(VirtualMachine& machine) {
 
 void iOut::execute(VirtualMachine& machine) {
     auto val = machine.pop<int>();
-    std::cout << val << std::endl;
+    machine.ofstream() << val << std::endl;
 }
 
 void iIn::execute(VirtualMachine& machine) {
     int val = 0;
-    std::cin >> val;
+    machine.ifstream() >> val;
     machine.push<int>(val);
 }
 
@@ -124,7 +124,7 @@ void strOut::execute(VirtualMachine& machine) {
         char sym = machine.atMemory<char>(addr + sizeof(size_t) + i);
         res.push_back(sym);
     }
-    std::cout << res << std::endl;
+    machine.ofstream() << res << std::endl;
 }
 
 void Alloca::execute(VirtualMachine& machine) {

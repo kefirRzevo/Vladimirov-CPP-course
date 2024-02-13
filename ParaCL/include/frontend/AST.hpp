@@ -7,7 +7,7 @@
 #include <utility>
 #include <iostream>
 
-#include "INode.hpp"
+#include "frontend/INode.hpp"
 
 namespace paracl
 {
@@ -61,7 +61,7 @@ public:
         root_ = nullptr;
     }
 
-    void dump(std::ostream& os) const;
+    void dump(const std::string& filepath) const;
 
     void decode(const std::string& filepath) const;
 

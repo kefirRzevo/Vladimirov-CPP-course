@@ -2,9 +2,9 @@
 
 #include <vector>
 
-#include "SymTable.hpp"
-#include "INode.hpp"
-#include "Driver.hpp"
+#include "frontend/SymTable.hpp"
+#include "frontend/INode.hpp"
+#include "frontend/Driver.hpp"
 
 namespace paracl
 {

@@ -2,14 +2,42 @@
 
 #include <unordered_map>
 
-#include "../Utils.hpp"
-#include "Image.hpp"
+#include "Utils.hpp"
+#include "backend/Image.hpp"
 
 namespace paracl
 {
 
 struct StringHash;
 struct StringEqual;
+
+class ConstantPool final
+{
+private:
+    using addr_t = size_t;
+    using Pool = std::unordered_map<int, addr_t>;
+
+    Pool pool_;
+    Image& im_;
+
+public:
+    ConstantPool(Image& image) :
+        im_(image) {}
+
+    std::optional<addr_t> lookupConst(int value) {
+        auto found = pool_.find(value);
+        if (found != pool_.cend()) {
+            return found->second;
+        }
+        return std::nullopt;
+    }
+
+    std::optional<addr_t> pushConst(int value) {
+        auto addr = im_.addConst<ConstInt>(value);
+        pool_.emplace(value, addr);
+        return addr;
+    }
+};
 
 class MemBlock
 {
@@ -96,7 +124,7 @@ public:
 
     std::optional<addr_t> lookupVar(std::string_view name) const {
         for (auto it = blocks_.rbegin(); it != blocks_.rend(); ++it) {
-            auto found = (*it).lookupVar(name);
+            auto found = it->lookupVar(name);
             if (found) {
                 return found;
             }

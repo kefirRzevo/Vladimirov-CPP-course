@@ -1,5 +1,7 @@
 #pragma once
 
+#include <tuple>
+
 #include "frontend/NodeVisitor.hpp"
 #include "backend/StackFrame.hpp"
 
@@ -8,43 +10,23 @@ namespace paracl
 
 class Image;
 
-class ConstantPool final
-{
-private:
-    using addr_t = size_t;
-    using Pool = std::unordered_map<int, addr_t>;
-
-    Pool pool_;
-    Image& im_;
-
-public:
-    ConstantPool(Image& image) :
-        im_(image) {}
-
-    std::optional<addr_t> lookupConst(int value) {
-        auto found = pool_.find(value);
-        if (found != pool_.cend()) {
-            return found->second;
-        }
-        return std::nullopt;
-    }
-
-    std::optional<addr_t> pushConst(int value) {
-        auto addr = im_.addConst<ConstInt>(value);
-        pool_.emplace(value, addr);
-        return addr;
-    }
-};
-
 class NodeCodegen final : public NodeVisitor
 {
 private:
     using NodeVisitor::visit;
     using addr_t = size_t;
 
+    enum class LoopResetType
+    {
+        CONTINUE,
+        BREAK,
+    };
+    using LoopReset = std::tuple<WhileStatement*, LoopResetType, addr_t>;
+
     Image im_;
 
     std::vector<UnaryExpression*> postfixes_;
+    std::vector<LoopReset> loopResets_;
 
     StackFrame frame_;
     ConstantPool consts_;
@@ -55,7 +37,11 @@ private:
         }
         for (auto& node: postfixes_) {
             auto var = static_cast<VariableExpression*>(node->expr_);
-            node->expr_->accept(*this);
+            auto addr = frame_.lookupVar(var->name_);
+            if (!addr) {
+                throw std::logic_error("Variable not found");
+            }
+            im_.addInstr<iPushAddr>(addr.value());
             switch (node->op_) {
             case UnaryOperator::UN_POSTFIX_INC:
                 im_.addInstr<iPushVal>(1);
@@ -68,10 +54,6 @@ private:
             default:
                 throw std::logic_error("Operator is not postfix");
             }
-            auto addr = frame_.lookupVar(var->name_);
-            if (!addr) {
-                throw std::logic_error("Variable not found");
-            }
             im_.addInstr<iPopAddr>(addr.value());
         }
         postfixes_.clear();
@@ -79,7 +61,11 @@ private:
 
     void codegenPrefix(UnaryExpression* node) {
         auto var = static_cast<VariableExpression*>(node->expr_);
-        node->expr_->accept(*this);
+        auto addr = frame_.lookupVar(var->name_);
+        if (!addr) {
+            throw std::logic_error("Variable not found");
+        }
+        im_.addInstr<iPushAddr>(addr.value());
         switch (node->op_) {
         case UnaryOperator::UN_PREFIX_INC:
             im_.addInstr<iPushVal>(1);
@@ -91,10 +77,6 @@ private:
             break;
         default:
             throw std::logic_error("Operator is not prefix");
-        }
-        auto addr = frame_.lookupVar(var->name_);
-        if (!addr) {
-            throw std::logic_error("Variable not found");
         }
         im_.addInstr<iPopAddr>(addr.value());
     }
@@ -147,6 +129,33 @@ private:
         }
     }
 
+    void codegenLoopResets(WhileStatement* node, addr_t cond, addr_t exit) {
+        if (loopResets_.empty()) {
+            return;
+        }
+        auto back = loopResets_.back();
+        while (std::get<WhileStatement*>(back) == node) {
+            auto type = std::get<LoopResetType>(back);
+            auto jmpIndx = std::get<addr_t>(back);
+            auto jmp = static_cast<Jmp*>(im_.getInstr(jmpIndx));
+            switch (type) {
+            case LoopResetType::BREAK:
+                jmp->setAddr(exit);
+                break;
+            case LoopResetType::CONTINUE:
+                jmp->setAddr(cond);
+                break;
+            default:
+                throw std::logic_error("Unknown loop reset type");
+            }
+            loopResets_.pop_back();
+            if (loopResets_.empty()) {
+                return;
+            }
+            back = loopResets_.back();
+        }
+    }
+
 public:
     NodeCodegen() :
         im_(), frame_(im_), consts_(im_) {}
@@ -162,6 +171,7 @@ public:
     void visit(UnaryExpression* node) {
         if (isPrefix(node->op_)) {
             codegenPrefix(node);
+            node->expr_->accept(*this);
         } else if (isPostfix(node->op_)) {
             node->expr_->accept(*this);
             postfixes_.push_back(node);
@@ -230,9 +240,9 @@ public:
         auto exitAddr = im_.getInstrCurAddr();
 
         auto jmpTrue = static_cast<JmpTrue*>(im_.getInstr(jmpTrueIndx));
-        jmpTrue->setAddr(exitAddr);
+        jmpTrue->setAddr(trueAddr);
         auto jmp = static_cast<Jmp*>(im_.getInstr(jmpIndx));
-        jmp->setAddr(trueAddr);
+        jmp->setAddr(exitAddr);
     }
 
     void visit(ConstantExpression* node) {
@@ -325,6 +335,7 @@ public:
         jmpFalse->setAddr(exitAddr);
         auto jmp = static_cast<Jmp*>(im_.getInstr(jmpIndx));
         jmp->setAddr(condAddr);
+        codegenLoopResets(node, condAddr, exitAddr);
         frame_.endScope();
     }
 
@@ -332,15 +343,18 @@ public:
         frame_.beginScope();
         node->expr_->accept(*this);
         im_.addInstr<iOut>();
+        codegenPostfixes();
         frame_.endScope();
     }
 
-    void visit(BreakStatement* ) {
-
+    void visit(BreakStatement* node) {
+        auto jmpIndx = im_.addInstr<Jmp>();
+        loopResets_.emplace_back(node->loop_, LoopResetType::BREAK, jmpIndx);
     }
 
-    void visit(ContinueStatement* ) {
-
+    void visit(ContinueStatement* node) {
+        auto jmpIndx = im_.addInstr<Jmp>();
+        loopResets_.emplace_back(node->loop_, LoopResetType::CONTINUE, jmpIndx);
     }
 };
 

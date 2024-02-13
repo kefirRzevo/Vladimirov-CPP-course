@@ -5,7 +5,7 @@
 #include <string_view>
 #include <unordered_map>
 
-#include "../Utils.hpp"
+#include "Utils.hpp"
 
 namespace paracl
 {
@@ -17,7 +17,8 @@ struct StringEqual;
 class Scope final
 {
 private:
-    using VarsMap = std::unordered_map<std::string_view, VariableExpression*, StringHash, StringEqual>;
+    using VarsMap = std::unordered_map<
+        std::string_view, VariableExpression*, StringHash, StringEqual>;
 
     VarsMap map_;
 

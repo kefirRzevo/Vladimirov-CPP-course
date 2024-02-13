@@ -25,14 +25,14 @@ namespace paracl
 
 struct StringHash
 {
-    std::size_t operator()(const std::string_view& key) const {
+    std::size_t operator()(std::string_view key) const {
         return std::hash<std::string_view>()(key);
     }
 };
 
 struct StringEqual
 {
-    bool operator()(const std::string_view& lhs, const std::string_view& rhs) const {
+    bool operator()(std::string_view lhs, std::string_view rhs) const {
         return lhs == rhs;
     }
 };

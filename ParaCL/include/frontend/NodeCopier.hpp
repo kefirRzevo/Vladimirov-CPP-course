@@ -1,6 +1,6 @@
 #pragma once
 
-#include "INode.hpp"
+#include "frontend/INode.hpp"
 
 namespace paracl
 {

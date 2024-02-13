@@ -2,7 +2,7 @@
 
 #include <iostream>
 
-#include "INode.hpp"
+#include "frontend/INode.hpp"
 
 namespace paracl
 {
@@ -14,7 +14,7 @@ private:
     std::ofstream os_;
 
 public:
-    NodeDecoder(std::string filepath)
+    NodeDecoder(const std::string& filepath)
     : filepath_(filepath), os_{filepath} {}
 
     void decode(INode* root) {

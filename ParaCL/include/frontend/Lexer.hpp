@@ -9,7 +9,7 @@
 
 #include <fstream>
 
-#include "Driver.hpp"
+#include "frontend/Driver.hpp"
 #include "parser.tab.hh"
 #include "location.hpp"
 
@@ -23,12 +23,18 @@ class Lexer final : public yyFlexLexer
 {
 private:
     Driver& driver_;
+    std::string filepath_;
     std::ifstream in_;
     position curPos_;
 
 public:
-    Lexer(Driver& driver, std::string* filepath)
-    : driver_(driver), in_(*filepath), curPos_(filepath) {
+    Lexer(Driver& driver) :
+        driver_(driver) {}
+
+    void setFilepath(const std::string& filepath) {
+        filepath_ = filepath;
+        in_.open(filepath, std::ifstream::in);
+        curPos_.initialize(std::addressof(filepath_));
         yyrestart(in_);
     }
 

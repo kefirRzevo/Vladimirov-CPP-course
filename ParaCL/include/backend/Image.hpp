@@ -4,8 +4,8 @@
 #include <memory>
 #include <utility>
 
-#include "Instructions.hpp"
-#include "Constants.hpp"
+#include "backend/Instructions.hpp"
+#include "backend/Constants.hpp"
 
 namespace paracl
 {
@@ -54,7 +54,8 @@ public:
         constCurPtr_ = instrEndPtr_;
     }
 
-    void disassembble(std::ostream& os) const {
+    void disassembble(const std::string& filepath) const {
+        std::ofstream os{filepath};
         os << "Literals" << std::endl;
         for (const auto& constant: consts_) {
             os << std::left << std::setw(8) << constant.first;

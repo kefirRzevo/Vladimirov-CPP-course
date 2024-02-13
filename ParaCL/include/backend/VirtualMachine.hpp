@@ -6,7 +6,7 @@
 #include <algorithm>
 #include <unordered_map>
 
-#include "Image.hpp"
+#include "backend/Image.hpp"
 
 namespace paracl
 {
@@ -24,8 +24,12 @@ private:
 
     bool halted = false;
 
+    std::istream& is_;
+    std::ostream& os_;
+
 public:
-    VirtualMachine() = default;
+    VirtualMachine(std::istream& is = std::cin, std::ostream& os = std::cout) :
+        is_(is), os_(os) {}
 
     void loadImage(Image&& image) {
         auto instrs = std::move(image.instrs_);
@@ -95,6 +99,14 @@ public:
 
     value_type& ip() {
         return registers_[1];
+    }
+
+    std::istream& ifstream() {
+        return is_;
+    }
+
+    std::ostream& ofstream() {
+        return os_;
     }
 };
 

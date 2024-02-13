@@ -1,9 +1,9 @@
 #pragma once
 
 #include "parser.tab.hh"
-#include "Errors.hpp"
-#include "Lexer.hpp"
-#include "AST.hpp"
+#include "frontend/Errors.hpp"
+#include "frontend/Lexer.hpp"
+#include "frontend/AST.hpp"
 
 namespace paracl
 {
@@ -16,33 +16,19 @@ class ErrorReposter;
 class Driver final
 {
 private:
-    std::string filepath_ = "";
-
-    std::unique_ptr<AST> tree_ = nullptr;
-    std::unique_ptr<Lexer> lexer_ = nullptr;
-    std::unique_ptr<Parser> parser_ = nullptr;
-    std::unique_ptr<ErrorReporter> reporter_ = nullptr;
+    std::unique_ptr<AST> tree_;
+    std::unique_ptr<Lexer> lexer_;
+    std::unique_ptr<Parser> parser_;
+    std::unique_ptr<ErrorReporter> reporter_;
 
 public:
-    Driver(const std::string& filepath)
-    : filepath_(filepath) {
-        tree_ = std::make_unique<AST>();
-        lexer_ = std::make_unique<Lexer>(*this, getFilepath());
-        parser_ = std::make_unique<Parser>(*this);
-        reporter_ = std::make_unique<ErrorReporter>();
-    }
+    Driver() :
+        tree_(std::make_unique<AST>()),
+        lexer_(std::make_unique<Lexer>(*this)),
+        parser_(std::make_unique<Parser>(*this)),
+        reporter_(std::make_unique<ErrorReporter>()) {}
 
-    void setFile(const std::string& filepath) {
-        filepath_ = filepath;
-        lexer_.reset();
-        lexer_ = std::make_unique<Lexer>(*this, getFilepath());
-        tree_->clear();
-        reporter_->clear();
-    }
-
-    std::string* getFilepath() {
-        return std::addressof(filepath_);
-    }
+    void setFilepath(const std::string& filepath);
 
     template<typename NodeType, typename... NodeArgs>
     NodeType* createNode(NodeArgs&&... args) {
@@ -61,8 +47,8 @@ public:
         return tree_->clear();
     }
 
-    void dumpAST(std::ostream& os) const {
-        tree_->dump(os);
+    void dumpAST(const std::string& filepath) const {
+        tree_->dump(filepath);
     }
 
     void decodeAST(const std::string& filepath) const {
