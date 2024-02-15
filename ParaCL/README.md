@@ -13,7 +13,7 @@ For example,
             while (iters > 0) { // for `if` the same
                 tmp = fst;
                 fst = snd;
-                snd = snd + temp;
+                snd = snd + tmp;
                 iters = iters - 1;
             }
 
@@ -21,6 +21,11 @@ For example,
 
         output: Fibonacci sequence
 ```
+Enable options of `paracl`:
+`--dump` - to dump AST in dot format
+`--decode` - to decode AST to same program
+`--disasm` - to disasm program to my assembler
+
 
 ## Build
 To build program:
