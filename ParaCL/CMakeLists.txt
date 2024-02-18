@@ -50,12 +50,12 @@ target_include_directories(
 )
 target_link_libraries(${INTERPETER} ${Boost_PROGRAM_OPTIONS_LIBRARY})
 
-#enable_testing()
-#set(TARGET vm_test)
-#set(TEST_SOURCES
-#  src/backend/Instructions.cpp
-#  test/VMTest.cpp
-#)
-#add_executable(${TARGET} ${TEST_SOURCES})
-#include_directories(${GTEST_INCLUDE_DIRS})
-#target_link_libraries(${TARGET} ${GTEST_LIBRARIES})
+enable_testing()
+set(TARGET vm_test)
+set(TEST_SOURCES
+  src/backend/Instructions.cpp
+  test/VMTest.cpp
+)
+add_executable(${TARGET} ${TEST_SOURCES})
+include_directories(${GTEST_INCLUDE_DIRS})
+target_link_libraries(${TARGET} ${GTEST_LIBRARIES})

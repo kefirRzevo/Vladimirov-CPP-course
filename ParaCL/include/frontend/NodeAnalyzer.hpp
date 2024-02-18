@@ -116,9 +116,7 @@ public:
     }
 
     void visit(OutputStatement* node) override {
-        scopes_.beginScope();
         node->expr_->accept(*this);
-        scopes_.endScope();
     }
 
     void visit(BreakStatement* node) override {

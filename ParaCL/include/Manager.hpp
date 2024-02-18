@@ -121,6 +121,7 @@ private:
         if (decodeFile_.has_value()) {
             drv.decodeAST(decodeFile_.value());
         }
+
         NodeCodegen codegener;
         auto im = codegener.codegen(drv.getRoot());
         if (disasmFile_.has_value()) {

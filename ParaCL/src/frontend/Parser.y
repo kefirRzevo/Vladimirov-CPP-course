@@ -113,12 +113,10 @@
     logical_or_expression
     conditional_expression
     assignment_expression
-//    constant_expression
     expression
 
 %type <paracl::Statement*>
     statement
-    compound_statement
 
 %type <paracl::BlockStatement*>
     statement_list
@@ -201,29 +199,22 @@
         : assignment_expression                     { $$ = $1; }
         | expression COMMA assignment_expression    { $$ = driver.createNode<BinaryExpression>(@$, BinaryOperator::BIN_COMMA, $1, $3); }
 
-    //constant_expression
-    //    : conditional_expression    { $$ = $1; }
-
     statement
-        : compound_statement        { $$ = $1; }
-        | expression_statement      { $$ = $1; }
-        | selection_statement       { $$ = $1; }
-        | iteration_statement       { $$ = $1; }
-        | jump_statement            { $$ = $1; }
-        | PRINT expression SEMICOL  { $$ = driver.createNode<OutputStatement>(@$, $2); }
-
-    compound_statement
-        : LCURLY RCURLY                 { $$ = driver.createNode<BlockStatement>(@$); }
-        | LCURLY statement_list RCURLY  { $$ = $2; }
+        : LCURLY statement_list RCURLY  { $$ = $2; }
+        | expression_statement          { $$ = $1; }
+        | selection_statement           { $$ = $1; }
+        | iteration_statement           { $$ = $1; }
+        | jump_statement                { $$ = $1; }
+        | PRINT expression SEMICOL      { $$ = driver.createNode<OutputStatement>(@$, $2); }
 
     statement_list
-        : statement                     { auto block = driver.createNode<BlockStatement>(@$); block->addStatement($1); $$ = block; }
+        : %empty                        { $$ = driver.createNode<BlockStatement>(@$); }
+        | statement_list SEMICOL        { $$ = $1; }
         | statement_list statement      { $1->addStatement($2); $$ = $1; }
         | statement_list error SEMICOL  { $$ = $1; yyerrok; }
 
     expression_statement
-        : SEMICOL               { }
-        | expression SEMICOL    { $$ = driver.createNode<ExpressionStatement>(@$, $1); }
+        : expression SEMICOL    { $$ = driver.createNode<ExpressionStatement>(@$, $1); }
 
     selection_statement
         : IF LPAREN expression RPAREN statement %prec IFX       { $$ = driver.createNode<IfStatement>(@$, $3, $5); }

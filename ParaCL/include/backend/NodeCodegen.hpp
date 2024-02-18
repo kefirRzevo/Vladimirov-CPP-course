@@ -340,11 +340,9 @@ public:
     }
 
     void visit(OutputStatement* node) {
-        frame_.beginScope();
         node->expr_->accept(*this);
         im_.addInstr<iOut>();
         codegenPostfixes();
-        frame_.endScope();
     }
 
     void visit(BreakStatement* node) {
