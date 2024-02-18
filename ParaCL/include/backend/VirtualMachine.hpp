@@ -68,16 +68,18 @@ public:
         if (indx + sizeof(T) > stackSize_) {
             throw std::logic_error("Can't look to stack");
         }
-        std::memcpy(std::addressof(memory_[indx]), std::addressof(val), sizeof(T));
+        auto valAddr = reinterpret_cast<const char*>(std::addressof(val));
+        std::copy_n(valAddr, sizeof(T), std::addressof(memory_[indx]));
     }
 
     template<typename T>
-    T atMemory(size_t indx) {
+    T atMemory(size_t indx) const {
         if (indx + sizeof(T) > memSize_) {
             throw std::logic_error("Can't look at memory");
         }
         T val{0};
-        std::memcpy(std::addressof(val), std::addressof(memory_[indx]), sizeof(T));
+        auto valAddr = reinterpret_cast<char*>(std::addressof(val));
+        std::copy_n(std::addressof(memory_[indx]), sizeof(T), valAddr);
         return val;
     }
 
