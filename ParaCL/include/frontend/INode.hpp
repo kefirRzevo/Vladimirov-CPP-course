@@ -8,6 +8,7 @@
 #include <iostream>
 
 #include "location.hpp"
+#include "frontend/SymTable.hpp"
 #include "frontend/Operators.hpp"
 #include "frontend/NodeVisitor.hpp"
 
@@ -126,6 +127,7 @@ struct BlockStatement : public Statement
 {
     using Statement::loc_;
 
+    Scope scope_;
     std::vector<Statement* > statements_;
 
     BlockStatement(const location& loc) :
@@ -154,6 +156,7 @@ struct IfStatement : public Statement
 {
     using Statement::loc_;
 
+    Scope scope_;
     Expression* condition_ = nullptr;
     Statement* trueBlock_ = nullptr;
 
@@ -181,6 +184,7 @@ struct WhileStatement : public Statement
 {
     using Statement::loc_;
 
+    Scope scope_;
     Expression* condition_ = nullptr;
     Statement* block_ = nullptr;
 

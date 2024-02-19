@@ -2,6 +2,7 @@
 
 #include <iostream>
 #include <optional>
+#include <functional>
 #include <string_view>
 #include <unordered_map>
 
@@ -60,13 +61,13 @@ public:
 class ScopeStack final
 {
 private:
-    std::vector<Scope> scopes_;
+    std::vector<std::reference_wrapper<Scope>> scopes_;
 
 public:
     ScopeStack() = default;
 
-    void beginScope() {
-        scopes_.emplace_back();
+    void beginScope(Scope& scope) {
+        scopes_.push_back(scope);
     }
 
     void endScope() {
@@ -76,13 +77,13 @@ public:
     void declare(std::string_view name, VariableExpression* node) {
         if (!scopes_.empty()) {
             auto& back = scopes_.back();
-            back.declare(name, node);
+            back.get().declare(name, node);
         }
     }
 
     bool declared(std::string_view name) const {
         for (auto it = scopes_.rbegin(); it != scopes_.rend(); ++it) {
-            if (it->declared(name)) {
+            if (it->get().declared(name)) {
                 return true;
             }
         }
@@ -91,20 +92,12 @@ public:
 
     std::optional<VariableExpression*> lookupVar(std::string_view name) const {
         for (auto it = scopes_.rbegin(); it != scopes_.rend(); ++it) {
-            auto found = it->lookupVar(name);
+            auto found = it->get().lookupVar(name);
             if (found) {
                 return found;
             }
         }
         return std::nullopt;
-    }
-
-    auto begin() const {
-        return scopes_.rbegin();
-    }
-
-    auto end() const {
-        return scopes_.rend();
     }
 
     size_t size() const {

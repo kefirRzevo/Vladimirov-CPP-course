@@ -80,7 +80,7 @@ public:
     void visit(InputExpression* ) override {}
 
     void visit(BlockStatement* node) override {
-        scopes_.beginScope();
+        scopes_.beginScope(node->scope_);
         for (auto statement: node->statements_) {
             statement->accept(*this);
         }
@@ -92,14 +92,14 @@ public:
     }
 
     void visit(IfStatement* node) override {
-        scopes_.beginScope();
+        scopes_.beginScope(node->scope_);
         node->condition_->accept(*this);
         node->trueBlock_->accept(*this);
         scopes_.endScope();
     }
 
     void visit(IfElseStatement* node) override {
-        scopes_.beginScope();
+        scopes_.beginScope(node->scope_);
         node->condition_->accept(*this);
         node->trueBlock_->accept(*this);
         node->falseBlock_->accept(*this);
@@ -107,7 +107,7 @@ public:
     }
 
     void visit(WhileStatement* node) override {
-        scopes_.beginScope();
+        scopes_.beginScope(node->scope_);
         loops_.push_back(node);
         node->condition_->accept(*this);
         node->block_->accept(*this);

@@ -4,6 +4,7 @@
 
 #include "Utils.hpp"
 #include "backend/Image.hpp"
+#include "frontend/SymTable.hpp"
 
 namespace paracl
 {
@@ -48,11 +49,10 @@ private:
     addr_t begAddr_;
     addr_t curAddr_;
     MemMap map_;
-    Image& im_;
 
 public:
-    MemBlock(addr_t addrBeg, Image& im) :
-        begAddr_(addrBeg), curAddr_(addrBeg), im_(im) {}
+    MemBlock(addr_t addrBeg) :
+        begAddr_(addrBeg), curAddr_(addrBeg) {}
 
     std::optional<addr_t> pushVar(std::string_view name) {
         [[maybe_unused]] auto [it, emplaced] = map_.emplace(name, curAddr_);
@@ -65,7 +65,6 @@ public:
     std::optional<addr_t> push(size_t size) {
         auto oldAddr = curAddr_;
         curAddr_ += size;
-        im_.addInstr<Alloca>(size);
         return oldAddr;
     }
 
@@ -92,24 +91,32 @@ private:
     using addr_t = size_t;
 
     std::vector<MemBlock> blocks_;
-    Image& im_;
+
+    addr_t getCurAddr() const {
+        return blocks_.empty() ? 0U : blocks_.back().getCurAddr();
+    }
 
 public:
-    StackFrame(Image& im) :
-        im_(im) {}
+    StackFrame() = default;
 
-    void beginScope() {
-        blocks_.emplace_back(getCurAddr(), im_);
-    }
-
-    void endScope() {
-        blocks_.pop_back();
-    }
-
-    std::optional<addr_t> pushVar(std::string_view name) {
-        if (!blocks_.empty()) {
+    std::optional<addr_t> beginScope(const Scope& scope) {
+        blocks_.emplace_back(getCurAddr());
+        auto& back = blocks_.back();
+        for (auto& var: scope) {
             auto& back = blocks_.back();
-            return back.pushVar(name);
+            auto addr = back.pushVar(var.first);
+            if (!addr) {
+                return std::nullopt;
+            }
+        }
+        return back.size();
+    }
+
+    std::optional<addr_t> endScope() {
+        if (!blocks_.empty()) {
+            auto size = blocks_.back().size();
+            blocks_.pop_back();
+            return size;
         }
         return std::nullopt;
     }
@@ -130,10 +137,6 @@ public:
             }
         }
         return std::nullopt;
-    }
-
-    addr_t getCurAddr() const {
-        return blocks_.empty() ? 0U : blocks_.back().getCurAddr();
     }
 };
 

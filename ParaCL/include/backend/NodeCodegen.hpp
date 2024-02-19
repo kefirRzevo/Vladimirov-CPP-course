@@ -31,6 +31,26 @@ private:
     StackFrame frame_;
     ConstantPool consts_;
 
+    void beginScope(const Scope& scope) {
+        auto size = frame_.beginScope(scope);
+        if (!size) {
+            throw std::runtime_error("Can't begin scope");
+        }
+        if (size.value() != 0U) {
+            im_.addInstr<Alloca>(size.value());
+        }
+    }
+
+    void endScope() {
+        auto size = frame_.endScope();
+        if (!size) {
+            throw std::runtime_error("Can't end scope");
+        }
+        if (size.value() != 0U) {
+            im_.addInstr<Alloca>(-static_cast<int>(size.value()));
+        }
+    }
+
     void codegenPostfixes() {
         if (postfixes_.empty()) {
             return;
@@ -158,7 +178,7 @@ private:
 
 public:
     NodeCodegen() :
-        im_(), frame_(im_), consts_(im_) {}
+        im_(), frame_(), consts_(im_) {}
 
     Image codegen(INode* root) {
         if (root) {
@@ -210,10 +230,7 @@ public:
                 auto lhs = static_cast<VariableExpression*>(node->left_);
                 auto addr = frame_.lookupVar(lhs->name_);
                 if (!addr) {
-                    addr = frame_.pushVar(lhs->name_);
-                    if (!addr) {
-                        throw std::runtime_error("Can't push variable");
-                    }
+                    throw std::runtime_error("Can't push variable");
                 }
                 node->right_->accept(*this);
                 im_.addInstr<iPopAddr>(addr.value());
@@ -259,10 +276,7 @@ public:
     void visit(VariableExpression* node) {
         auto addr = frame_.lookupVar(node->name_);
         if (!addr) {
-            addr = frame_.pushVar(node->name_);
-            if (!addr) {
-                throw std::runtime_error("Can't push variable");
-            }
+            throw std::runtime_error("Can't push variable");
         }
         im_.addInstr<iPushAddr>(addr.value());
     }
@@ -272,11 +286,11 @@ public:
     }
 
     void visit(BlockStatement* node) {
-        frame_.beginScope();
+        beginScope(node->scope_);
         for (auto statement: node->statements_) {
             statement->accept(*this);
         }
-        frame_.endScope();
+        endScope();
     }
 
     void visit(ExpressionStatement* node) {
@@ -286,7 +300,7 @@ public:
     }
 
     void visit(IfStatement* node) {
-        frame_.beginScope();
+        beginScope(node->scope_);
         node->condition_->accept(*this);
         codegenPostfixes();
         auto jmpFalseIndx = im_.addInstr<JmpFalse>();
@@ -296,11 +310,11 @@ public:
 
         auto jmpFalse = static_cast<JmpFalse*>(im_.getInstr(jmpFalseIndx));
         jmpFalse->setAddr(exitAddr);
-        frame_.endScope();
+        endScope();
     }
 
     void visit(IfElseStatement* node) {
-        frame_.beginScope();
+        beginScope(node->scope_);
         node->condition_->accept(*this);
         codegenPostfixes();
         auto jmpTrueIndx = im_.addInstr<JmpTrue>();
@@ -317,11 +331,11 @@ public:
         jmpTrue->setAddr(trueAddr);
         auto jmp = static_cast<Jmp*>(im_.getInstr(jmpIndx));
         jmp->setAddr(exitAddr);
-        frame_.endScope();
+        endScope();
     }
 
     void visit(WhileStatement* node) {
-        frame_.beginScope();
+        beginScope(node->scope_);
         auto condAddr = im_.getInstrCurAddr();
 
         node->condition_->accept(*this);
@@ -336,7 +350,7 @@ public:
         auto jmp = static_cast<Jmp*>(im_.getInstr(jmpIndx));
         jmp->setAddr(condAddr);
         codegenLoopResets(node, condAddr, exitAddr);
-        frame_.endScope();
+        endScope();
     }
 
     void visit(OutputStatement* node) {
