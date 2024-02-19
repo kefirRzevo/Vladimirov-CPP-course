@@ -1,0 +1,23 @@
+name: Concrete pre-commit and post-push
+on:
+  push:
+    branches:
+      - master
+  pull_request:
+    branches:
+      - master
+jobs:
+  main:
+    runs-on: ubuntu-latest
+    defaults:
+      run:
+        shell: bash
+    steps:
+    - name: Install required compiler to be sure
+      run: sudo apt-get install g++
+    - name: Checkout repository
+      uses: actions/checkout@v3
+    - name: CMake check config
+      run: cmake -S . -B build -DCMAKE_CXX_COMPILER=g++
+    - name: CMake check build
+      run: cmake --build build
