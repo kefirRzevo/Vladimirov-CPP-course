@@ -61,7 +61,8 @@ struct BinaryExpression : public Expression
     Expression* left_ = nullptr;
     Expression* right_ = nullptr;
 
-    BinaryExpression(const location& loc, BinaryOperator op, Expression* left, Expression* right) :
+    BinaryExpression(const location& loc,
+                     BinaryOperator op, Expression* left, Expression* right) :
         Expression(loc), op_(op), left_(left), right_(right) {}
 
     VISITABLE;
@@ -75,8 +76,10 @@ struct TernaryExpression : public Expression
     Expression* onTrue_ = nullptr;
     Expression* onFalse_ = nullptr;
 
-    TernaryExpression(const location& loc, Expression* condition, Expression* onTrue, Expression* onFalse) :
-        Expression(loc), condition_(condition), onTrue_(onTrue), onFalse_(onFalse) {}
+    TernaryExpression(const location& loc, Expression* condition,
+                      Expression* onTrue, Expression* onFalse) :
+        Expression(loc), condition_(condition),
+        onTrue_(onTrue), onFalse_(onFalse) {}
 
     VISITABLE;
 };
@@ -160,7 +163,8 @@ struct IfStatement : public Statement
     Expression* condition_ = nullptr;
     Statement* trueBlock_ = nullptr;
 
-    IfStatement(const location& loc, Expression* condition, Statement* trueBlock) :
+    IfStatement(const location& loc,
+                Expression* condition, Statement* trueBlock) :
         Statement(loc), condition_(condition), trueBlock_(trueBlock) {}
 
     VISITABLE;
@@ -169,12 +173,14 @@ struct IfStatement : public Statement
 struct IfElseStatement : public IfStatement
 {
     using IfStatement::loc_;
+    using IfStatement::scope_;
     using IfStatement::condition_;
     using IfStatement::trueBlock_;
 
     Statement* falseBlock_ = nullptr;
 
-    IfElseStatement(const location& loc, Expression* condition, Statement* trueBlock, Statement* falseBlock) :
+    IfElseStatement(const location& loc, Expression* condition,
+                    Statement* trueBlock, Statement* falseBlock) :
         IfStatement(loc, condition, trueBlock), falseBlock_(falseBlock) {}
 
     VISITABLE;
@@ -188,7 +194,8 @@ struct WhileStatement : public Statement
     Expression* condition_ = nullptr;
     Statement* block_ = nullptr;
 
-    WhileStatement(const location& loc, Expression* condition, Statement* block) :
+    WhileStatement(const location& loc,
+                   Expression* condition, Statement* block) :
         Statement(loc), condition_(condition), block_(block) {}
 
     VISITABLE;

@@ -1,8 +1,9 @@
 #include "frontend/AST.hpp"
 #include "frontend/NodeCopier.hpp"
-#include "frontend/NodeDumper.hpp"
-#include "frontend/NodeDecoder.hpp"
-#include "frontend/NodeAnalyzer.hpp"
+#include "frontend/NodeGeneratorCL.hpp"
+#include "frontend/NodeGeneratorCPP.hpp"
+#include "frontend/NodeGeneratorDot.hpp"
+#include "frontend/NodeSemanticAnalyzer.hpp"
 
 namespace paracl
 {
@@ -22,14 +23,19 @@ AST::AST(const AST& rhs) {
     root_ = copier.copy(rhs.root_);
 }
 
-void AST::dump(const std::string& filepath) const {
-    NodeDumper dumper{filepath};
-    dumper.dump(root_);
+void AST::generateDot(const std::string& filepath) const {
+    NodeGeneratorDot generator{filepath};
+    generator.generate(root_);
 }
 
-void AST::decode(const std::string& filepath) const {
-    NodeDecoder dumper{filepath};
-    dumper.decode(root_);
+void AST::generateCl(const std::string& filepath) const {
+    NodeGeneratorCl generator{filepath};
+    generator.generate(root_);
+}
+
+void AST::generateCpp(const std::string& filepath) const {
+    NodeGeneratorCpp generator{filepath};
+    generator.generate(root_);
 }
 
 void AST::semanticAnalyze(Driver& driver) {

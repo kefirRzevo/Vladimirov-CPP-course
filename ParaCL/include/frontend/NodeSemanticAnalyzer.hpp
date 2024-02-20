@@ -19,7 +19,7 @@ private:
     Driver& driver_;
     ScopeStack scopes_;
     std::vector<INode*> loops_;
-    bool declareMode = false;
+    bool declareMode_ = false;
 
 public:
     NodeSemanticAnalyzer(Driver& driver)
@@ -32,32 +32,31 @@ public:
     }
 
     void visit(UnaryExpression* node) override {
-        switch(node->op_) {
-            case UnaryOperator::UN_PREFIX_INC:
-            case UnaryOperator::UN_PREFIX_DEC:
-            case UnaryOperator::UN_POSTFIX_INC:
-            case UnaryOperator::UN_POSTFIX_DEC:
-                if (typeid(*node->expr_) != typeid(VariableExpression)) {
-                    driver_.reportError<UnassignableExpression>(node->loc_);
-                }
-                break;
-            default:
-                break;
+        if (isPostfix(node->op_) || isPrefix(node->op_)) {
+            if (typeid(*node->expr_) != typeid(VariableExpression)) {
+                driver_.reportError<UnassignableExpression>(node->loc_);
+            }
         }
         node->expr_->accept(*this);
     }
 
     void visit(BinaryExpression* node) override {
-        node->right_->accept(*this);
-        if (node->op_ == BinaryOperator::BIN_ASSIGN) {
-            declareMode = true;
+        switch (node->op_) {
+        case BinaryOperator::BIN_ASSIGN: {
+            node->right_->accept(*this);
+            declareMode_ = true;
             if (typeid(*node->left_) != typeid(VariableExpression)) {
                 driver_.reportError<UnassignableExpression>(node->loc_);
             }
             node->left_->accept(*this);
-            declareMode = false;
-        } else {
+            declareMode_ = false;
+            break;
+        }
+        default: {
             node->left_->accept(*this);
+            node->right_->accept(*this);
+            break;
+        }
         }
     }
 
@@ -70,7 +69,7 @@ public:
     void visit(ConstantExpression* ) override {}
 
     void visit(VariableExpression* node) override {
-        if (declareMode) {
+        if (declareMode_ && !scopes_.declared(node->name_)) {
             scopes_.declare(node->name_, node);
         } else if (!scopes_.declared(node->name_)) {
             driver_.reportError<UndeclaredIdentifier>(node->loc_, node->name_);

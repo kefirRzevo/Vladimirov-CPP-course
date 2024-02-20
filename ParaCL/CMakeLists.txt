@@ -43,7 +43,6 @@ add_executable(
   ${FLEX_scanner_OUTPUTS}
   ${INTERPETER_SOURCES}
 )
-#include_directories(${BOOST_INCLUDE_DIRS})
 target_include_directories(
   ${INTERPETER} PRIVATE
   ${CMAKE_CURRENT_BINARY_DIR}
@@ -55,6 +54,14 @@ set(TARGET vm_test)
 set(TEST_SOURCES
   src/backend/Instructions.cpp
   test/VMTest.cpp
+)
+add_executable(${TARGET} ${TEST_SOURCES})
+include_directories(${GTEST_INCLUDE_DIRS})
+target_link_libraries(${TARGET} ${GTEST_LIBRARIES})
+
+set(TARGET paracl_test)
+set(TEST_SOURCES
+  test/ParaCLTest.cpp
 )
 add_executable(${TARGET} ${TEST_SOURCES})
 include_directories(${GTEST_INCLUDE_DIRS})

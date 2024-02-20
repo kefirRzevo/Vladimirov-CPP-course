@@ -7,17 +7,17 @@
 namespace paracl
 {
 
-class NodeDecoder final : public NodeVisitor
+class NodeGeneratorCl final : public NodeVisitor
 {
 private:
     std::string filepath_;
     std::ofstream os_;
 
 public:
-    NodeDecoder(const std::string& filepath)
+    NodeGeneratorCl(const std::string& filepath)
     : filepath_(filepath), os_{filepath} {}
 
-    void decode(INode* root) {
+    void generate(INode* root) {
         if (root) {
             root->accept(*this);
         }

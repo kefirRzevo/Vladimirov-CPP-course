@@ -18,8 +18,9 @@ class Manager
 {
 private:
     std::optional<std::string> inputFile_ = std::nullopt;
-    std::optional<std::string> dumpFile_ = std::nullopt;
-    std::optional<std::string> decodeFile_ = std::nullopt;
+    std::optional<std::string> dotFile_ = std::nullopt;
+    std::optional<std::string> clFile_ = std::nullopt;
+    std::optional<std::string> cppFile_ = std::nullopt;
     std::optional<std::string> disasmFile_ = std::nullopt;
     bool help_ = false;
 
@@ -34,13 +35,15 @@ private:
 
         po::options_description config("Configuration");
         config.add_options()
-            ("dump", po::value<std::string>()->implicit_value(""),
+            ("dot", po::value<std::string>()->implicit_value(""),
             "ast dot dump")
-            ("decode",
+            ("cl",
             po::value<std::string>()->implicit_value(""),
-            "decode ast")
+            "generate cl code")
             ("disasm", po::value<std::string>()->implicit_value(""),
-            "my assembler");
+            "disassembler code")
+            ("cpp", po::value<std::string>()->implicit_value(""),
+            "generate cpp code");
 
         po::options_description hidden("Hidden options");
         hidden.add_options()
@@ -76,19 +79,26 @@ private:
                 if (dump == "") {
                     dump = fullpath.generic_string().append(".dot");
                 }
-                dumpFile_.emplace(dump);
+                dotFile_.emplace(dump);
             }
             if (vm.count("decode")) {
                 auto decode = vm["decode"].as<std::string>();
                 if (decode == "") {
                     decode = fullpath.generic_string().append(".decoded");
                 }
-                decodeFile_.emplace(decode);
+                clFile_.emplace(decode);
+            }
+            if (vm.count("cpp")) {
+                auto cpp = vm["cpp"].as<std::string>();
+                if (cpp == "") {
+                    cpp = fullpath.generic_string().append(".cpp");
+                }
+                cppFile_.emplace(cpp);
             }
             if (vm.count("disasm")) {
                 auto disasm = vm["disasm"].as<std::string>();
                 if (disasm == "") {
-                    disasm = fullpath.generic_string().append(".myasm");
+                    disasm = fullpath.generic_string().append(".disasm");
                 }
                 disasmFile_.emplace(disasm);
             }
@@ -115,17 +125,20 @@ private:
             drv.reportAllErrors(std::cerr);
             return;
         }
-        if (dumpFile_.has_value()) {
-            drv.dumpAST(dumpFile_.value());
+        if (dotFile_.has_value()) {
+            drv.generateDot(dotFile_.value());
         }
-        if (decodeFile_.has_value()) {
-            drv.decodeAST(decodeFile_.value());
+        if (clFile_.has_value()) {
+            drv.generateCl(clFile_.value());
+        }
+        if (cppFile_.has_value()) {
+            drv.generateCpp(cppFile_.value());
         }
 
         NodeCodegen codegener;
         auto im = codegener.codegen(drv.getRoot());
         if (disasmFile_.has_value()) {
-            im.disassembble(disasmFile_.value());
+            im.disassemble(disasmFile_.value());
         }
         VirtualMachine m;
         m.loadImage(std::move(im));

@@ -1,5 +1,4 @@
-//#include "backend/VirtualMachine.hpp"
-#include "../../include/backend/VirtualMachine.hpp"
+#include "backend/VirtualMachine.hpp"
 
 namespace paracl
 {

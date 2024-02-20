@@ -1,10 +1,8 @@
 .vscode/
 build/
 res/
-tests/*.dot
-tests/*.myasm
 
 include/backend/Instructions2.hpp
+include/Json.hpp
 test/TestGenerator.cpp
-test/NodeCodegenC.hpp
 test/config.json

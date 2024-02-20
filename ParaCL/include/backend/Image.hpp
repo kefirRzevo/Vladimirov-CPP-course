@@ -55,7 +55,7 @@ public:
         constCurPtr_ = instrEndPtr_;
     }
 
-    void disassembble(const std::string& filepath) const {
+    void disassemble(const std::string& filepath) const {
         std::ofstream os{filepath};
         os << "Literals" << std::endl;
         for (const auto& constant: consts_) {

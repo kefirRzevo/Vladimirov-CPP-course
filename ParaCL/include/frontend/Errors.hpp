@@ -127,8 +127,9 @@ struct OutOfLoopStatement : public Semantic
 
     std::string stat_;
 
-    OutOfLoopStatement(const location& loc, const std::string& stat)
-    : Semantic(loc, "statement not in loop or switch statement"), stat_(stat) {}
+    OutOfLoopStatement(const location& loc, const std::string& stat) :
+        Semantic(loc, "statement not in loop or switch statement"),
+        stat_(stat) {}
 
     void print(std::ostream& os) const override {
         os << loc_ << " error: '" << stat_ << "' " << msg_ << std::endl;
@@ -149,7 +150,9 @@ public:
 
     template<typename ErrorType, typename... ErrorArgs>
     void reportError(ErrorArgs&&... args) {
-        auto uptr = std::make_unique<ErrorType>(std::forward<ErrorArgs>(args)...);
+        auto uptr = std::make_unique<ErrorType>(
+            std::forward<ErrorArgs>(args)...
+        );
         errors_.push_back(std::move(uptr));
     }
 

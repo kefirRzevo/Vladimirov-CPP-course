@@ -8,7 +8,7 @@
 namespace paracl
 {
 
-class NodeDumper final : public NodeVisitor
+class NodeGeneratorDot final : public NodeVisitor
 {
 private:
     std::string filepath_;
@@ -18,15 +18,18 @@ private:
         os_ << "\tnode_" << parent << " -> node_" << child << ";\n";
     }
 
-    void printNode(INode* node, const std::string& color, const std::string& label) {
-        os_ << "\tnode_" << node << "[fillcolor=" << color << ", label = \"" << node->loc_ << " | " << label << "\"];\n";
+    void printNode(INode* node, 
+                   const std::string& color, const std::string& label) {
+        os_ << "\tnode_" << node;
+        os_ <<"[fillcolor=" << color << ", label = \"";
+        os_ << node->loc_ << " | " << label << "\"];\n";
     }
 
 public:
-    NodeDumper(const std::string& filepath)
+    NodeGeneratorDot(const std::string& filepath)
     : os_(filepath) {}
 
-    void dump(INode* root) {
+    void generate(INode* root) {
         os_ << "digraph {\n";
         os_ << "\tnode[shape=record, style=filled, fontcolor=black];\n";
         if (root) {
@@ -39,11 +42,11 @@ public:
     void visit(UnaryExpression* node) override {
         std::string res;
         if (isPrefix(node->op_)) {
-            res = "^";
+            res = "\\^";
         }
-        res += toString(node->op_);
+        res += "\\" + toString(node->op_);
         if (isPostfix(node->op_)) {
-            res += "^";
+            res += "\\^";
         }
         printNode(node, "orange", res);
         printLink(node, node->expr_);
@@ -51,7 +54,7 @@ public:
     }
 
     void visit(BinaryExpression* node) override {
-        printNode(node, "orange", toString(node->op_));
+        printNode(node, "orange", "\\" + toString(node->op_));
         printLink(node, node->left_);
         printLink(node, node->right_);
         node->left_->accept(*this);
@@ -59,7 +62,7 @@ public:
     }
 
     void visit(TernaryExpression* node) override {
-        printNode(node, "orange", "? :");
+        printNode(node, "orange", "\\? \\:");
         printLink(node, node->condition_);
         printLink(node, node->onTrue_);
         printLink(node, node->onFalse_);

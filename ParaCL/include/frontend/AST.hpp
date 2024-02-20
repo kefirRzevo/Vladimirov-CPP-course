@@ -48,22 +48,24 @@ public:
         return ptr;
     }
 
-    void setRoot(INode* root) {
+    void setRoot(INode* root) noexcept {
         root_ = root;
     }
 
-    INode* getRoot() {
+    INode* getRoot() noexcept {
         return root_;
     }
 
-    void clear() {
+    void clear() noexcept {
         nodes_.clear();
         root_ = nullptr;
     }
 
-    void dump(const std::string& filepath) const;
+    void generateDot(const std::string& filepath) const;
 
-    void decode(const std::string& filepath) const;
+    void generateCl(const std::string& filepath) const;
+
+    void generateCpp(const std::string& filepath) const;
 
     void semanticAnalyze(Driver& driver);
 };

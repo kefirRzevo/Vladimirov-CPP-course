@@ -56,6 +56,10 @@ public:
     size_t size() const {
         return map_.size();
     }
+
+    bool empty() const {
+        return map_.empty();
+    }
 };
 
 class ScopeStack final

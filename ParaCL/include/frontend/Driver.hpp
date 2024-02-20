@@ -43,16 +43,16 @@ public:
         return tree_->getRoot();
     }
 
-    void clearAST() {
-        return tree_->clear();
+    void generateDot(const std::string& filepath) const {
+        tree_->generateDot(filepath);
     }
 
-    void dumpAST(const std::string& filepath) const {
-        tree_->dump(filepath);
+    void generateCl(const std::string& filepath) const {
+        tree_->generateCl(filepath);
     }
 
-    void decodeAST(const std::string& filepath) const {
-        tree_->decode(filepath);
+    void generateCpp(const std::string& filepath) const {
+        tree_->generateCpp(filepath);
     }
 
     void semanticAnalyze() {
@@ -76,10 +76,6 @@ public:
 
     void reportAllErrors(std::ostream& os) const {
         reporter_->reportAllErrors(os);
-    }
-
-    void clearReporter() {
-        reporter_->clear();
     }
 };
 
