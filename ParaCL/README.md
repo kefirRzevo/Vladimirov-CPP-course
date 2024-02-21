@@ -22,9 +22,10 @@ For example,
         output: Fibonacci sequence
 ```
 Enable options of `paracl`:
-`--dump` - to dump AST in dot format
-`--decode` - to decode AST to same program
+`--dot`    - to dump AST in dot format
+`--cl`     - to decode AST to the same program
 `--disasm` - to disasm program to my assembler
+`--cpp`    - to generate cpp code
 
 
 ## Build
@@ -42,4 +43,5 @@ To build program:
 To check my tests:
 ```
         ./paracl_test
+        ./vm_test
 ```

@@ -18,7 +18,7 @@ else ()
     set(COMPILER_SETTINGS -O2 -Wall -Wextra -Wpedantic)
 endif ()
 add_compile_options(${COMPILER_SETTINGS})
-include_directories(include ${Boost_INCLUDE_DIRS})
+include_directories(include ${Boost_INCLUDE_DIR})
 
 flex_target(
   scanner
