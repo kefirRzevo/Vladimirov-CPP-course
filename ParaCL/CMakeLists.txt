@@ -8,7 +8,7 @@ set(INTERPETER "${PROJECT_NAME}")
 
 find_package(FLEX REQUIRED)
 find_package(BISON REQUIRED)
-find_package(Boost COMPONENTS program_options REQUIRED)
+find_package(Boost 1.40 COMPONENTS program_options REQUIRED)
 find_package(GTest REQUIRED)
 
 set(CMAKE_BUILD_TYPE Debug)
