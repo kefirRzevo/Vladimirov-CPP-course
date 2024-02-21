@@ -10,11 +10,20 @@ jobs:
       run:
         shell: bash
     steps:
-    - name: Install required compiler to be sure
+    - uses: actions/checkout@v3
+    - name: Compiler dependency
       run: sudo apt-get install g++
-    - name: Checkout repository
-      uses: actions/checkout@v3
-    - name: CMake check config
+    - name: Boost dependency
+      run: sudo apt-get install libboost-all-dev
+    - name: GTest dependency
+      run: sudo apt install libgtest-dev
+    - name: Flex dependency
+      run: sudo apt-get install flex && sudo apt-get install libfl-dev
+    - name: Bison dependency
+      run: sudo apt-get install bison
+    - name: CMake configure
       run: cmake -S ParaCL/ -B ParaCL/build -DCMAKE_CXX_COMPILER=g++
-    - name: CMake check build
+    - name: CMake build
       run: cmake --build ParaCL/build
+    - name: Run tests
+      run: ./ParaCL/build/paracl_test && ./ParaCL/build/vm_test
