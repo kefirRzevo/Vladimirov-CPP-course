@@ -28,64 +28,79 @@ public:
 
     void visit(UnaryExpression* node) override {
         using Type = UnaryExpression;
-        node->expr_->accept(*this);
+        auto nodeLoc = node->getLocation();
+        auto nodeOp = node->getOperator();
+        auto nodeExpr = node->getExpr();
+        nodeExpr->accept(*this);
         Expression* expr = static_cast<Expression*>(copied_.back());
         copied_.pop_back();
-        Type* n = tree_.createNode<Type>(node->loc_, node->op_, expr);
+        auto n = tree_.createNode<Type>(nodeLoc, nodeOp, expr);
         copied_.push_back(n);
     }
 
     void visit(BinaryExpression* node) override {
         using Type = BinaryExpression;
-        node->right_->accept(*this);
+        auto nodeLoc = node->getLocation();
+        auto nodeOp = node->getOperator();
+        auto nodeLeft = node->getLeftExpr();
+        auto nodeRight = node->getRightExpr();
+        nodeRight->accept(*this);
         Expression* right = static_cast<Expression*>(copied_.back());
         copied_.pop_back();
-        node->left_->accept(*this);
+        nodeLeft->accept(*this);
         Expression* left = static_cast<Expression*>(copied_.back());
         copied_.pop_back();
-        Type* n = tree_.createNode<Type>(node->loc_, node->op_, left, right);
+        auto n = tree_.createNode<Type>(nodeLoc, nodeOp, left, right);
         copied_.push_back(n);
     }
 
     void visit(TernaryExpression* node) override {
         using Type = TernaryExpression;
-        node->onFalse_->accept(*this);
+        auto nodeLoc = node->getLocation();
+        auto nodeCond = node->getCondExpr();
+        auto nodeTrue = node->getTrueExpr();
+        auto nodeFalse = node->getFalseExpr();
+        nodeFalse->accept(*this);
         Expression* onFalse = static_cast<Expression*>(copied_.back());
         copied_.pop_back();
-        node->onTrue_->accept(*this);
+        nodeTrue->accept(*this);
         Expression* onTrue = static_cast<Expression*>(copied_.back());
         copied_.pop_back();
-        node->condition_->accept(*this);
-        Expression* condition = static_cast<Expression*>(copied_.back());
+        nodeCond->accept(*this);
+        Expression* cond = static_cast<Expression*>(copied_.back());
         copied_.pop_back();
-        Type* n = tree_.createNode<Type>(node->loc_, condition,
-                                         onTrue, onFalse);
+        auto n = tree_.createNode<Type>(nodeLoc, cond, onTrue, onFalse);
         copied_.push_back(n);
     }
 
     void visit(ConstantExpression* node) override {
         using Type = ConstantExpression;
-        Type* n = tree_.createNode<Type>(node->loc_,node->value_);
+        auto nodeLoc = node->getLocation();
+        auto nodeVal = node->getValue();
+        auto n = tree_.createNode<Type>(nodeLoc, nodeVal);
         copied_.push_back(n);
     }
 
     void visit(VariableExpression* node) override {
         using Type = VariableExpression;
-        Type* n = tree_.createNode<Type>(node->loc_, node->name_);
+        auto nodeLoc = node->getLocation();
+        auto nodeName = node->getName();
+        auto n = tree_.createNode<Type>(nodeLoc, nodeName);
         copied_.push_back(n);
     }
 
     void visit(InputExpression* node) override {
         using Type = InputExpression;
-        InputExpression* n = tree_.createNode<Type>(node->loc_);
+        auto nodeLoc = node->getLocation();
+        auto n = tree_.createNode<Type>(nodeLoc);
         copied_.push_back(n);
     }
 
     void visit(BlockStatement* node) override {
         using Type = BlockStatement;
-        Type* n = tree_.createNode<Type>(node->loc_);
-        auto&& stats = node->statements_;
-        for (auto it = stats.rbegin(); it != stats.rend(); ++it) {
+        auto nodeLoc = node->getLocation();
+        auto n = tree_.createNode<Type>(nodeLoc);
+        for (auto it = node->rbegin(); it != node->rend(); ++it) {
             (*it)->accept(*this);
             Statement* stat = static_cast<Statement*>(copied_.back());
             copied_.pop_back();
@@ -96,71 +111,86 @@ public:
 
     void visit(ExpressionStatement* node) override {
         using Type = ExpressionStatement;
-        node->expr_->accept(*this);
+        auto nodeLoc = node->getLocation();
+        auto nodeExpr = node->getExpr();
+        nodeExpr->accept(*this);
         Expression* expr = static_cast<Expression*>(copied_.back());
         copied_.pop_back();
-        Type* n = tree_.createNode<Type>(node->loc_, expr);
+        auto n = tree_.createNode<Type>(nodeLoc, expr);
         copied_.push_back(n);
     }
 
     void visit(IfStatement* node) override {
         using Type = IfStatement;
-        node->trueBlock_->accept(*this);
+        auto nodeLoc = node->getLocation();
+        auto nodeCond = node->getCondExpr();
+        auto nodeTrue = node->getTrueBlock();
+        nodeTrue->accept(*this);
         Statement* trueBlock = static_cast<Statement*>(copied_.back());
         copied_.pop_back();
-        node->condition_->accept(*this);
-        Expression* condition = static_cast<Expression*>(copied_.back());
+        nodeCond->accept(*this);
+        Expression* cond = static_cast<Expression*>(copied_.back());
         copied_.pop_back();
-        Type* n = tree_.createNode<Type>(node->loc_, condition, trueBlock);
+        auto n = tree_.createNode<Type>(nodeLoc, cond, trueBlock);
         copied_.push_back(n);
     }
 
     void visit(IfElseStatement* node) override {
         using Type = IfElseStatement;
-        node->falseBlock_->accept(*this);
+        auto nodeLoc = node->getLocation();
+        auto nodeCond = node->getCondExpr();
+        auto nodeTrue = node->getTrueBlock();
+        auto nodeFalse = node->getFalseBlock();
+        nodeFalse->accept(*this);
         Statement* falseBlock = static_cast<Statement*>(copied_.back());
         copied_.pop_back();
-        node->trueBlock_->accept(*this);
+        nodeTrue->accept(*this);
         Statement* trueBlock = static_cast<Statement*>(copied_.back());
         copied_.pop_back();
-        node->condition_->accept(*this);
-        Expression* condition = static_cast<Expression*>(copied_.back());
+        nodeCond->accept(*this);
+        Expression* cond = static_cast<Expression*>(copied_.back());
         copied_.pop_back();
-        Type* n = tree_.createNode<Type>(node->loc_, condition,
-                                         trueBlock, falseBlock);
+        auto n = tree_.createNode<Type>(nodeLoc, cond, trueBlock, falseBlock);
         copied_.push_back(n);
     }
 
     void visit(WhileStatement* node) override {
         using Type = WhileStatement;
-        node->block_->accept(*this);
+        auto nodeLoc = node->getLocation();
+        auto nodeCond = node->getCondExpr();
+        auto nodeBlock = node->getBlock();
+        nodeBlock->accept(*this);
         Statement* block = static_cast<Statement*>(copied_.back());
         copied_.pop_back();
-        node->condition_->accept(*this);
-        Expression* condition = static_cast<Expression*>(copied_.back());
+        nodeCond->accept(*this);
+        Expression* cond = static_cast<Expression*>(copied_.back());
         copied_.pop_back();
-        Type* n = tree_.createNode<Type>(node->loc_, condition, block);
+        auto n = tree_.createNode<Type>(nodeLoc, cond, block);
         copied_.push_back(n);
     }
 
     void visit(OutputStatement* node) override {
         using Type = OutputStatement;
-        node->expr_->accept(*this);
+        auto nodeLoc = node->getLocation();
+        auto nodeExpr = node->getExpr();
+        nodeExpr->accept(*this);
         Expression* expr = static_cast<Expression*>(copied_.back());
         copied_.pop_back();
-        Type* n = tree_.createNode<Type>(node->loc_, expr);
+        auto n = tree_.createNode<Type>(nodeLoc, expr);
         copied_.push_back(n);
     }
 
     void visit(BreakStatement* node) override {
         using Type = BreakStatement;
-        Type* n = tree_.createNode<Type>(node->loc_);
+        auto nodeLoc = node->getLocation();
+        auto n = tree_.createNode<Type>(nodeLoc);
         copied_.push_back(n);
     }
 
     void visit(ContinueStatement* node) override {
         using Type = ContinueStatement;
-        Type* n = tree_.createNode<Type>(node->loc_);
+        auto nodeLoc = node->getLocation();
+        auto n = tree_.createNode<Type>(nodeLoc);
         copied_.push_back(n);
     }
 };

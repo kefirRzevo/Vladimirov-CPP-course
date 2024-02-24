@@ -32,105 +32,116 @@ public:
     }
 
     void visit(UnaryExpression* node) override {
-        if (isPostfix(node->op_) || isPrefix(node->op_)) {
-            if (typeid(*node->expr_) != typeid(VariableExpression)) {
-                driver_.reportError<UnassignableExpression>(node->loc_);
+        auto nodeLoc = node->getLocation();
+        auto nodeOp = node->getOperator();
+        auto nodeExpr = node->getExpr();
+        if (isPostfix(nodeOp) || isPrefix(nodeOp)) {
+            if (typeid(*nodeExpr) != typeid(VariableExpression)) {
+                driver_.reportError<UnassignableExpression>(nodeLoc);
             }
         }
-        node->expr_->accept(*this);
+        nodeExpr->accept(*this);
     }
 
     void visit(BinaryExpression* node) override {
-        switch (node->op_) {
+        auto nodeLoc = node->getLocation();
+        auto nodeOp = node->getOperator();
+        auto nodeLeft = node->getLeftExpr();
+        auto nodeRight = node->getRightExpr();
+        switch (nodeOp) {
         case BinaryOperator::BIN_ASSIGN: {
-            node->right_->accept(*this);
+            nodeRight->accept(*this);
             declareMode_ = true;
-            if (typeid(*node->left_) != typeid(VariableExpression)) {
-                driver_.reportError<UnassignableExpression>(node->loc_);
+            if (typeid(*nodeLeft) != typeid(VariableExpression)) {
+                driver_.reportError<UnassignableExpression>(nodeLoc);
             }
-            node->left_->accept(*this);
+            nodeLeft->accept(*this);
             declareMode_ = false;
             break;
         }
         default: {
-            node->left_->accept(*this);
-            node->right_->accept(*this);
+            nodeLeft->accept(*this);
+            nodeRight->accept(*this);
             break;
         }
         }
     }
 
     void visit(TernaryExpression* node) override {
-        node->condition_->accept(*this);
-        node->onTrue_->accept(*this);
-        node->onFalse_->accept(*this);
+        node->getCondExpr()->accept(*this);
+        node->getTrueExpr()->accept(*this);
+        node->getFalseExpr()->accept(*this);
     }
 
     void visit(ConstantExpression* ) override {}
 
     void visit(VariableExpression* node) override {
-        if (declareMode_ && !scopes_.declared(node->name_)) {
-            scopes_.declare(node->name_, node);
-        } else if (!scopes_.declared(node->name_)) {
-            driver_.reportError<UndeclaredIdentifier>(node->loc_, node->name_);
+        auto nodeLoc = node->getLocation();
+        auto nodeName = node->getName();
+        if (declareMode_ && !scopes_.declared(nodeName)) {
+            scopes_.declare(nodeName, node);
+        } else if (!scopes_.declared(nodeName)) {
+            driver_.reportError<UndeclaredIdentifier>(nodeLoc, nodeName);
         }
     }
 
     void visit(InputExpression* ) override {}
 
     void visit(BlockStatement* node) override {
-        scopes_.beginScope(node->scope_);
-        for (auto statement: node->statements_) {
+        scopes_.beginScope(node->getScope());
+        for (auto&& statement : *node) {
             statement->accept(*this);
         }
         scopes_.endScope();
     }
 
     void visit(ExpressionStatement* node) override {
-        node->expr_->accept(*this);
+        node->getExpr()->accept(*this);
     }
 
     void visit(IfStatement* node) override {
-        scopes_.beginScope(node->scope_);
-        node->condition_->accept(*this);
-        node->trueBlock_->accept(*this);
+        scopes_.beginScope(node->getScope());
+        node->getCondExpr()->accept(*this);
+        node->getTrueBlock()->accept(*this);
         scopes_.endScope();
     }
 
     void visit(IfElseStatement* node) override {
-        scopes_.beginScope(node->scope_);
-        node->condition_->accept(*this);
-        node->trueBlock_->accept(*this);
-        node->falseBlock_->accept(*this);
+        scopes_.beginScope(node->getScope());
+        node->getCondExpr()->accept(*this);
+        node->getTrueBlock()->accept(*this);
+        node->getFalseBlock()->accept(*this);
         scopes_.endScope();
     }
 
     void visit(WhileStatement* node) override {
-        scopes_.beginScope(node->scope_);
+        scopes_.beginScope(node->getScope());
         loops_.push_back(node);
-        node->condition_->accept(*this);
-        node->block_->accept(*this);
+        node->getCondExpr()->accept(*this);
+        node->getBlock()->accept(*this);
         loops_.pop_back();
         scopes_.endScope();
     }
 
     void visit(OutputStatement* node) override {
-        node->expr_->accept(*this);
+        node->getExpr()->accept(*this);
     }
 
     void visit(BreakStatement* node) override {
+        auto nodeLoc = node->getLocation();
         if (loops_.empty()) {
-            driver_.reportError<OutOfLoopStatement>(node->loc_, "break");
+            driver_.reportError<OutOfLoopStatement>(nodeLoc, "break");
         } else {
-            node->loop_ = static_cast<WhileStatement*>(loops_.back());
+            node->setLoopStat(static_cast<WhileStatement*>(loops_.back()));
         }
     }
 
     void visit(ContinueStatement* node) override {
+        auto nodeLoc = node->getLocation();
         if (loops_.empty()) {
-            driver_.reportError<OutOfLoopStatement>(node->loc_, "continue");
+            driver_.reportError<OutOfLoopStatement>(nodeLoc, "continue");
         } else {
-            node->loop_ = static_cast<WhileStatement*>(loops_.back());
+            node->setLoopStat(static_cast<WhileStatement*>(loops_.back()));
         }
     }
 };

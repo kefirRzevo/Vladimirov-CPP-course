@@ -135,8 +135,9 @@ private:
             drv.generateCpp(cppFile_.value());
         }
 
-        NodeCodegen codegener;
-        auto im = codegener.codegen(drv.getRoot());
+        Image im;
+        NodeCodegen codegener{im};
+        codegener.codegen(drv.getRoot());
         if (disasmFile_.has_value()) {
             im.disassemble(disasmFile_.value());
         }

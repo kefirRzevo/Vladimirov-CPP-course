@@ -30,13 +30,6 @@ private:
     addr_t instrCurPtr_;
     addr_t constCurPtr_;
 
-    void clear() {
-        instrs_.clear();
-        consts_.clear();
-        constCurPtr_ = instrEndPtr_;
-        instrCurPtr_ = stackEndPtr_;
-    }
-
     friend class VirtualMachine;
 
 // |             |                       |                     |
@@ -117,6 +110,13 @@ public:
 
     addr_t getConstAddr(size_t id) {
         return consts_[id].first;
+    }
+
+    void clear() {
+        instrs_.clear();
+        consts_.clear();
+        constCurPtr_ = instrEndPtr_;
+        instrCurPtr_ = stackEndPtr_;
     }
 };
 

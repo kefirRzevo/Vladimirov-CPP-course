@@ -58,39 +58,40 @@ public:
     }
 
     void visit(UnaryExpression* node) override {
+        auto nodeOp = node->getOperator();
         os_ << "(";
-        if (isPostfix(node->op_)) {
-            node->expr_->accept(*this);
-            os_ << toString(node->op_);
+        if (isPostfix(nodeOp)) {
+            node->getExpr()->accept(*this);
+            os_ << toString(nodeOp);
         } else {
-            os_ << toString(node->op_);
-            node->expr_->accept(*this);
+            os_ << toString(nodeOp);
+            node->getExpr()->accept(*this);
         }
         os_ << ")";
     }
 
     void visit(BinaryExpression* node) override {
         os_ << "(";
-        node->left_->accept(*this);
-        os_ << toString(node->op_);
-        node->right_->accept(*this);
+        node->getLeftExpr()->accept(*this);
+        os_ << toString(node->getOperator());
+        node->getRightExpr()->accept(*this);
         os_ << ")";
     }
 
     void visit(TernaryExpression* node) override {
-        node->condition_->accept(*this);
+        node->getCondExpr()->accept(*this);
         os_ << "?";
-        node->onTrue_->accept(*this);
+        node->getTrueExpr()->accept(*this);
         os_ << ":";
-        node->onFalse_->accept(*this);
+        node->getFalseExpr()->accept(*this);
     }
 
     void visit(ConstantExpression* node) override {
-        os_ << node->value_;
+        os_ << node->getValue();
     }
 
     void visit(VariableExpression* node) override {
-        os_ << node->name_;
+        os_ << node->getName();
     }
 
     void visit(InputExpression* ) override {
@@ -98,53 +99,57 @@ public:
     }
 
     void visit(BlockStatement* node) override {
-        beginScope(node->scope_);
-        for (auto statement: node->statements_) {
+        auto nodeScope = node->getScope();
+        beginScope(nodeScope);
+        for (auto&& statement : *node) {
             statement->accept(*this);
         }
-        endScope(node->scope_);
+        endScope(nodeScope);
     }
 
     void visit(ExpressionStatement* node) override {
-        node->expr_->accept(*this);
+        node->getExpr()->accept(*this);
         os_ << ";";
     }
 
     void visit(IfStatement* node) override {
-        beginScope(node->scope_);
+        auto nodeScope = node->getScope();
+        beginScope(nodeScope);
         os_ << "if(";
-        node->condition_->accept(*this);
+        node->getCondExpr()->accept(*this);
         os_ << "){";
-        node->trueBlock_->accept(*this);
+        node->getTrueBlock()->accept(*this);
         os_ << "}";
-        endScope(node->scope_);
+        endScope(nodeScope);
     }
 
     void visit(IfElseStatement* node) override {
-        beginScope(node->scope_);
+        auto nodeScope = node->getScope();
+        beginScope(nodeScope);
         os_ << "if(";
-        node->condition_->accept(*this);
+        node->getCondExpr()->accept(*this);
         os_ << "){";
-        node->trueBlock_->accept(*this);
+        node->getTrueBlock()->accept(*this);
         os_ << "}else{";
-        node->falseBlock_->accept(*this);
+        node->getFalseBlock()->accept(*this);
         os_ << "}";
-        endScope(node->scope_);
+        endScope(nodeScope);
     }
 
     void visit(WhileStatement* node) override {
-        beginScope(node->scope_);
+        auto nodeScope = node->getScope();
+        beginScope(nodeScope);
         os_ << "while(";
-        node->condition_->accept(*this);
+        node->getCondExpr()->accept(*this);
         os_ << "){";
-        node->block_->accept(*this);
+        node->getBlock()->accept(*this);
         os_ << "}";
-        endScope(node->scope_);
+        endScope(nodeScope);
     }
 
     void visit(OutputStatement* node) override {
         os_ << "std::cout << ";
-        node->expr_->accept(*this);
+        node->getExpr()->accept(*this);
         os_ << "<< std::endl;\n";
     }
 

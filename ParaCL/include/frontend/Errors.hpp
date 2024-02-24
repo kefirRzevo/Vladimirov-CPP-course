@@ -4,6 +4,7 @@
 #include <string>
 #include <fstream>
 #include <iostream>
+#include <string_view>
 
 #include "location.hpp"
 
@@ -15,7 +16,7 @@ struct Error
     location loc_;
     std::string msg_;
 
-    Error(const location& loc, const std::string& msg) :
+    Error(const location& loc, std::string_view msg) :
         loc_(loc), msg_(msg) {}
 
     virtual void print(std::ostream& os) const {
@@ -45,7 +46,7 @@ struct UnknownToken : public Lexical
 
     std::string token_;
 
-    UnknownToken(const location& loc, const std::string& token) :
+    UnknownToken(const location& loc, std::string_view token) :
         Lexical(loc, "unknown type name "), token_(token) {}
 
     void print(std::ostream& os) const override {
@@ -71,7 +72,7 @@ struct Syntax : public Error
     using Error::loc_;
     using Error::msg_;
 
-    Syntax(const location& loc, const std::string& msg) :
+    Syntax(const location& loc, std::string_view msg) :
         Error(loc, msg) {}
 
     void print(std::ostream& os) const override {
@@ -84,7 +85,7 @@ struct Semantic : public Error
     using Error::loc_;
     using Error::msg_;
 
-    Semantic(const location& loc, const std::string& msg)
+    Semantic(const location& loc, std::string_view msg)
     : Error(loc, msg) {}
 
     void print(std::ostream& os) const override {
@@ -112,7 +113,7 @@ struct UndeclaredIdentifier : public Semantic
 
     std::string ident_;
 
-    UndeclaredIdentifier(const location& loc, const std::string& ident)
+    UndeclaredIdentifier(const location& loc, std::string_view ident)
     : Semantic(loc, "use of undeclared identifier"), ident_(ident) {}
 
     void print(std::ostream& os) const override {
@@ -127,7 +128,7 @@ struct OutOfLoopStatement : public Semantic
 
     std::string stat_;
 
-    OutOfLoopStatement(const location& loc, const std::string& stat) :
+    OutOfLoopStatement(const location& loc, std::string_view stat) :
         Semantic(loc, "statement not in loop or switch statement"),
         stat_(stat) {}
 

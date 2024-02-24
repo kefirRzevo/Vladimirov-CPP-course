@@ -18,11 +18,11 @@ private:
         os_ << "\tnode_" << parent << " -> node_" << child << ";\n";
     }
 
-    void printNode(INode* node, 
-                   const std::string& color, const std::string& label) {
+    void printNode(INode* node, std::string_view col, std::string_view label) {
+        auto nodeLoc = node->getLocation();
         os_ << "\tnode_" << node;
-        os_ <<"[fillcolor=" << color << ", label = \"";
-        os_ << node->loc_ << " | " << label << "\"];\n";
+        os_ <<"[fillcolor=" << col << ", label = \"";
+        os_ << nodeLoc << " | " << label << "\"];\n";
     }
 
 public:
@@ -41,42 +41,52 @@ public:
 
     void visit(UnaryExpression* node) override {
         std::string res;
-        if (isPrefix(node->op_)) {
+        auto nodeOp = node->getOperator();
+        auto nodeExpr = node->getExpr();
+        if (isPrefix(nodeOp)) {
             res = "\\^";
         }
-        res += "\\" + toString(node->op_);
-        if (isPostfix(node->op_)) {
+        res += "\\" + toString(nodeOp);
+        if (isPostfix(nodeOp)) {
             res += "\\^";
         }
         printNode(node, "orange", res);
-        printLink(node, node->expr_);
-        node->expr_->accept(*this);
+        printLink(node, nodeExpr);
+        nodeExpr->accept(*this);
     }
 
     void visit(BinaryExpression* node) override {
-        printNode(node, "orange", "\\" + toString(node->op_));
-        printLink(node, node->left_);
-        printLink(node, node->right_);
-        node->left_->accept(*this);
-        node->right_->accept(*this);
+        auto nodeOp = node->getOperator();
+        auto nodeLeft = node->getLeftExpr();
+        auto nodeRight = node->getRightExpr();
+        printNode(node, "orange", "\\" + toString(nodeOp));
+        printLink(node, nodeLeft);
+        printLink(node, nodeRight);
+        nodeLeft->accept(*this);
+        nodeRight->accept(*this);
     }
 
     void visit(TernaryExpression* node) override {
+        auto nodeCond = node->getCondExpr();
+        auto nodeTrue = node->getTrueExpr();
+        auto nodeFalse = node->getFalseExpr();
         printNode(node, "orange", "\\? \\:");
-        printLink(node, node->condition_);
-        printLink(node, node->onTrue_);
-        printLink(node, node->onFalse_);
-        node->condition_->accept(*this);
-        node->onTrue_->accept(*this);
-        node->onFalse_->accept(*this);
+        printLink(node, nodeCond);
+        printLink(node, nodeTrue);
+        printLink(node, nodeFalse);
+        nodeCond->accept(*this);
+        nodeTrue->accept(*this);
+        nodeFalse->accept(*this);
     }
 
     void visit(ConstantExpression* node) override {
-        printNode(node, "yellow", std::to_string(node->value_));
+        auto nodeVal = node->getValue();
+        printNode(node, "yellow", std::to_string(nodeVal));
     }
 
     void visit(VariableExpression* node) override {
-        printNode(node, "pink", node->name_);
+        auto nodeName = node->getName();
+        printNode(node, "pink", nodeName);
     }
 
     void visit(InputExpression* node) override {
@@ -85,48 +95,57 @@ public:
 
     void visit(BlockStatement* node) override {
         printNode(node, "green", "Statement Block");
-        for (auto statement: node->statements_) {
+        for (auto&& statement : *node) {
             printLink(node, statement);
             statement->accept(*this);
         }
     }
 
     void visit(ExpressionStatement* node) override {
+        auto nodeExpr = node->getExpr();
         printNode(node, "green", "Expression Statement");
-        printLink(node, node->expr_);
-        node->expr_->accept(*this);
+        printLink(node, nodeExpr);
+        nodeExpr->accept(*this);
     }
 
     void visit(IfStatement* node) override {
+        auto nodeCond = node->getCondExpr();
+        auto nodeTrue = node->getTrueBlock();
         printNode(node, "green", "if");
-        printLink(node, node->condition_);
-        printLink(node, node->trueBlock_);
-        node->condition_->accept(*this);
-        node->trueBlock_->accept(*this);
+        printLink(node, nodeCond);
+        printLink(node, nodeTrue);
+        nodeCond->accept(*this);
+        nodeTrue->accept(*this);
     }
 
     void visit(IfElseStatement* node) override {
+        auto nodeCond = node->getCondExpr();
+        auto nodeTrue = node->getTrueBlock();
+        auto nodeFalse = node->getFalseBlock();
         printNode(node, "green", "if else");
-        printLink(node, node->condition_);
-        printLink(node, node->trueBlock_);
-        printLink(node, node->falseBlock_);
-        node->condition_->accept(*this);
-        node->trueBlock_->accept(*this);
-        node->falseBlock_->accept(*this);
+        printLink(node, nodeCond);
+        printLink(node, nodeTrue);
+        printLink(node, nodeFalse);
+        nodeCond->accept(*this);
+        nodeTrue->accept(*this);
+        nodeFalse->accept(*this);
     }
 
     void visit(WhileStatement* node) override {
+        auto nodeCond = node->getCondExpr();
+        auto nodeBlock = node->getBlock();
         printNode(node, "green", "while");
-        printLink(node, node->condition_);
-        printLink(node, node->block_);
-        node->condition_->accept(*this);
-        node->block_->accept(*this);
+        printLink(node, nodeCond);
+        printLink(node, nodeBlock);
+        nodeCond->accept(*this);
+        nodeBlock->accept(*this);
     }
 
     void visit(OutputStatement* node) override {
+        auto nodeExpr = node->getExpr();
         printNode(node, "green", "output");
-        printLink(node, node->expr_);
-        node->expr_->accept(*this);
+        printLink(node, nodeExpr);
+        nodeExpr->accept(*this);
     }
 
     void visit(BreakStatement* node) override {

@@ -11,7 +11,7 @@
 namespace paracl
 {
 
-struct VariableExpression;
+class VariableExpression;
 struct StringHash;
 struct StringEqual;
 

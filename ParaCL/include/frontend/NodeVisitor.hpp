@@ -5,21 +5,21 @@
 namespace paracl
 {
 
-struct UnaryExpression;
-struct BinaryExpression;
-struct TernaryExpression;
-struct ConstantExpression;
-struct VariableExpression;
-struct InputExpression;
-struct Statement;
-struct BlockStatement;
-struct ExpressionStatement;
-struct IfStatement;
-struct IfElseStatement;
-struct WhileStatement;
-struct OutputStatement;
-struct BreakStatement;
-struct ContinueStatement;
+class UnaryExpression;
+class BinaryExpression;
+class TernaryExpression;
+class ConstantExpression;
+class VariableExpression;
+class InputExpression;
+class Statement;
+class BlockStatement;
+class ExpressionStatement;
+class IfStatement;
+class IfElseStatement;
+class WhileStatement;
+class OutputStatement;
+class BreakStatement;
+class ContinueStatement;
 
 class NodeVisitor
 {
@@ -51,6 +51,8 @@ public:
     virtual void visit(BreakStatement* node) = 0;
 
     virtual void visit(ContinueStatement* node) = 0;
+
+    virtual ~NodeVisitor() = default;
 };
 
 } // namespace paracl

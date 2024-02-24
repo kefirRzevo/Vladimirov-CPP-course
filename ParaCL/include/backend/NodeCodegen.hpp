@@ -23,13 +23,12 @@ private:
     };
     using LoopReset = std::tuple<WhileStatement*, LoopResetType, addr_t>;
 
-    Image im_;
-
     std::vector<UnaryExpression*> postfixes_;
     std::vector<LoopReset> loopResets_;
 
-    StackFrame frame_;
+    Image& im_;
     ConstantPool consts_;
+    StackFrame frame_;
 
     void beginScope(const Scope& scope) {
         auto size = frame_.beginScope(scope);
@@ -56,13 +55,13 @@ private:
             return;
         }
         for (auto& node: postfixes_) {
-            auto var = static_cast<VariableExpression*>(node->expr_);
-            auto addr = frame_.lookupVar(var->name_);
+            auto var = static_cast<VariableExpression*>(node->getExpr());
+            auto addr = frame_.lookupVar(var->getName());
             if (!addr) {
                 throw std::logic_error("Variable not found");
             }
             im_.addInstr<iPushAddr>(addr.value());
-            switch (node->op_) {
+            switch (node->getOperator()) {
             case UnaryOperator::UN_POSTFIX_INC:
                 im_.addInstr<iPushVal>(1);
                 im_.addInstr<iAdd>();
@@ -80,13 +79,13 @@ private:
     }
 
     void codegenPrefix(UnaryExpression* node) {
-        auto var = static_cast<VariableExpression*>(node->expr_);
-        auto addr = frame_.lookupVar(var->name_);
+        auto var = static_cast<VariableExpression*>(node->getExpr());
+        auto addr = frame_.lookupVar(var->getName());
         if (!addr) {
             throw std::logic_error("Variable not found");
         }
         im_.addInstr<iPushAddr>(addr.value());
-        switch (node->op_) {
+        switch (node->getOperator()) {
         case UnaryOperator::UN_PREFIX_INC:
             im_.addInstr<iPushVal>(1);
             im_.addInstr<iAdd>();
@@ -102,9 +101,9 @@ private:
     }
 
     void codegenArithmetic(BinaryExpression* node) {
-        node->left_->accept(*this);
-        node->right_->accept(*this);
-        switch (node->op_) {
+        node->getLeftExpr()->accept(*this);
+        node->getRightExpr()->accept(*this);
+        switch (node->getOperator()) {
         case BinaryOperator::BIN_MUL:
             im_.addInstr<iMul>();
             break;
@@ -177,36 +176,38 @@ private:
     }
 
 public:
-    NodeCodegen() :
-        im_(), frame_(), consts_(im_) {}
+    NodeCodegen(Image& im) :
+        im_(im), consts_(im), frame_() {}
 
-    Image codegen(INode* root) {
+    void codegen(INode* root) {
+        im_.clear();
         if (root) {
             root->accept(*this);
         }
         im_.addInstr<Hlt>();
-        return std::move(im_);
     }
 
     void visit(UnaryExpression* node) {
-        if (isPrefix(node->op_)) {
+        auto nodeOp = node->getOperator();
+        auto nodeExpr = node->getExpr();
+        if (isPrefix(nodeOp)) {
             codegenPrefix(node);
-            node->expr_->accept(*this);
-        } else if (isPostfix(node->op_)) {
-            node->expr_->accept(*this);
+            nodeExpr->accept(*this);
+        } else if (isPostfix(nodeOp)) {
+            nodeExpr->accept(*this);
             postfixes_.push_back(node);
         } else {
-            switch (node->op_) {
+            switch (nodeOp) {
             case UnaryOperator::UN_SUB:
                 im_.addInstr<iPushVal>(0);
-                node->expr_->accept(*this);
+                nodeExpr->accept(*this);
                 im_.addInstr<iSub>();
                 break;
             case UnaryOperator::UN_ADD:
-                node->expr_->accept(*this);
+                nodeExpr->accept(*this);
                 break;
             case UnaryOperator::UN_NOT:
-                node->expr_->accept(*this);
+                nodeExpr->accept(*this);
                 im_.addInstr<iNot>();
                 break;
             default:
@@ -216,23 +217,26 @@ public:
     }
 
     void visit(BinaryExpression* node) {
-        if (isArithmetic(node->op_)) {
+        auto nodeOp = node->getOperator();
+        if (isArithmetic(nodeOp)) {
             codegenArithmetic(node);
         } else {
-            switch (node->op_) {
+            auto nodeLeft = node->getLeftExpr();
+            auto nodeRight = node->getRightExpr();
+            switch (nodeOp) {
             case BinaryOperator::BIN_COMMA: {
-                node->right_->accept(*this);
+                nodeRight->accept(*this);
                 im_.addInstr<iPopVal>();
-                node->left_->accept(*this);
+                nodeLeft->accept(*this);
                 break;
             }
             case BinaryOperator::BIN_ASSIGN: {
-                auto lhs = static_cast<VariableExpression*>(node->left_);
-                auto addr = frame_.lookupVar(lhs->name_);
+                auto lhs = static_cast<VariableExpression*>(nodeLeft);
+                auto addr = frame_.lookupVar(lhs->getName());
                 if (!addr) {
                     throw std::runtime_error("Can't push variable");
                 }
-                node->right_->accept(*this);
+                nodeRight->accept(*this);
                 im_.addInstr<iPopAddr>(addr.value());
                 im_.addInstr<iPushAddr>(addr.value());
                 break;
@@ -244,15 +248,15 @@ public:
     }
 
     void visit(TernaryExpression* node) {
-        node->condition_->accept(*this);
+        node->getCondExpr()->accept(*this);
         codegenPostfixes();
         auto jmpTrueIndx = im_.addInstr<JmpTrue>();
-        node->onFalse_->accept(*this);
+        node->getFalseExpr()->accept(*this);
         codegenPostfixes();
         auto jmpIndx = im_.addInstr<Jmp>();
         auto trueAddr = im_.getInstrCurAddr();
 
-        node->onTrue_->accept(*this);
+        node->getTrueExpr()->accept(*this);
         codegenPostfixes();
         auto exitAddr = im_.getInstrCurAddr();
 
@@ -263,9 +267,10 @@ public:
     }
 
     void visit(ConstantExpression* node) {
-        auto addr = consts_.lookupConst(node->value_);
+        auto nodeVal = node->getValue();
+        auto addr = consts_.lookupConst(nodeVal);
         if (!addr) {
-            addr = consts_.pushConst(node->value_);
+            addr = consts_.pushConst(nodeVal);
             if (!addr) {
                 throw std::runtime_error("Can't push const");
             }
@@ -274,7 +279,7 @@ public:
     }
 
     void visit(VariableExpression* node) {
-        auto addr = frame_.lookupVar(node->name_);
+        auto addr = frame_.lookupVar(node->getName());
         if (!addr) {
             throw std::runtime_error("Can't push variable");
         }
@@ -286,25 +291,25 @@ public:
     }
 
     void visit(BlockStatement* node) {
-        beginScope(node->scope_);
-        for (auto statement: node->statements_) {
+        beginScope(node->getScope());
+        for (auto&& statement : *node) {
             statement->accept(*this);
         }
         endScope();
     }
 
     void visit(ExpressionStatement* node) {
-        node->expr_->accept(*this);
+        node->getExpr()->accept(*this);
         codegenPostfixes();
         im_.addInstr<iPopVal>();
     }
 
     void visit(IfStatement* node) {
-        beginScope(node->scope_);
-        node->condition_->accept(*this);
+        beginScope(node->getScope());
+        node->getCondExpr()->accept(*this);
         codegenPostfixes();
         auto jmpFalseIndx = im_.addInstr<JmpFalse>();
-        node->trueBlock_->accept(*this);
+        node->getTrueBlock()->accept(*this);
         codegenPostfixes();
         auto exitAddr = im_.getInstrCurAddr();
 
@@ -314,16 +319,16 @@ public:
     }
 
     void visit(IfElseStatement* node) {
-        beginScope(node->scope_);
-        node->condition_->accept(*this);
+        beginScope(node->getScope());
+        node->getCondExpr()->accept(*this);
         codegenPostfixes();
         auto jmpTrueIndx = im_.addInstr<JmpTrue>();
-        node->falseBlock_->accept(*this);
+        node->getFalseBlock()->accept(*this);
         codegenPostfixes();
         auto jmpIndx = im_.addInstr<Jmp>();
         auto trueAddr = im_.getInstrCurAddr();
 
-        node->trueBlock_->accept(*this);
+        node->getTrueBlock()->accept(*this);
         codegenPostfixes();
         auto exitAddr = im_.getInstrCurAddr();
 
@@ -335,13 +340,13 @@ public:
     }
 
     void visit(WhileStatement* node) {
-        beginScope(node->scope_);
+        beginScope(node->getScope());
         auto condAddr = im_.getInstrCurAddr();
 
-        node->condition_->accept(*this);
+        node->getCondExpr()->accept(*this);
         codegenPostfixes();
         auto jmpFalseIndx = im_.addInstr<JmpFalse>();
-        node->block_->accept(*this);
+        node->getBlock()->accept(*this);
         auto jmpIndx = im_.addInstr<Jmp>();
         auto exitAddr = im_.getInstrCurAddr();
 
@@ -354,19 +359,21 @@ public:
     }
 
     void visit(OutputStatement* node) {
-        node->expr_->accept(*this);
+        node->getExpr()->accept(*this);
         im_.addInstr<iOut>();
         codegenPostfixes();
     }
 
     void visit(BreakStatement* node) {
+        auto nodeLoop = node->getLoopStat();
         auto jmpIndx = im_.addInstr<Jmp>();
-        loopResets_.emplace_back(node->loop_, LoopResetType::BREAK, jmpIndx);
+        loopResets_.emplace_back(nodeLoop, LoopResetType::BREAK, jmpIndx);
     }
 
     void visit(ContinueStatement* node) {
+        auto nodeLoop = node->getLoopStat();
         auto jmpIndx = im_.addInstr<Jmp>();
-        loopResets_.emplace_back(node->loop_, LoopResetType::CONTINUE, jmpIndx);
+        loopResets_.emplace_back(nodeLoop, LoopResetType::CONTINUE, jmpIndx);
     }
 };
 
