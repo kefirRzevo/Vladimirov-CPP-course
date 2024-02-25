@@ -1,5 +1,9 @@
 #pragma once
 
+#include <memory>
+#include <utility>
+#include <string_view>
+
 #include "parser.tab.hh"
 #include "frontend/Errors.hpp"
 #include "frontend/Lexer.hpp"
@@ -28,7 +32,7 @@ public:
         parser_(std::make_unique<Parser>(*this)),
         reporter_(std::make_unique<ErrorReporter>()) {}
 
-    void setFilepath(const std::string& filepath);
+    void setFilepath(std::string_view filepath);
 
     template<typename NodeType, typename... NodeArgs>
     NodeType* createNode(NodeArgs&&... args) {
@@ -43,15 +47,15 @@ public:
         return tree_->getRoot();
     }
 
-    void generateDot(const std::string& filepath) const {
+    void generateDot(std::string_view filepath) const {
         tree_->generateDot(filepath);
     }
 
-    void generateCl(const std::string& filepath) const {
+    void generateCl(std::string_view filepath) const {
         tree_->generateCl(filepath);
     }
 
-    void generateCpp(const std::string& filepath) const {
+    void generateCpp(std::string_view filepath) const {
         tree_->generateCpp(filepath);
     }
 

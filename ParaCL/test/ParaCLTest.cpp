@@ -1,4 +1,5 @@
 #include <vector>
+#include <string>
 #include <fstream>
 #include <cstdlib>
 #include <exception>
@@ -8,8 +9,8 @@
 
 static std::filesystem::path execPath = ".";
 
-inline void readData(std::vector<int>& data, const std::string& filepath) {
-    std::ifstream is{filepath, std::ios::in};
+inline void readData(std::vector<int>& data, std::string_view filepath) {
+    std::ifstream is(std::string{filepath}, std::ifstream::in);
     is.seekg(0, std::ios::beg);
     int temp = 0;
     while (is >> temp) {

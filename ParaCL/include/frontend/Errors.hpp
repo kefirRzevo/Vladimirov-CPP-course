@@ -1,8 +1,9 @@
 #pragma once
 
-#include <memory>
 #include <string>
-#include <fstream>
+#include <vector>
+#include <memory>
+#include <utility>
 #include <iostream>
 #include <string_view>
 
@@ -31,7 +32,7 @@ struct Lexical : public Error
     using Error::loc_;
     using Error::msg_;
 
-    Lexical(const location& loc, const std::string& msg) :
+    Lexical(const location& loc, std::string_view msg) :
         Error(loc, msg) {}
 
     void print(std::ostream& os) const override {
@@ -137,7 +138,7 @@ struct OutOfLoopStatement : public Semantic
     }
 };
 
-class ErrorReporter
+class ErrorReporter final
 {
 private:
     std::vector<std::unique_ptr<Error>> errors_;
@@ -158,7 +159,7 @@ public:
     }
 
     void reportAllErrors(std::ostream& os) const {
-        for (const auto& error: errors_) {
+        for (auto&& error : errors_) {
             error->print(os);
         }
     }

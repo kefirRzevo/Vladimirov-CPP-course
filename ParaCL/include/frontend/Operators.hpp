@@ -1,6 +1,7 @@
 #pragma once
 
 #include <string>
+#include <stdexcept>
 
 namespace paracl
 {
@@ -34,7 +35,7 @@ inline std::string toString(UnaryOperator op) {
     case UnaryOperator::UN_POSTFIX_DEC:
         return "--";
     default:
-        return "";
+        throw std::logic_error("Unknown operator");
     }
 }
 
@@ -114,7 +115,7 @@ inline std::string toString(BinaryOperator op) {
     case BinaryOperator::BIN_COMMA:
         return ",";
     default:
-        return "";
+        throw std::logic_error("Unknown operator");
     }
 }
 

@@ -7,7 +7,10 @@
 #undef YY_DECL
 #define YY_DECL paracl::Parser::symbol_type paracl::Lexer::getNextToken()
 
+#include <string>
+#include <memory>
 #include <fstream>
+#include <string_view>
 
 #include "frontend/Driver.hpp"
 #include "parser.tab.hh"
@@ -31,9 +34,9 @@ public:
     Lexer(Driver& driver) :
         driver_(driver) {}
 
-    void setFilepath(const std::string& filepath) {
+    void setFilepath(std::string_view filepath) {
         filepath_ = filepath;
-        in_.open(filepath, std::ifstream::in);
+        in_.open(std::string{filepath}, std::ifstream::in);
         curPos_.initialize(std::addressof(filepath_));
         yyrestart(in_);
     }

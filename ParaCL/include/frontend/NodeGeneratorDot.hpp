@@ -1,7 +1,8 @@
 #pragma once
 
 #include <vector>
-#include <iostream>
+#include <fstream>
+#include <string_view>
 
 #include "frontend/INode.hpp"
 
@@ -26,8 +27,8 @@ private:
     }
 
 public:
-    NodeGeneratorDot(const std::string& filepath)
-    : os_(filepath) {}
+    NodeGeneratorDot(std::string_view filepath) :
+        filepath_(filepath), os_(filepath_) {}
 
     void generate(INode* root) {
         os_ << "digraph {\n";

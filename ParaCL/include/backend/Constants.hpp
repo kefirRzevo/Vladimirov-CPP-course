@@ -1,8 +1,9 @@
 #pragma once
 
 #include <string>
-#include <memory>
 #include <iostream>
+#include <type_traits>
+#include <string_view>
 
 #include "Utils.hpp"
 
@@ -93,7 +94,7 @@ public:
     ConstStr() :
         Const(sizeof(size_t), Constant::STR) {}
 
-    ConstStr(const std::string& val) :
+    ConstStr(std::string_view val) :
         Const(sizeof(size_t) + val.size(), Constant::STR), val_(val) {}
 
     void read(const char* buf) override {

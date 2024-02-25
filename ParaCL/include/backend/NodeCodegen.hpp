@@ -1,6 +1,8 @@
 #pragma once
 
 #include <tuple>
+#include <vector>
+#include <stdexcept>
 
 #include "frontend/NodeVisitor.hpp"
 #include "backend/StackFrame.hpp"
@@ -54,7 +56,7 @@ private:
         if (postfixes_.empty()) {
             return;
         }
-        for (auto& node: postfixes_) {
+        for (auto&& node : postfixes_) {
             auto var = static_cast<VariableExpression*>(node->getExpr());
             auto addr = frame_.lookupVar(var->getName());
             if (!addr) {

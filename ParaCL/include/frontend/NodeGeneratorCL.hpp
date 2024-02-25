@@ -1,6 +1,9 @@
 #pragma once
 
-#include <iostream>
+#include <string>
+#include <cstdlib>
+#include <fstream>
+#include <string_view>
 
 #include "frontend/INode.hpp"
 
@@ -14,8 +17,8 @@ private:
     std::ofstream os_;
 
 public:
-    NodeGeneratorCl(const std::string& filepath)
-    : filepath_(filepath), os_{filepath} {}
+    NodeGeneratorCl(std::string_view filepath)
+    : filepath_(filepath), os_(filepath_) {}
 
     void generate(INode* root) {
         if (root) {

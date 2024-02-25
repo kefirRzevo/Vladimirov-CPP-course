@@ -16,7 +16,7 @@
 
 %code requires
 {
-    #include <stdexcept>
+    #include <string>
     #include "frontend/AST.hpp"
 
     namespace paracl

@@ -1,17 +1,18 @@
 #pragma once
 
 #include <array>
-#include <utility>
+#include <vector>
+#include <memory>
+#include <iostream>
 #include <stdexcept>
 #include <algorithm>
-#include <unordered_map>
 
 #include "backend/Image.hpp"
 
 namespace paracl
 {
 
-class VirtualMachine
+class VirtualMachine final
 {
 private:
     using value_type = size_t;
@@ -41,10 +42,10 @@ public:
         ip() = image.stackEndPtr_;
         image.clear();
         for (auto it = instrs.begin(); it != instrs.end(); ++it) {
-            (*it).second->write(std::addressof(memory_[(*it).first]));
+            it->second->write(std::addressof(memory_[it->first]));
         }
         for (auto it = consts.begin(); it != consts.end(); ++it) {
-            (*it).second->write(std::addressof(memory_[(*it).first]));
+            it->second->write(std::addressof(memory_[it->first]));
         }
     }
 

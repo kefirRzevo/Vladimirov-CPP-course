@@ -2,8 +2,12 @@
 
 #include <vector>
 #include <memory>
+#include <fstream>
 #include <utility>
 #include <iomanip>
+#include <iostream>
+#include <stdexcept>
+#include <string_view>
 
 #include "backend/Instructions.hpp"
 #include "backend/Constants.hpp"
@@ -13,7 +17,7 @@ namespace paracl
 
 class VirtualMachine;
 
-class Image
+class Image final
 {
 private:
     using addr_t = size_t;
@@ -48,17 +52,17 @@ public:
         constCurPtr_ = instrEndPtr_;
     }
 
-    void disassemble(const std::string& filepath) const {
-        std::ofstream os{filepath};
+    void disassemble(std::string_view filepath) const {
+        std::ofstream os{std::string{filepath}};
         os << "Literals" << std::endl;
-        for (const auto& constant: consts_) {
+        for (auto&& constant : consts_) {
             os << std::left << std::setw(8) << constant.first;
             constant.second->disassemble(os);
             os << std::endl;
         }
         os << "Instructions" << std::endl;
-        for (const auto& instr: instrs_) {
-            os <<std::left << std::setw(8) << instr.first;
+        for (auto&& instr : instrs_) {
+            os << std::left << std::setw(8) << instr.first;
             instr.second->disassemble(os);
             os << std::endl;
         }

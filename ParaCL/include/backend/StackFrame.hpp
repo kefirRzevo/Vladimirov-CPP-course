@@ -1,5 +1,8 @@
 #pragma once
 
+#include <vector>
+#include <optional>
+#include <string_view>
 #include <unordered_map>
 
 #include "Utils.hpp"
@@ -40,11 +43,12 @@ public:
     }
 };
 
-class MemBlock
+class MemBlock final
 {
 private:
     using addr_t = size_t;
-    using MemMap = std::unordered_map<std::string_view, addr_t, StringHash, StringEqual>;
+    using MemMap = std::unordered_map<
+        std::string_view, addr_t, StringHash, StringEqual>;
 
     addr_t begAddr_;
     addr_t curAddr_;
@@ -102,7 +106,7 @@ public:
     std::optional<addr_t> beginScope(const Scope& scope) {
         blocks_.emplace_back(getCurAddr());
         auto& back = blocks_.back();
-        for (auto& var: scope) {
+        for (auto&& var: scope) {
             auto& back = blocks_.back();
             auto addr = back.pushVar(var.first);
             if (!addr) {

@@ -2,7 +2,8 @@
 
 #include <string>
 #include <random>
-#include <ostream>
+#include <cstdlib>
+#include <fstream>
 #include <iostream>
 #include <algorithm>
 
@@ -22,7 +23,7 @@ private:
         auto empty = scope.empty();
         if (!empty) {
             os_ << "{\n";
-            for (auto& var: scope) {
+            for (auto&& var : scope) {
                 os_ << "int " << var.first << ";\n";
             }
         }
@@ -40,8 +41,8 @@ private:
     }
 
 public:
-    NodeGeneratorCpp(const std::string& filepath)
-    : filepath_(filepath), os_{filepath} {}
+    NodeGeneratorCpp(std::string_view filepath)
+    : filepath_(filepath), os_(filepath_) {}
 
     void generate(INode* root) {
         generateRandomInputVar();

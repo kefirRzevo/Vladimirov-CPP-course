@@ -8,7 +8,7 @@
 namespace paracl
 {
 
-void Driver::setFilepath(const std::string& filepath) {
+void Driver::setFilepath(std::string_view filepath) {
     lexer_->setFilepath(filepath);
     tree_->clear();
     reporter_->clear();
@@ -23,17 +23,17 @@ AST::AST(const AST& rhs) {
     root_ = copier.copy(rhs.root_);
 }
 
-void AST::generateDot(const std::string& filepath) const {
+void AST::generateDot(std::string_view filepath) const {
     NodeGeneratorDot generator{filepath};
     generator.generate(root_);
 }
 
-void AST::generateCl(const std::string& filepath) const {
+void AST::generateCl(std::string_view filepath) const {
     NodeGeneratorCl generator{filepath};
     generator.generate(root_);
 }
 
-void AST::generateCpp(const std::string& filepath) const {
+void AST::generateCpp(std::string_view filepath) const {
     NodeGeneratorCpp generator{filepath};
     generator.generate(root_);
 }

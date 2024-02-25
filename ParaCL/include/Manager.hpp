@@ -1,7 +1,9 @@
 #pragma once
 
 #include <string>
+#include <iostream>
 #include <optional>
+#include <stdexcept>
 #include <filesystem>
 #include <boost/program_options.hpp>
 
@@ -14,7 +16,7 @@ namespace po = boost::program_options;
 namespace paracl
 {
 
-class Manager
+class Manager final
 {
 private:
     std::optional<std::string> inputFile_ = std::nullopt;

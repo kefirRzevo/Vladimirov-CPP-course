@@ -1,3 +1,5 @@
+#include <string>
+
 #include "backend/VirtualMachine.hpp"
 
 namespace paracl

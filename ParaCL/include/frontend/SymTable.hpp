@@ -1,7 +1,8 @@
 #pragma once
 
-#include <iostream>
+#include <vector>
 #include <optional>
+#include <stdexcept>
 #include <functional>
 #include <string_view>
 #include <unordered_map>

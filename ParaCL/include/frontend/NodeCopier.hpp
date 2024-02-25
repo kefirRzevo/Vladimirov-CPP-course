@@ -1,5 +1,8 @@
 #pragma once
 
+#include <vector>
+#include <stdexcept>
+
 #include "frontend/INode.hpp"
 
 namespace paracl
@@ -22,7 +25,9 @@ public:
         root->accept(*this);
         INode* copiedRoot = copied_.back();
         copied_.pop_back();
-        assert(copied_.empty());
+        if (!copied_.empty()) {
+            throw std::runtime_error("Copied stack isn't empty");
+        }
         return copiedRoot;
     }
 
@@ -32,7 +37,7 @@ public:
         auto nodeOp = node->getOperator();
         auto nodeExpr = node->getExpr();
         nodeExpr->accept(*this);
-        Expression* expr = static_cast<Expression*>(copied_.back());
+        auto expr = static_cast<Expression*>(copied_.back());
         copied_.pop_back();
         auto n = tree_.createNode<Type>(nodeLoc, nodeOp, expr);
         copied_.push_back(n);
@@ -45,10 +50,10 @@ public:
         auto nodeLeft = node->getLeftExpr();
         auto nodeRight = node->getRightExpr();
         nodeRight->accept(*this);
-        Expression* right = static_cast<Expression*>(copied_.back());
+        auto right = static_cast<Expression*>(copied_.back());
         copied_.pop_back();
         nodeLeft->accept(*this);
-        Expression* left = static_cast<Expression*>(copied_.back());
+        auto left = static_cast<Expression*>(copied_.back());
         copied_.pop_back();
         auto n = tree_.createNode<Type>(nodeLoc, nodeOp, left, right);
         copied_.push_back(n);
@@ -61,13 +66,13 @@ public:
         auto nodeTrue = node->getTrueExpr();
         auto nodeFalse = node->getFalseExpr();
         nodeFalse->accept(*this);
-        Expression* onFalse = static_cast<Expression*>(copied_.back());
+        auto onFalse = static_cast<Expression*>(copied_.back());
         copied_.pop_back();
         nodeTrue->accept(*this);
-        Expression* onTrue = static_cast<Expression*>(copied_.back());
+        auto onTrue = static_cast<Expression*>(copied_.back());
         copied_.pop_back();
         nodeCond->accept(*this);
-        Expression* cond = static_cast<Expression*>(copied_.back());
+        auto cond = static_cast<Expression*>(copied_.back());
         copied_.pop_back();
         auto n = tree_.createNode<Type>(nodeLoc, cond, onTrue, onFalse);
         copied_.push_back(n);
@@ -102,7 +107,7 @@ public:
         auto n = tree_.createNode<Type>(nodeLoc);
         for (auto it = node->rbegin(); it != node->rend(); ++it) {
             (*it)->accept(*this);
-            Statement* stat = static_cast<Statement*>(copied_.back());
+            auto stat = static_cast<Statement*>(copied_.back());
             copied_.pop_back();
             n->addStatement(stat);
         }
@@ -114,7 +119,7 @@ public:
         auto nodeLoc = node->getLocation();
         auto nodeExpr = node->getExpr();
         nodeExpr->accept(*this);
-        Expression* expr = static_cast<Expression*>(copied_.back());
+        auto expr = static_cast<Expression*>(copied_.back());
         copied_.pop_back();
         auto n = tree_.createNode<Type>(nodeLoc, expr);
         copied_.push_back(n);
@@ -126,10 +131,10 @@ public:
         auto nodeCond = node->getCondExpr();
         auto nodeTrue = node->getTrueBlock();
         nodeTrue->accept(*this);
-        Statement* trueBlock = static_cast<Statement*>(copied_.back());
+        auto trueBlock = static_cast<Statement*>(copied_.back());
         copied_.pop_back();
         nodeCond->accept(*this);
-        Expression* cond = static_cast<Expression*>(copied_.back());
+        auto cond = static_cast<Expression*>(copied_.back());
         copied_.pop_back();
         auto n = tree_.createNode<Type>(nodeLoc, cond, trueBlock);
         copied_.push_back(n);
@@ -142,13 +147,13 @@ public:
         auto nodeTrue = node->getTrueBlock();
         auto nodeFalse = node->getFalseBlock();
         nodeFalse->accept(*this);
-        Statement* falseBlock = static_cast<Statement*>(copied_.back());
+        auto falseBlock = static_cast<Statement*>(copied_.back());
         copied_.pop_back();
         nodeTrue->accept(*this);
-        Statement* trueBlock = static_cast<Statement*>(copied_.back());
+        auto trueBlock = static_cast<Statement*>(copied_.back());
         copied_.pop_back();
         nodeCond->accept(*this);
-        Expression* cond = static_cast<Expression*>(copied_.back());
+        auto cond = static_cast<Expression*>(copied_.back());
         copied_.pop_back();
         auto n = tree_.createNode<Type>(nodeLoc, cond, trueBlock, falseBlock);
         copied_.push_back(n);
@@ -160,10 +165,10 @@ public:
         auto nodeCond = node->getCondExpr();
         auto nodeBlock = node->getBlock();
         nodeBlock->accept(*this);
-        Statement* block = static_cast<Statement*>(copied_.back());
+        auto block = static_cast<Statement*>(copied_.back());
         copied_.pop_back();
         nodeCond->accept(*this);
-        Expression* cond = static_cast<Expression*>(copied_.back());
+        auto cond = static_cast<Expression*>(copied_.back());
         copied_.pop_back();
         auto n = tree_.createNode<Type>(nodeLoc, cond, block);
         copied_.push_back(n);
@@ -174,7 +179,7 @@ public:
         auto nodeLoc = node->getLocation();
         auto nodeExpr = node->getExpr();
         nodeExpr->accept(*this);
-        Expression* expr = static_cast<Expression*>(copied_.back());
+        auto expr = static_cast<Expression*>(copied_.back());
         copied_.pop_back();
         auto n = tree_.createNode<Type>(nodeLoc, expr);
         copied_.push_back(n);

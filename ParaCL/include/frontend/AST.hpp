@@ -3,9 +3,7 @@
 #include <vector>
 #include <memory>
 #include <string>
-#include <fstream>
 #include <utility>
-#include <iostream>
 
 #include "frontend/INode.hpp"
 
@@ -61,11 +59,11 @@ public:
         root_ = nullptr;
     }
 
-    void generateDot(const std::string& filepath) const;
+    void generateDot(std::string_view filepath) const;
 
-    void generateCl(const std::string& filepath) const;
+    void generateCl(std::string_view filepath) const;
 
-    void generateCpp(const std::string& filepath) const;
+    void generateCpp(std::string_view filepath) const;
 
     void semanticAnalyze(Driver& driver);
 };
