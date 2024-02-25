@@ -33,19 +33,18 @@ public:
         is_(is), os_(os) {}
 
     void loadImage(Image&& image) {
-        auto instrs = std::move(image.instrs_);
-        auto consts = std::move(image.consts_);
-        memSize_ = image.constEndPtr_;
-        stackSize_ = image.stackEndPtr_;
+        auto instrs = std::move(image).getInstrs();
+        auto consts = std::move(image).getConsts();
+        memSize_ = image.getConstEndPtr();
+        stackSize_ = image.getStackEndPtr();
         memory_.reserve(memSize_);
         sp() = 0U;
-        ip() = image.stackEndPtr_;
-        image.clear();
-        for (auto it = instrs.begin(); it != instrs.end(); ++it) {
-            it->second->write(std::addressof(memory_[it->first]));
+        ip() = image.getStackEndPtr();
+        for (auto&& instr : instrs) {
+            instr.second->write(std::addressof(memory_[instr.first]));
         }
-        for (auto it = consts.begin(); it != consts.end(); ++it) {
-            it->second->write(std::addressof(memory_[it->first]));
+        for (auto&& constant : consts) {
+            constant.second->write(std::addressof(memory_[constant.first]));
         }
     }
 

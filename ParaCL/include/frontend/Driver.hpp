@@ -32,7 +32,7 @@ public:
         parser_(std::make_unique<Parser>(*this)),
         reporter_(std::make_unique<ErrorReporter>()) {}
 
-    void setFilepath(std::string_view filepath);
+    void setFilepath(const std::string& filepath);
 
     template<typename NodeType, typename... NodeArgs>
     NodeType* createNode(NodeArgs&&... args) {

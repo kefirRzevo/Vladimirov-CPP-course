@@ -137,14 +137,13 @@ private:
             drv.generateCpp(cppFile_.value());
         }
 
-        Image im;
-        NodeCodegen codegener{im};
-        codegener.codegen(drv.getRoot());
+        NodeCodegen codegener;
+        auto im = codegener.codegen(drv.getRoot());
         if (disasmFile_.has_value()) {
-            im.disassemble(disasmFile_.value());
+            im->disassemble(disasmFile_.value());
         }
         VirtualMachine m;
-        m.loadImage(std::move(im));
+        m.loadImage(std::move(*im));
         m.execute();
     }
 

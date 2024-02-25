@@ -8,7 +8,7 @@
 namespace paracl
 {
 
-void Driver::setFilepath(std::string_view filepath) {
+void Driver::setFilepath(const std::string& filepath) {
     lexer_->setFilepath(filepath);
     tree_->clear();
     reporter_->clear();

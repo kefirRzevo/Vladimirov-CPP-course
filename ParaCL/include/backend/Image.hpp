@@ -34,8 +34,6 @@ private:
     addr_t instrCurPtr_;
     addr_t constCurPtr_;
 
-    friend class VirtualMachine;
-
 // |             |                       |                     |
 // |0    stackEnd|instrsBeg     instrsEnd|constsBeg   constsEnd|size
 // |_____________|_______________________|_____________________|
@@ -44,7 +42,11 @@ private:
 // |             |                       |                     |
 
 public:
-    Image(size_t stackSize = 49152U, size_t instrsSize = 15360U, size_t constsSize = 1024U)
+    Image(
+        size_t stackSize = 49152U,
+        size_t instrsSize = 15360U,
+        size_t constsSize = 1024U
+    )
     : stackEndPtr_(stackSize),
       instrEndPtr_(stackSize + instrsSize),
       constEndPtr_(stackSize + instrsSize + constsSize) {
@@ -52,8 +54,8 @@ public:
         constCurPtr_ = instrEndPtr_;
     }
 
-    void disassemble(std::string_view filepath) const {
-        std::ofstream os{std::string{filepath}};
+    void disassemble(const std::string& filepath) const {
+        std::ofstream os(filepath);
         os << "Literals" << std::endl;
         for (auto&& constant : consts_) {
             os << std::left << std::setw(8) << constant.first;
@@ -70,24 +72,32 @@ public:
 
     template<typename ConstType, typename... ConstArgs>
     addr_t addConst(ConstArgs&&... args) {
-        auto uptr = std::make_unique<ConstType>(std::forward<ConstArgs>(args)...);
+        auto uptr = std::make_unique<ConstType>(
+            std::forward<ConstArgs>(args)...
+        );
         auto constPtr = constCurPtr_;
         if (constPtr + uptr->getSize() > constEndPtr_) {
             throw std::logic_error("Too many constants");
         }
-        consts_.push_back(std::move(std::make_pair(constPtr, std::move(uptr))));
+        consts_.push_back(
+            std::move(std::make_pair(constPtr, std::move(uptr)))
+        );
         constCurPtr_ = constPtr + consts_.back().second->getSize();
         return constPtr;
     }
 
     template<typename InstrType, typename... InstrArgs>
     size_t addInstr(InstrArgs&&... args) {
-        auto uptr = std::make_unique<InstrType>(std::forward<InstrArgs>(args)...);
+        auto uptr = std::make_unique<InstrType>(
+            std::forward<InstrArgs>(args)...
+        );
         auto instrPtr = instrCurPtr_;
         if (instrPtr + uptr->getSize() > instrEndPtr_) {
             throw std::logic_error("Too many instructions");
         }
-        instrs_.push_back(std::move(std::make_pair(instrPtr, std::move(uptr))));
+        instrs_.push_back(
+            std::move(std::make_pair(instrPtr, std::move(uptr)))
+        );
         instrCurPtr_ = instrPtr + instrs_.back().second->getSize();
         return instrs_.size() - 1U;
     }
@@ -116,11 +126,28 @@ public:
         return consts_[id].first;
     }
 
-    void clear() {
-        instrs_.clear();
-        consts_.clear();
-        constCurPtr_ = instrEndPtr_;
-        instrCurPtr_ = stackEndPtr_;
+    std::vector<instr_value> getInstrs() && {
+        std::vector<instr_value> instrs;
+        std::swap(instrs, instrs_);
+        return instrs;
+    }
+
+    std::vector<const_value> getConsts() && {
+        std::vector<const_value> consts;
+        std::swap(consts, consts_);
+        return consts;
+    }
+
+    addr_t getStackEndPtr() const {
+        return stackEndPtr_;
+    }
+
+    addr_t getInstrEndPtr() const {
+        return instrEndPtr_;
+    }
+
+    addr_t getConstEndPtr() const {
+        return constEndPtr_;
     }
 };
 

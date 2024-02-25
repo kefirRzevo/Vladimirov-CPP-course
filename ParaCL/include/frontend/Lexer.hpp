@@ -34,9 +34,9 @@ public:
     Lexer(Driver& driver) :
         driver_(driver) {}
 
-    void setFilepath(std::string_view filepath) {
+    void setFilepath(const std::string& filepath) {
         filepath_ = filepath;
-        in_.open(std::string{filepath}, std::ifstream::in);
+        in_.open(filepath, std::ifstream::in);
         curPos_.initialize(std::addressof(filepath_));
         yyrestart(in_);
     }
