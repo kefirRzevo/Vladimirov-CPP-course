@@ -1,0 +1,5 @@
+.vscode/
+build/
+res/cl_gemm.cc
+res/gemm_simple.cl
+tests/
