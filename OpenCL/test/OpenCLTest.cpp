@@ -10,7 +10,7 @@
 
 using namespace opencl;
 
-static const char* execPath = nullptr;
+static std::filesystem::path execPath = ".";
 
 TEST(CpuSortTest, TestReadFunction) {
     std::stringstream is;
@@ -24,7 +24,8 @@ TEST(CpuSortTest, TestReadFunction) {
 
 TEST(CpuSortTest, CpuEnd2endTest) {
     namespace fs = std::filesystem;
-    std::string inputPath = "../tests/";
+    auto buildDir = fs::absolute(fs::path{execPath}.parent_path());
+    std::string inputPath = buildDir / std::string("../tests/");
     for (auto&& p: fs::directory_iterator(inputPath)) {
         std::string filePath = p.path().generic_string();
         if (filePath.find(".dat") == std::string::npos ||
@@ -60,8 +61,9 @@ TEST(CpuSortTest, CpuEnd2endTest) {
 
 TEST(GpuSortTest, GpuEnd2endTest) {
     namespace fs = std::filesystem;
-    std::string inputPath = "../tests/";
-    OpenClApp app(execPath);
+    auto buildDir = fs::absolute(fs::path{execPath}.parent_path());
+    std::string inputPath = buildDir / std::string("../tests/");
+    OpenClApp app(execPath.c_str());
     app.buildProgram<int>("../src/BitonicInt.cl");
     for (auto&& p: fs::directory_iterator(inputPath)) {
         std::string filePath = p.path().generic_string();
@@ -98,12 +100,12 @@ TEST(GpuSortTest, GpuEnd2endTest) {
 
 TEST(CompareSortTest, CpuVSGpu) {
     namespace fs = std::filesystem;
-    std::string inputPath = "../tests/";
     auto buildDir = fs::absolute(fs::path{execPath}.parent_path());
-    //fs::create_directory(buildDir / std::string("../res"));
+    std::string inputPath = buildDir / std::string("../tests/");
+    fs::create_directory(buildDir / std::string("../res"));
     std::ofstream comp{buildDir.c_str() + std::string("/../res/compare.txt")};    
 
-    OpenClApp app(execPath);
+    OpenClApp app(execPath.c_str());
     app.buildProgram<int>("../src/BitonicInt.cl");
     for (auto&& p: fs::directory_iterator(buildDir / inputPath)) {
         std::string filePath = p.path().generic_string();

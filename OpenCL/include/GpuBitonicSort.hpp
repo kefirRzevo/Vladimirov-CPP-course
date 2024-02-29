@@ -75,35 +75,28 @@ public:
 
         size_t bufSize = size * sizeof(T);
         cl::Buffer buf(context_, CL_MEM_WRITE_ONLY, bufSize);
-
-        using namespace std::chrono;
-        auto cpuStart = high_resolution_clock::now();
-        cl::copy(queue_, data.begin(), data.end(), buf);
-        auto cpuEnd = high_resolution_clock::now();
-        auto cpuElapsed = duration_cast<microseconds>(cpuEnd - cpuStart).count();
-
         cl::KernelFunctor<cl::Buffer, uint, uint> parallel(program_, "bitonic");
         cl::NDRange globalRange(size);
+        cl::Event event;
+
+        using namespace std::chrono;
+
+        auto cpuStart = high_resolution_clock::now();
+        cl::copy(queue_, data.begin(), data.end(), buf);
         cl::EnqueueArgs args(queue_, globalRange);
-
-        cl_ulong gpuStart = 0;
-        cl_ulong gpuEnd = 0;
-        long long gpuElapsed = 0;
-
-        cpuStart = high_resolution_clock::now();
         for (size_t stage = 2U; stage <= size; stage = stage << 1) {
             for (size_t step = stage >> 1; step > 0; step = step >> 1) {
-                cl::Event event = parallel(args, buf, stage, step);
-                event.wait();
-                gpuStart = event.getProfilingInfo<CL_PROFILING_COMMAND_START>();
-                gpuEnd = event.getProfilingInfo<CL_PROFILING_COMMAND_END>();
-                gpuElapsed += (gpuEnd - gpuStart) / 1000;
+                event = parallel(args, buf, stage, step);
             }
         }
+        event.wait();
         cl::copy(queue_, buf, data.begin(), data.end());
-        cpuEnd = high_resolution_clock::now();
+        auto cpuEnd = high_resolution_clock::now();
 
-        cpuElapsed += duration_cast<microseconds>(cpuEnd - cpuStart).count();
+        auto cpuElapsed = duration_cast<microseconds>(cpuEnd - cpuStart).count();
+        auto gpuStart = event.getProfilingInfo<CL_PROFILING_COMMAND_START>();
+        auto gpuEnd = event.getProfilingInfo<CL_PROFILING_COMMAND_END>();
+        long long gpuElapsed = (gpuEnd - gpuStart) / 1000;
         cpuElapsed -= gpuElapsed;
         return {cpuElapsed, gpuElapsed};
     }
