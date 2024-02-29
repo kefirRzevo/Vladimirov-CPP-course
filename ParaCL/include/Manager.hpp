@@ -19,11 +19,11 @@ namespace paracl
 class Manager final
 {
 private:
-    std::optional<std::string> inputFile_ = std::nullopt;
-    std::optional<std::string> dotFile_ = std::nullopt;
-    std::optional<std::string> clFile_ = std::nullopt;
-    std::optional<std::string> cppFile_ = std::nullopt;
-    std::optional<std::string> disasmFile_ = std::nullopt;
+    std::optional<std::string> inputFile_;
+    std::optional<std::string> dotFile_;
+    std::optional<std::string> clFile_;
+    std::optional<std::string> cppFile_;
+    std::optional<std::string> disasmFile_;
     bool help_ = false;
 
     po::options_description cmdline_{"Options"};
@@ -139,11 +139,14 @@ private:
 
         NodeCodegen codegener;
         auto im = codegener.codegen(drv.getRoot());
+        if (!im.has_value()) {
+            throw std::runtime_error("Couldn't get Image");
+        }
         if (disasmFile_.has_value()) {
             im->disassemble(disasmFile_.value());
         }
         VirtualMachine m;
-        m.loadImage(std::move(*im));
+        m.loadImage(std::move(im.value()));
         m.execute();
     }
 

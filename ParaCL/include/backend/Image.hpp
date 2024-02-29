@@ -126,16 +126,12 @@ public:
         return consts_[id].first;
     }
 
-    std::vector<instr_value> getInstrs() && {
-        std::vector<instr_value> instrs;
-        std::swap(instrs, instrs_);
-        return instrs;
+    std::vector<instr_value> getInstrs() {
+        return std::move(instrs_);
     }
 
-    std::vector<const_value> getConsts() && {
-        std::vector<const_value> consts;
-        std::swap(consts, consts_);
-        return consts;
+    std::vector<const_value> getConsts() {
+        return std::move(consts_);
     }
 
     addr_t getStackEndPtr() const {

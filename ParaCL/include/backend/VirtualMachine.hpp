@@ -32,9 +32,9 @@ public:
     VirtualMachine(std::istream& is = std::cin, std::ostream& os = std::cout) :
         is_(is), os_(os) {}
 
-    void loadImage(Image&& image) {
-        auto instrs = std::move(image).getInstrs();
-        auto consts = std::move(image).getConsts();
+    void loadImage(Image image) {
+        auto instrs = image.getInstrs();
+        auto consts = image.getConsts();
         memSize_ = image.getConstEndPtr();
         stackSize_ = image.getStackEndPtr();
         memory_.reserve(memSize_);

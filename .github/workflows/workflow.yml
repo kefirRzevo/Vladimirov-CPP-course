@@ -1,8 +1,10 @@
 name: ParCL post-push
 on:
   push:
-    branches:
-      - main
+      paths:
+        - ParaCL/**
+      branches:
+        - main
 jobs:
   main:
     runs-on: ubuntu-latest

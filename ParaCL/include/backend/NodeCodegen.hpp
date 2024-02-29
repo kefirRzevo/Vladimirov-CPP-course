@@ -1,8 +1,8 @@
 #pragma once
 
 #include <tuple>
-#include <memory>
 #include <vector>
+#include <optional>
 #include <stdexcept>
 
 #include "frontend/NodeVisitor.hpp"
@@ -29,8 +29,8 @@ private:
     std::vector<UnaryExpression*> postfixes_;
     std::vector<LoopReset> loopResets_;
 
-    std::unique_ptr<Image> im_;
-    std::unique_ptr<ConstantPool> consts_;
+    std::optional<Image> im_;
+    std::optional<ConstantPool> consts_;
     StackFrame frame_;
 
     void beginScope(const Scope& scope) {
@@ -181,17 +181,14 @@ private:
 public:
     NodeCodegen() = default;
 
-    std::unique_ptr<Image> codegen(INode* root) {
-        im_ = std::make_unique<Image>();
-        consts_ = std::make_unique<ConstantPool>(*im_);
+    std::optional<Image> codegen(INode* root) {
+        im_.emplace();
+        consts_.emplace(im_.value());
         if (root) {
             root->accept(*this);
         }
         im_->addInstr<Hlt>();
-        consts_.reset();
-        std::unique_ptr<Image> im = std::move(im_);
-        im_.release();
-        return im;
+        return std::move(im_);
     }
 
     void visit(UnaryExpression* node) {
