@@ -59,6 +59,7 @@ public:
         root_ = nullptr;
     }
 
+    //implementation in AST.cpp to avoid forward declaration errors
     void generateDot(std::string_view filepath) const;
 
     void generateCl(std::string_view filepath) const;

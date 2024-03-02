@@ -12,11 +12,6 @@
 namespace paracl
 {
 
-#define VISITABLE                               \
-void accept(NodeVisitor& visitor) override {    \
-    visitor.visit(this);                        \
-}
-
 class INode
 {
 protected:
@@ -45,17 +40,33 @@ public:
         INode(loc) {}
 };
 
-class UnaryExpression : public Expression
+template<typename Node>
+class VisitableExpression : public Expression
 {
 protected:
     using Expression::loc_;
+
+public:
+    VisitableExpression(const location& loc) :
+        Expression(loc) {}
+
+    void accept(NodeVisitor& visitor) override {
+        visitor.visit(static_cast<Node*>(this));
+    }
+};
+
+class UnaryExpression : public VisitableExpression<UnaryExpression>
+{
+protected:
+    using VisExpr = VisitableExpression<UnaryExpression>;
+    using VisExpr::loc_;
 
     UnaryOperator op_;
     Expression* expr_ = nullptr;
 
 public:
     UnaryExpression(const location& loc, UnaryOperator op, Expression* expr) :
-        Expression(loc), op_(op), expr_(expr) {}
+        VisExpr(loc), op_(op), expr_(expr) {}
 
     UnaryOperator getOperator() const {
         return op_;
@@ -64,14 +75,13 @@ public:
     Expression* getExpr() const {
         return expr_;
     }
-
-    VISITABLE;
 };
 
-class BinaryExpression : public Expression
+class BinaryExpression : public VisitableExpression<BinaryExpression>
 {
 protected:
-    using Expression::loc_;
+    using VisExpr = VisitableExpression<BinaryExpression>;
+    using VisExpr::loc_;
 
     BinaryOperator op_;
     Expression* left_ = nullptr;
@@ -80,7 +90,7 @@ protected:
 public:
     BinaryExpression(const location& loc,
                      BinaryOperator op, Expression* left, Expression* right) :
-        Expression(loc), op_(op), left_(left), right_(right) {}
+        VisExpr(loc), op_(op), left_(left), right_(right) {}
 
     BinaryOperator getOperator() const {
         return op_;
@@ -93,14 +103,13 @@ public:
     Expression* getRightExpr() const {
         return right_;
     }
-
-    VISITABLE;
 };
 
-class TernaryExpression : public Expression
+class TernaryExpression : public VisitableExpression<TernaryExpression>
 {
 protected:
-    using Expression::loc_;
+    using VisExpr = VisitableExpression<TernaryExpression>;
+    using VisExpr::loc_;
 
     Expression* condition_ = nullptr;
     Expression* onTrue_ = nullptr;
@@ -109,7 +118,7 @@ protected:
 public:
     TernaryExpression(const location& loc, Expression* condition,
                       Expression* onTrue, Expression* onFalse) :
-        Expression(loc), condition_(condition),
+        VisExpr(loc), condition_(condition),
         onTrue_(onTrue), onFalse_(onFalse) {}
 
     Expression* getCondExpr() const {
@@ -123,56 +132,51 @@ public:
     Expression* getFalseExpr() const {
         return onFalse_;
     }
-
-    VISITABLE;
 };
 
-class ConstantExpression : public Expression
+class ConstantExpression : public VisitableExpression<ConstantExpression>
 {
 protected:
-    using Expression::loc_;
+    using VisExpr = VisitableExpression<ConstantExpression>;
+    using VisExpr::loc_;
 
     int value_;
 
 public:
     ConstantExpression(const location& loc, const int& value) :
-        Expression(loc), value_(value) {}
+        VisExpr(loc), value_(value) {}
 
     int getValue() const {
         return value_;
     }
-
-    VISITABLE;
 };
 
-class VariableExpression : public Expression
+class VariableExpression : public VisitableExpression<VariableExpression>
 {
 protected:
-    using Expression::loc_;
+    using VisExpr = VisitableExpression<VariableExpression>;
+    using VisExpr::loc_;
 
     std::string name_;
 
 public:
     VariableExpression(const location& loc, std::string_view name) :
-        Expression(loc), name_(name) {}
+        VisExpr(loc), name_(name) {}
 
     std::string_view getName() const {
         return name_;
     }
-
-    VISITABLE;
 };
 
-class InputExpression : public Expression
+class InputExpression : public VisitableExpression<InputExpression>
 {
 protected:
-    using Expression::loc_;
+    using VisExpr = VisitableExpression<InputExpression>;
+    using VisExpr::loc_;
 
 public:
     InputExpression(const location& loc):
-        Expression(loc) {}
-
-    VISITABLE;
+        VisExpr(loc) {}
 };
 
 class Statement : public INode
@@ -185,17 +189,33 @@ public:
         INode(loc) {}
 };
 
-class BlockStatement : public Statement
+template<typename Node>
+class VisitableStatement : public Statement
 {
 protected:
     using Statement::loc_;
+
+public:
+    VisitableStatement(const location& loc) :
+        Statement(loc) {}
+
+    void accept(NodeVisitor& visitor) override {
+        visitor.visit(static_cast<Node*>(this));
+    }
+};
+
+class BlockStatement : public VisitableStatement<BlockStatement>
+{
+protected:
+    using VisStat = VisitableStatement<BlockStatement>;
+    using VisStat::loc_;
 
     Scope scope_;
     std::vector<Statement* > statements_;
 
 public:
     BlockStatement(const location& loc) :
-        Statement(loc) {}
+        VisStat(loc) {}
 
     Scope& getScope() {
         return scope_;
@@ -220,32 +240,30 @@ public:
     auto rend() const {
         return statements_.rend();
     }
-
-    VISITABLE;
 };
 
-class ExpressionStatement : public Statement
+class ExpressionStatement : public VisitableStatement<ExpressionStatement>
 {
 protected:
-    using Statement::loc_;
+    using VisStat = VisitableStatement<ExpressionStatement>;
+    using VisStat::loc_;
 
     Expression* expr_;
 
 public:
     ExpressionStatement(const location& loc, Expression* expr) :
-        Statement(loc), expr_(expr) {}
+        VisStat(loc), expr_(expr) {}
 
     Expression* getExpr() const {
         return expr_;
     }
-
-    VISITABLE;
 };
 
-class IfStatement : public Statement
+class IfStatement : public VisitableStatement<IfStatement>
 {
 protected:
-    using Statement::loc_;
+    using VisStat = VisitableStatement<IfStatement>;
+    using VisStat::loc_;
 
     Scope scope_;
     Expression* condition_ = nullptr;
@@ -254,7 +272,7 @@ protected:
 public:
     IfStatement(const location& loc,
                 Expression* condition, Statement* trueBlock) :
-        Statement(loc), condition_(condition), trueBlock_(trueBlock) {}
+        VisStat(loc), condition_(condition), trueBlock_(trueBlock) {}
 
     Scope& getScope() {
         return scope_;
@@ -267,8 +285,6 @@ public:
     Statement* getTrueBlock() const {
         return trueBlock_;
     }
-
-    VISITABLE;
 };
 
 class IfElseStatement : public IfStatement
@@ -289,14 +305,13 @@ public:
     Statement* getFalseBlock() const {
         return falseBlock_;
     }
-
-    VISITABLE;
 };
 
-class WhileStatement : public Statement
+class WhileStatement : public VisitableStatement<WhileStatement>
 {
 protected:
-    using Statement::loc_;
+    using VisStat = VisitableStatement<WhileStatement>;
+    using VisStat::loc_;
 
     Scope scope_;
     Expression* condition_ = nullptr;
@@ -305,7 +320,7 @@ protected:
 public:
     WhileStatement(const location& loc,
                    Expression* condition, Statement* block) :
-        Statement(loc), condition_(condition), block_(block) {}
+        VisStat(loc), condition_(condition), block_(block) {}
 
     Scope& getScope() {
         return scope_;
@@ -318,38 +333,36 @@ public:
     Statement* getBlock() const {
         return block_;
     }
-
-    VISITABLE;
 };
 
-class OutputStatement : public Statement
+class OutputStatement : public VisitableStatement<OutputStatement>
 {
 protected:
-    using Statement::loc_;
+    using VisStat = VisitableStatement<OutputStatement>;
+    using VisStat::loc_;
 
     Expression* expr_;
 
 public:
     OutputStatement(const location& loc, Expression* expr) :
-        Statement(loc), expr_(expr) {}
+        VisStat(loc), expr_(expr) {}
 
     Expression* getExpr() const {
         return expr_;
     }
-
-    VISITABLE;
 };
 
-class BreakStatement : public Statement
+class BreakStatement : public VisitableStatement<BreakStatement>
 {
 protected:
-    using Statement::loc_;
+    using VisStat = VisitableStatement<BreakStatement>;
+    using VisStat::loc_;
 
     WhileStatement* loop_ = nullptr;
 
 public:
     BreakStatement(const location& loc) :
-        Statement(loc) {}
+        VisStat(loc) {}
 
     WhileStatement* getLoopStat() const {
         return loop_;
@@ -358,20 +371,19 @@ public:
     void setLoopStat(WhileStatement* stat) {
         loop_ = stat;
     }
-
-    VISITABLE;
 };
 
-class ContinueStatement : public Statement
+class ContinueStatement : public VisitableStatement<ContinueStatement>
 {
 protected:
-    using Statement::loc_;
+    using VisStat = VisitableStatement<ContinueStatement>;
+    using VisStat::loc_;
 
     WhileStatement* loop_ = nullptr;
 
 public:
     ContinueStatement(const location& loc) :
-        Statement(loc) {}
+        VisStat(loc) {}
 
     WhileStatement* getLoopStat() const {
         return loop_;
@@ -380,8 +392,6 @@ public:
     void setLoopStat(WhileStatement* stat) {
         loop_ = stat;
     }
-
-    VISITABLE;
 };
 
 } // namespace paracl

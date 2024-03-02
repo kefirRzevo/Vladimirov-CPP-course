@@ -63,7 +63,10 @@ public:
         tree_->semanticAnalyze(*this);
     }
 
+    //implementation in AST.cpp to avoid forward declaration errors
     Parser::symbol_type getNextToken();
+    //    return lexer_->getNextToken();
+    //}
 
     void parse() {
         parser_->parse();
