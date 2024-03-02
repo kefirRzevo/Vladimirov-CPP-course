@@ -77,24 +77,29 @@ public:
         cl::Buffer buf(context_, CL_MEM_WRITE_ONLY, bufSize);
         cl::KernelFunctor<cl::Buffer, uint, uint> parallel(program_, "bitonic");
         cl::NDRange globalRange(size);
-        cl::Event event;
+        cl::Event firstEvent, event;
+        bool first = true;
 
         using namespace std::chrono;
-
         auto cpuStart = high_resolution_clock::now();
         cl::copy(queue_, data.begin(), data.end(), buf);
-        cl::EnqueueArgs args(queue_, globalRange);
         for (size_t stage = 2U; stage <= size; stage = stage << 1) {
             for (size_t step = stage >> 1; step > 0; step = step >> 1) {
-                event = parallel(args, buf, stage, step);
+                if (first) {
+                    const auto firstArgs = cl::EnqueueArgs{queue_, globalRange};
+                    firstEvent = event = parallel(firstArgs, buf, stage, step);
+                    first = false;
+                } else {
+                    const auto args = cl::EnqueueArgs{queue_, event, globalRange};
+                    event = parallel(args, buf, stage, step);
+                }
             }
         }
         event.wait();
         cl::copy(queue_, buf, data.begin(), data.end());
         auto cpuEnd = high_resolution_clock::now();
-
         auto cpuElapsed = duration_cast<microseconds>(cpuEnd - cpuStart).count();
-        auto gpuStart = event.getProfilingInfo<CL_PROFILING_COMMAND_START>();
+        auto gpuStart = firstEvent.getProfilingInfo<CL_PROFILING_COMMAND_START>();
         auto gpuEnd = event.getProfilingInfo<CL_PROFILING_COMMAND_END>();
         long long gpuElapsed = (gpuEnd - gpuStart) / 1000;
         cpuElapsed -= gpuElapsed;
@@ -103,4 +108,3 @@ public:
 };
 
 } // namespace opencl
-//*/
