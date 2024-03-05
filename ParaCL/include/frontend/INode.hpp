@@ -271,7 +271,7 @@ protected:
 
 public:
     IfStatement(const location& loc,
-                Expression* condition, Statement* trueBlock) :
+        Expression* condition, Statement* trueBlock) :
         VisStat(loc), condition_(condition), trueBlock_(trueBlock) {}
 
     Scope& getScope() {
@@ -287,20 +287,34 @@ public:
     }
 };
 
-class IfElseStatement : public IfStatement
+class IfElseStatement : public VisitableStatement<IfElseStatement>
 {
 protected:
-    using IfStatement::loc_;
-    using IfStatement::scope_;
-    using IfStatement::condition_;
-    using IfStatement::trueBlock_;
+    using VisStat = VisitableStatement<IfElseStatement>;
+    using VisStat::loc_;
 
+    Scope scope_;
+    Expression* condition_ = nullptr;
+    Statement* trueBlock_ = nullptr;
     Statement* falseBlock_ = nullptr;
 
 public:
-    IfElseStatement(const location& loc, Expression* condition,
-                    Statement* trueBlock, Statement* falseBlock) :
-        IfStatement(loc, condition, trueBlock), falseBlock_(falseBlock) {}
+    IfElseStatement(const location& loc,
+        Expression* condition, Statement* trueBlock, Statement* falseBlock) :
+        VisStat(loc), condition_(condition),
+        trueBlock_(trueBlock), falseBlock_(falseBlock) {}
+
+    Scope& getScope() {
+        return scope_;
+    }
+
+    Expression* getCondExpr() const {
+        return condition_;
+    }
+
+    Statement* getTrueBlock() const {
+        return trueBlock_;
+    }
 
     Statement* getFalseBlock() const {
         return falseBlock_;
@@ -319,7 +333,7 @@ protected:
 
 public:
     WhileStatement(const location& loc,
-                   Expression* condition, Statement* block) :
+        Expression* condition, Statement* block) :
         VisStat(loc), condition_(condition), block_(block) {}
 
     Scope& getScope() {

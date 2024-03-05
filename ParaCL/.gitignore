@@ -6,3 +6,7 @@ include/backend/Instructions2.hpp
 include/Json.hpp
 test/TestGenerator.cpp
 test/config.json
+
+tests/*.cpp
+tests/*.disasm
+tests/*.dot

@@ -76,15 +76,15 @@ private:
                 inputFile_.emplace(input);
             }
             fullpath.replace_extension();
-            if (vm.count("dump")) {
-                auto dump = vm["dump"].as<std::string>();
+            if (vm.count("dot")) {
+                auto dump = vm["dot"].as<std::string>();
                 if (dump == "") {
                     dump = fullpath.generic_string().append(".dot");
                 }
                 dotFile_.emplace(dump);
             }
-            if (vm.count("decode")) {
-                auto decode = vm["decode"].as<std::string>();
+            if (vm.count("cl")) {
+                auto decode = vm["cl"].as<std::string>();
                 if (decode == "") {
                     decode = fullpath.generic_string().append(".decoded");
                 }
