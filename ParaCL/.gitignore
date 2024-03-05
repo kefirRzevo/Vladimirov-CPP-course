@@ -3,6 +3,7 @@ build/
 res/
 
 include/backend/Instructions2.hpp
+include/frontend/VisitorDraft.hpp
 include/Json.hpp
 test/TestGenerator.cpp
 test/config.json

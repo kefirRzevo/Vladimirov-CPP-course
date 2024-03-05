@@ -229,9 +229,9 @@ public:
             auto nodeRight = node->getRightExpr();
             switch (nodeOp) {
             case BinaryOperator::BIN_COMMA: {
-                nodeRight->accept(*this);
-                im_->addInstr<iPopVal>();
                 nodeLeft->accept(*this);
+                im_->addInstr<iPopVal>();
+                nodeRight->accept(*this);
                 break;
             }
             case BinaryOperator::BIN_ASSIGN: {

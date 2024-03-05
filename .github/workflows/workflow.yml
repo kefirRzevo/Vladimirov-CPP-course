@@ -1,4 +1,4 @@
-name: ParCL post-push
+name: ParaCL post-push
 on:
   push:
       paths:

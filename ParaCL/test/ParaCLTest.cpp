@@ -45,6 +45,9 @@ TEST(ParaclTest, RunEnd2EndTests) {
         auto equal = std::equal(outData.cbegin(), outData.cend(),
                                 ansData.cbegin(), ansData.cend());
         EXPECT_TRUE(equal);
+        if (!equal) {
+            std::cout << "Run not equal: " << testStem << std::endl;
+        }
 
         std::string testCppBin =  projDir / std::string("res") / (testStem);
         std::system(("g++ -std=c++17 -o " + testCppBin + " " + testCpp).c_str());
@@ -54,6 +57,9 @@ TEST(ParaclTest, RunEnd2EndTests) {
         auto equalCpp = std::equal(cppData.cbegin(), cppData.cend(),
                                    ansData.cbegin(), ansData.cend());
         EXPECT_TRUE(equalCpp);
+        if (!equalCpp) {
+            std::cout << "Cpp not equal: " << testStem << std::endl;
+        }
     }
 }
 
