@@ -2,11 +2,11 @@
     "nTests": 100,
     "sizeRange": {
         "min": 2,
-        "max": 20000
+        "max": 65000
     },
     "dataRange": {
         "min": 0,
-        "max": 50000
+        "max": 150000
     },
     "outputPath": "../tests/"
 }

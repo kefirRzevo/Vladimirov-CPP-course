@@ -76,15 +76,16 @@ public:
         size_t bufSize = size * sizeof(T);
         cl::Buffer buf(context_, CL_MEM_WRITE_ONLY, bufSize);
         cl::KernelFunctor<cl::Buffer, uint, uint> parallel(program_, "bitonic");
-        cl::NDRange globalRange(size);
+        cl::NDRange globalRange(size / 2);
         cl::Event firstEvent, event;
         bool first = true;
+        size_t stages = std::countr_zero(size);
 
         using namespace std::chrono;
         auto cpuStart = high_resolution_clock::now();
         cl::copy(queue_, data.begin(), data.end(), buf);
-        for (size_t stage = 2U; stage <= size; stage = stage << 1) {
-            for (size_t step = stage >> 1; step > 0; step = step >> 1) {
+        for (size_t stage = 0U; stage < stages; ++stage) {
+            for (int step = stage; step >= 0; --step) {
                 if (first) {
                     const auto firstArgs = cl::EnqueueArgs{queue_, globalRange};
                     firstEvent = event = parallel(firstArgs, buf, stage, step);
